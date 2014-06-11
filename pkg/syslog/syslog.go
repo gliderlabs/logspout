@@ -81,8 +81,8 @@ const (
 
 // A Writer is a connection to a syslog server.
 type Writer struct {
-	Priority Priority
-	Tag      string
+	priority Priority
+	tag      string
 	hostname string
 	network  string
 	raddr    string
@@ -130,8 +130,8 @@ func Dial(network, raddr string, priority Priority, tag string) (*Writer, error)
 	hostname, _ := os.Hostname()
 
 	w := &Writer{
-		Priority: priority,
-		Tag:      tag,
+		priority: priority,
+		tag:      tag,
 		hostname: hostname,
 		network:  network,
 		raddr:    raddr,
@@ -176,7 +176,7 @@ func (w *Writer) connect() (err error) {
 
 // Write sends a log message to the syslog daemon.
 func (w *Writer) Write(b []byte) (int, error) {
-	return w.writeAndRetry(w.Priority, w.Tag, string(b))
+	return w.writeAndRetry(w.priority, w.tag, string(b))
 }
 
 // Close closes a connection to the syslog daemon.
@@ -195,71 +195,75 @@ func (w *Writer) Close() error {
 // Emerg logs a message with severity LOG_EMERG, ignoring the severity
 // passed to New.
 func (w *Writer) Emerg(m string) (err error) {
-	_, err = w.writeAndRetry(LOG_EMERG, w.Tag, m)
+	_, err = w.writeAndRetry(LOG_EMERG, w.tag, m)
 	return err
 }
 
 // Alert logs a message with severity LOG_ALERT, ignoring the severity
 // passed to New.
 func (w *Writer) Alert(m string) (err error) {
-	_, err = w.writeAndRetry(LOG_ALERT, w.Tag, m)
+	_, err = w.writeAndRetry(LOG_ALERT, w.tag, m)
 	return err
 }
 
 // Crit logs a message with severity LOG_CRIT, ignoring the severity
 // passed to New.
 func (w *Writer) Crit(m string) (err error) {
-	_, err = w.writeAndRetry(LOG_CRIT, w.Tag, m)
+	_, err = w.writeAndRetry(LOG_CRIT, w.tag, m)
 	return err
 }
 
 // Err logs a message with severity LOG_ERR, ignoring the severity
 // passed to New.
 func (w *Writer) Err(m string) (err error) {
-	_, err = w.writeAndRetry(LOG_ERR, w.Tag, m)
+	_, err = w.writeAndRetry(LOG_ERR, w.tag, m)
 	return err
 }
 
 // Warning logs a message with severity LOG_WARNING, ignoring the
 // severity passed to New.
 func (w *Writer) Warning(m string) (err error) {
-	_, err = w.writeAndRetry(LOG_WARNING, w.Tag, m)
+	_, err = w.writeAndRetry(LOG_WARNING, w.tag, m)
 	return err
 }
 
 // Notice logs a message with severity LOG_NOTICE, ignoring the
 // severity passed to New.
 func (w *Writer) Notice(m string) (err error) {
-	_, err = w.writeAndRetry(LOG_NOTICE, w.Tag, m)
+	_, err = w.writeAndRetry(LOG_NOTICE, w.tag, m)
 	return err
 }
 
 // Info logs a message with severity LOG_INFO, ignoring the severity
 // passed to New.
 func (w *Writer) Info(m string) (err error) {
-	_, err = w.writeAndRetry(LOG_INFO, w.Tag, m)
+	_, err = w.writeAndRetry(LOG_INFO, w.tag, m)
 	return err
 }
 
 // Debug logs a message with severity LOG_DEBUG, ignoring the severity
 // passed to New.
 func (w *Writer) Debug(m string) (err error) {
-	_, err = w.writeAndRetry(LOG_DEBUG, w.Tag, m)
+	_, err = w.writeAndRetry(LOG_DEBUG, w.tag, m)
 	return err
 }
 
+// WriteWithTag sends a log message to the syslog daemon with a custom
+// tag.
 func (w *Writer) WriteWithTag(m, tag string) (err error) {
-	_, err = w.writeAndRetry(w.Priority, tag, m)
+	_, err = w.writeAndRetry(w.priority, tag, m)
 	return err
 }
 
+// WriteWithTagPriority sends a log message to the syslog daemon with a
+// custom tag and priority.
 func (w *Writer) WriteWithTagPriority(m, tag string, p Priority) (err error) {
 	_, err = w.writeAndRetry(p, tag, m)
 	return err
 }
 
 func (w *Writer) writeAndRetry(p Priority, tag, s string) (int, error) {
-	pr := (w.Priority & facilityMask) | (p & severityMask)
+	pr := (w.priority & facilityMask) | (p & severityMask)
 
 	w.mu.Lock()
 	defer w.mu.Unlock()

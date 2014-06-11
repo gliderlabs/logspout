@@ -2,13 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/robxu9/logspout/pkg/syslog"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/robxu9/logspout/pkg/syslog"
 
 	"code.google.com/p/go.net/websocket"
 	"github.com/fsouza/go-dockerclient"
