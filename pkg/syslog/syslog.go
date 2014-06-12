@@ -248,16 +248,8 @@ func (w *Writer) Debug(m string) (err error) {
 	return err
 }
 
-// WriteWithTag sends a log message to the syslog daemon with a custom
-// tag.
-func (w *Writer) WriteWithTag(m, tag string) (err error) {
-	_, err = w.writeAndRetry(w.priority, tag, m)
-	return err
-}
-
-// WriteWithTagPriority sends a log message to the syslog daemon with a
-// custom tag and priority.
-func (w *Writer) WriteWithTagPriority(m, tag string, p Priority) (err error) {
+// Send logs a message to the syslog daemon with a custom tag and priority.
+func (w *Writer) Send(m, tag string, p Priority) (err error) {
 	_, err = w.writeAndRetry(p, tag, m)
 	return err
 }
