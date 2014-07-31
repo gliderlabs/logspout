@@ -80,7 +80,12 @@ func (rm *RouteManager) Add(route *Route) error {
 	go func() {
 		logstream := make(chan *Log)
 		defer close(logstream)
-		go syslogStreamer(route.Target, types, logstream)
+		switch route.Target.Type {
+		case "syslog":
+			go syslogStreamer(route.Target, types, logstream)
+		case "udp":
+			go udpStreamer(route.Target, types, logstream)
+		}
 		rm.attacher.Listen(route.Source, logstream, route.closer)
 	}()
 	if rm.persistor != nil {
