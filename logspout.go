@@ -81,6 +81,7 @@ func udpStreamer(target Target, types []string, logstream chan *Log) {
 		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
 			continue
 		}
+		logline.Name = strings.SplitN(logline.Name, "_", 2)[0]
 		encoder.Encode(logline)
 	}
 }
