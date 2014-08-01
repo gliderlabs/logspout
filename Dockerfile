@@ -1,13 +1,6 @@
-FROM flynn/busybox
-MAINTAINER Jeff Lindsay <progrium@gmail.com>
+# This Dockerfile is used to build the logspout binary only. See
+# image/Dockerfile for building a much leaner release image.
 
-ADD ./build/logspout /bin/logspout
-
-ENV DOCKER unix:///tmp/docker.sock
-ENV ROUTESPATH /mnt/routes
-VOLUME /mnt/routes
-
-EXPOSE 8000
-
-ENTRYPOINT ["/bin/logspout"]
-CMD []
+FROM google/golang
+ADD . /gopath/src/logspout
+RUN go get -v logspout
