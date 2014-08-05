@@ -1,11 +1,7 @@
 FROM flynn/busybox
-MAINTAINER Jeff Lindsay <progrium@gmail.com>
+MAINTAINER CMGS <ilskdw@gmail.com>
 
-ADD ./build/logspout /bin/logspout
-
-ENV DOCKER unix:///tmp/docker.sock
-ENV ROUTESPATH /mnt/routes
-VOLUME /mnt/routes
+ADD ./logspout /bin/logspout
 
 EXPOSE 8000
 
