@@ -1,9 +1,7 @@
 FROM flynn/busybox
 MAINTAINER CMGS <ilskdw@gmail.com>
 
-ADD ./logspout /bin/logspout
+ADD ./logspout /bin/lenz
 
-EXPOSE 8000
-
-ENTRYPOINT ["/bin/logspout"]
+ENTRYPOINT ["/bin/lenz"]
 CMD []

@@ -14,10 +14,13 @@ type AttachEvent struct {
 }
 
 type Log struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Data string `json:"data"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Data    string `json:"data"`
+	Appname string `json:"appname"`
+	Tag     string `json:"tag"`
+	Port    string `json:"port"`
 }
 
 type Route struct {
