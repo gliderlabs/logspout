@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log"
 	"net"
 	"net/url"
@@ -74,8 +73,9 @@ func main() {
 	var c = make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	signal.Notify(c, syscall.SIGTERM)
+	signal.Notify(c, syscall.SIGHUP)
 	for {
-		fmt.Println("Catch", <-c)
+		log.Println("Catch", <-c)
 		break
 	}
 }
