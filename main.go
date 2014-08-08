@@ -1,12 +1,9 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"io/ioutil"
 	"log"
-	"net"
-	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
@@ -36,31 +33,11 @@ func pid(path string) {
 	}
 }
 
-func udpStreamer(target Target, types []string, logstream chan *Log) {
-	typestr := "," + strings.Join(types, ",") + ","
-	addr, err := net.ResolveUDPAddr("udp", target.Addr)
-	assert(err, "resolve udp failed")
-	conn, err := net.DialUDP("udp", nil, addr)
-	assert(err, "connect udp failed")
-	encoder := json.NewEncoder(conn)
-	defer conn.Close()
-	for logline := range logstream {
-		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
-			continue
-		}
-		appinfo := strings.SplitN(logline.Name, "_", 2)
-		logline.Appname = appinfo[0]
-		logline.Port = appinfo[1]
-		logline.Tag = target.AppendTag
-		encoder.Encode(logline)
-	}
-}
-
 func main() {
 	flag.BoolVar(&debugMode, "DEBUG", false, "enable debug")
 	endpoint := flag.String("docker", "unix:///var/run/docker.sock", "docker location")
 	routes := flag.String("routes", "/var/lib/lenz", "routes path")
-	forwarder := flag.String("forwarder", "udp://127.0.0.1:20000", "log forward dest")
+	forwards := flag.String("forwards", "", "log forward location, separate by comma")
 	pidFile := flag.String("pidfile", "/var/run/lenz.pid", "pid file")
 	flag.Parse()
 
@@ -69,10 +46,13 @@ func main() {
 	attacher := NewAttachManager(client)
 	router := NewRouteManager(attacher)
 
-	u, err := url.Parse(*forwarder)
-	assert(err, "url")
-	log.Println("routing all to " + *forwarder)
-	router.Add(&Route{Target: Target{Type: u.Scheme, Addr: u.Host}})
+	if *forwards != "" {
+		log.Println("routing all to " + *forwards)
+		target := Target{Addrs: strings.Split(*forwards, ",")}
+		route := Route{Target: &target}
+		route.loadBackends()
+		router.Add(&route)
+	}
 
 	if _, err := os.Stat(*routes); err == nil {
 		log.Println("loading and persisting routes in " + *routes)

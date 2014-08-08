@@ -73,14 +73,10 @@ func (rm *RouteManager) Add(route *Route) error {
 	}
 	route.closer = make(chan bool)
 	rm.routes[route.ID] = route
-	types := []string{}
-	if route.Source != nil {
-		types = append(types, route.Source.Types...)
-	}
 	go func() {
 		logstream := make(chan *Log)
 		defer close(logstream)
-		go udpStreamer(route.Target, types, logstream)
+		go udpStreamer(route, logstream)
 		rm.attacher.Listen(route.Source, logstream, route.closer)
 	}()
 	if rm.persistor != nil {
@@ -136,6 +132,7 @@ func (fs RouteFileStore) GetAll() ([]*Route, error) {
 			if err == nil {
 				routes = append(routes, route)
 			}
+			route.loadBackends()
 		}
 	}
 	return routes, nil
