@@ -1,11 +1,16 @@
 package main
 
 import (
+	"crypto/sha1"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type RouteStore interface {
@@ -61,6 +66,11 @@ func (rm *RouteManager) GetAll() ([]*Route, error) {
 func (rm *RouteManager) Add(route *Route) error {
 	rm.Lock()
 	defer rm.Unlock()
+	if route.ID == "" {
+		h := sha1.New()
+		io.WriteString(h, strconv.Itoa(int(time.Now().UnixNano())))
+		route.ID = fmt.Sprintf("%x", h.Sum(nil))[:12]
+	}
 	route.closer = make(chan bool)
 	rm.routes[route.ID] = route
 	go func() {
@@ -105,9 +115,6 @@ func (fs RouteFileStore) Get(id string) (*Route, error) {
 	route := new(Route)
 	if err = unmarshal(file, route); err != nil {
 		return nil, err
-	}
-	if route.ID == "" {
-		route.ID = id
 	}
 	return route, nil
 }
