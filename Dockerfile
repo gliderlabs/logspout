@@ -1,13 +1,7 @@
 FROM flynn/busybox
-MAINTAINER Jeff Lindsay <progrium@gmail.com>
+MAINTAINER CMGS <ilskdw@gmail.com>
 
-ADD ./build/logspout /bin/logspout
+ADD ./lenz /bin/lenz
 
-ENV DOCKER unix:///tmp/docker.sock
-ENV ROUTESPATH /mnt/routes
-VOLUME /mnt/routes
-
-EXPOSE 8000
-
-ENTRYPOINT ["/bin/logspout"]
+ENTRYPOINT ["/bin/lenz"]
 CMD []

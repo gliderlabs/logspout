@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+
+	"github.com/CMGS/consistent"
 )
 
 type AttachEvent struct {
@@ -14,17 +16,28 @@ type AttachEvent struct {
 }
 
 type Log struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Data string `json:"data"`
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Type    string `json:"type"`
+	Data    string `json:"data"`
+	Appname string `json:"appname"`
+	Tag     string `json:"tag"`
+	Port    string `json:"port"`
 }
 
 type Route struct {
-	ID     string  `json:"id"`
-	Source *Source `json:"source,omitempty"`
-	Target Target  `json:"target"`
-	closer chan bool
+	ID       string  `json:"id"`
+	Source   *Source `json:"source,omitempty"`
+	Target   *Target `json:"target"`
+	backends *consistent.Consistent
+	closer   chan bool
+}
+
+func (s *Route) loadBackends() {
+	s.backends = consistent.New()
+	for _, addr := range s.Target.Addrs {
+		s.backends.Add(addr)
+	}
 }
 
 type Source struct {
@@ -39,9 +52,8 @@ func (s *Source) All() bool {
 }
 
 type Target struct {
-	Type      string `json:"type"`
-	Addr      string `json:"addr"`
-	AppendTag string `json:"append_tag,omitempty"`
+	Addrs     []string `json:"addrs"`
+	AppendTag string   `json:"append_tag,omitempty"`
 }
 
 func marshal(obj interface{}) []byte {
