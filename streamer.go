@@ -26,28 +26,30 @@ func udpStreamer(route *Route, logstream chan *Log) {
 		logline.Port = appinfo[1]
 		logline.Tag = route.Target.AppendTag
 
-		addr, err := route.backends.Get(logline.Appname)
-		debug(logline.Appname, addr)
-		if err != nil {
-			debug("Get backend failed", err)
-			log.Println(logline.Appname, logline.Data)
-			continue
-		}
+		for offset := 0; offset < route.backends.Len(); offset++ {
+			addr, err := route.backends.Get(logline.Appname, offset)
+			if err != nil {
+				debug("Get backend failed", err)
+				log.Println(logline.Appname, logline.Data)
+				break
+			}
 
-		udpAddr, err := net.ResolveUDPAddr("udp", addr)
-		if err != nil {
-			debug("Resolve udp failed", err)
-			continue
-		}
+			debug(logline.Appname, addr)
+			udpAddr, err := net.ResolveUDPAddr("udp", addr)
+			if err != nil {
+				debug("Resolve udp failed", err)
+				continue
+			}
 
-		var conn *net.UDPConn
-		conn, err = net.DialUDP("udp", nil, udpAddr)
-		if err != nil {
-			debug("Connect backend failed", err)
-			continue
+			conn, err := net.DialUDP("udp", nil, udpAddr)
+			if err != nil {
+				debug("Connect backend failed", err)
+				continue
+			}
+			defer conn.Close()
+			encoder := json.NewEncoder(conn)
+			encoder.Encode(logline)
+			break
 		}
-		defer conn.Close()
-		encoder := json.NewEncoder(conn)
-		encoder.Encode(logline)
 	}
 }
