@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
-	"net/url"
 
 	"github.com/CMGS/consistent"
 )
@@ -37,9 +36,7 @@ type Route struct {
 func (s *Route) loadBackends() {
 	s.backends = consistent.New()
 	for _, addr := range s.Target.Addrs {
-		u, err := url.Parse(addr)
-		assert(err, "addr")
-		s.backends.Add(u.Host)
+		s.backends.Add(addr)
 	}
 }
 

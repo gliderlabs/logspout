@@ -76,7 +76,7 @@ func (rm *RouteManager) Add(route *Route) error {
 	go func() {
 		logstream := make(chan *Log)
 		defer close(logstream)
-		go udpStreamer(route, logstream)
+		go streamer(route, logstream)
 		rm.attacher.Listen(route.Source, logstream, route.closer)
 	}()
 	if rm.persistor != nil {

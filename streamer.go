@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"net"
+	"net/url"
 	"strings"
 )
 
-func udpStreamer(route *Route, logstream chan *Log) {
+func streamer(route *Route, logstream chan *Log) {
 	var types map[string]struct{}
 	if route.Source != nil {
 		types = make(map[string]struct{})
@@ -34,22 +36,66 @@ func udpStreamer(route *Route, logstream chan *Log) {
 				break
 			}
 
-			debug(logline.Appname, addr)
-			udpAddr, err := net.ResolveUDPAddr("udp", addr)
-			if err != nil {
-				debug("Resolve udp failed", err)
+			switch u, err := url.Parse(addr); {
+			case err != nil:
+				debug(err)
+				route.backends.Remove(addr)
 				continue
+			case u.Scheme == "udp":
+				err := udpStreamer(logline, u.Host)
+				if err != nil {
+					debug("Send to", u.Host, "by udp failed", err)
+					continue
+				}
+			case u.Scheme == "tcp":
+				err := tcpStreamer(logline, u.Host)
+				if err != nil {
+					debug("Send to", u.Host, "by tcp failed", err)
+					continue
+				}
 			}
-
-			conn, err := net.DialUDP("udp", nil, udpAddr)
-			if err != nil {
-				debug("Connect backend failed", err)
-				continue
-			}
-			defer conn.Close()
-			encoder := json.NewEncoder(conn)
-			encoder.Encode(logline)
 			break
 		}
 	}
+}
+
+func tcpStreamer(logline *Log, addr string) error {
+	debug(logline.Appname, addr)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		debug("Resolve tcp failed", err)
+		return err
+	}
+
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		debug("Connect backend failed", err)
+		return err
+	}
+	defer conn.Close()
+	writeJSON(conn, logline)
+	return nil
+}
+
+func udpStreamer(logline *Log, addr string) error {
+	debug(logline.Appname, addr)
+	udpAddr, err := net.ResolveUDPAddr("udp", addr)
+	if err != nil {
+		debug("Resolve udp failed", err)
+		return err
+	}
+
+	conn, err := net.DialUDP("udp", nil, udpAddr)
+	if err != nil {
+		debug("Connect backend failed", err)
+		return err
+	}
+	defer conn.Close()
+	writeJSON(conn, logline)
+	return nil
+}
+
+func writeJSON(w io.Writer, logline *Log) {
+	encoder := json.NewEncoder(w)
+	encoder.Encode(logline)
 }
