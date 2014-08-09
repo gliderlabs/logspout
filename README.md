@@ -1,8 +1,10 @@
 # lenz
 
-Fork from logspout by progrium, modified for sending JSON-formatted data to logstash by udp protocol. It removed http api interface and changed route file syntax.
+Fork from logspout by progrium, modified for sending JSON-formatted data to backends. It removed http api interface and changed route file syntax.
 
-Also, I made lenz support multiple remotes as backends. When events coming, it will choice one and send the event. Here I use consistent hash for scaling and failover.
+I made lenz support multiple mixed protocols backend. When events coming, it will choice one and send the event. Here I use consistent hash for scaling and failover.
+
+In the end, I implement the reload route files method by HUP signal. It would help you dynamic forward events easily.
 
 # logspout
 
@@ -12,9 +14,9 @@ It's a 100% stateless log appliance (unless you persist routes). It's not meant 
 
 For now it only captures stdout and stderr, but soon Docker will let us hook into more ... perhaps getting everything from every container's /dev/log. 
 
-#### Route all container output to remote logstash
+#### Route all container output to remote backends
 
-The simplest way to use lenz is to just take all logs and ship to a remote logstash. Just pass a default target URIs as the command.
+The simplest way to use lenz is to just take all logs and ship to remotes. Just pass default target URIs as the command.
 
 	$ ./lenz -forwards=udp://zzzz:50433,udp://yyy:50433
 
