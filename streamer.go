@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
+	"log/syslog"
 	"net"
 	"net/url"
 	"strings"
@@ -36,21 +38,25 @@ func streamer(route *Route, logstream chan *Log) {
 				break
 			}
 
+			debug(logline.Appname, addr)
 			switch u, err := url.Parse(addr); {
 			case err != nil:
 				debug(err)
 				route.backends.Remove(addr)
 				continue
 			case u.Scheme == "udp":
-				err := udpStreamer(logline, u.Host)
-				if err != nil {
+				if err := udpStreamer(logline, u.Host); err != nil {
 					debug("Send to", u.Host, "by udp failed", err)
 					continue
 				}
 			case u.Scheme == "tcp":
-				err := tcpStreamer(logline, u.Host)
-				if err != nil {
+				if err := tcpStreamer(logline, u.Host); err != nil {
 					debug("Send to", u.Host, "by tcp failed", err)
+					continue
+				}
+			case u.Scheme == "syslog":
+				if err := syslogStreamer(logline, u.Host); err != nil {
+					debug("Sent to syslog failed", err)
 					continue
 				}
 			}
@@ -59,8 +65,17 @@ func streamer(route *Route, logstream chan *Log) {
 	}
 }
 
+func syslogStreamer(logline *Log, addr string) error {
+	tag := fmt.Sprintf("%s.%s", logline.Appname, logline.Tag)
+	remote, err := syslog.Dial("udp", addr, syslog.LOG_USER|syslog.LOG_INFO, tag)
+	if err != nil {
+		return err
+	}
+	io.WriteString(remote, logline.Data)
+	return nil
+}
+
 func tcpStreamer(logline *Log, addr string) error {
-	debug(logline.Appname, addr)
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		debug("Resolve tcp failed", err)
@@ -78,7 +93,6 @@ func tcpStreamer(logline *Log, addr string) error {
 }
 
 func udpStreamer(logline *Log, addr string) error {
-	debug(logline.Appname, addr)
 	udpAddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		debug("Resolve udp failed", err)
