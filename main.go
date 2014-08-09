@@ -65,7 +65,13 @@ func main() {
 	signal.Notify(c, syscall.SIGTERM)
 	signal.Notify(c, syscall.SIGHUP)
 	for {
-		log.Println("Catch", <-c)
-		break
+		s := <-c
+		log.Println("Catch", s)
+		switch s {
+		case syscall.SIGHUP:
+			assert(router.Load(RouteFileStore(*routes)), "persistor")
+		default:
+			os.Exit(0)
+		}
 	}
 }
