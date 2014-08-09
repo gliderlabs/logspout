@@ -45,18 +45,19 @@ func main() {
 	assert(err, "docker")
 	attacher := NewAttachManager(client)
 	router := NewRouteManager(attacher)
+	routefs := RouteFileStore(*routes)
 
 	if *forwards != "" {
 		log.Println("routing all to " + *forwards)
 		target := Target{Addrs: strings.Split(*forwards, ",")}
-		route := Route{Target: &target}
+		route := Route{ID: "lenz_default", Target: &target}
 		route.loadBackends()
 		router.Add(&route)
 	}
 
 	if _, err := os.Stat(*routes); err == nil {
 		log.Println("loading and persisting routes in " + *routes)
-		assert(router.Load(RouteFileStore(*routes)), "persistor")
+		assert(router.Load(routefs), "persistor")
 	}
 
 	pid(*pidFile)
@@ -69,7 +70,7 @@ func main() {
 		log.Println("Catch", s)
 		switch s {
 		case syscall.SIGHUP:
-			assert(router.Load(RouteFileStore(*routes)), "persistor")
+			assert(router.Reload(), "persistor")
 		default:
 			os.Exit(0)
 		}

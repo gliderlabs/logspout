@@ -1,16 +1,11 @@
 package main
 
 import (
-	"crypto/sha1"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 type RouteStore interface {
@@ -29,6 +24,33 @@ type RouteManager struct {
 
 func NewRouteManager(attacher *AttachManager) *RouteManager {
 	return &RouteManager{attacher: attacher, routes: make(map[string]*Route)}
+}
+
+func (rm *RouteManager) Reload() error {
+	newRoutes, err := rm.persistor.GetAll()
+	if err != nil {
+		return err
+	}
+
+	newRoutesMap := make(map[string]struct{})
+	for _, newRoute := range newRoutes {
+		newRoutesMap[newRoute.ID] = struct{}{}
+		if route, ok := rm.routes[newRoute.ID]; ok {
+			route.Source = newRoute.Source
+			route.Target = newRoute.Target
+			route.backends = newRoute.backends
+			continue
+		}
+		rm.Add(newRoute)
+	}
+
+	for key, _ := range rm.routes {
+		if _, ok := newRoutesMap[key]; ok || key == "lenz_default" {
+			continue
+		}
+		rm.Remove(key)
+	}
+	return nil
 }
 
 func (rm *RouteManager) Load(persistor RouteStore) error {
@@ -66,11 +88,6 @@ func (rm *RouteManager) GetAll() ([]*Route, error) {
 func (rm *RouteManager) Add(route *Route) error {
 	rm.Lock()
 	defer rm.Unlock()
-	if route.ID == "" {
-		h := sha1.New()
-		io.WriteString(h, strconv.Itoa(int(time.Now().UnixNano())))
-		route.ID = fmt.Sprintf("%x", h.Sum(nil))[:12]
-	}
 	route.closer = make(chan bool)
 	rm.routes[route.ID] = route
 	go func() {
