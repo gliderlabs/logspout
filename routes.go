@@ -116,6 +116,9 @@ func (fs RouteFileStore) Get(id string) (*Route, error) {
 	if err = unmarshal(file, route); err != nil {
 		return nil, err
 	}
+	if route.ID == "" {
+		route.ID = id
+	}
 	return route, nil
 }
 
