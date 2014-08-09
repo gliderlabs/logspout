@@ -1,13 +1,13 @@
-build/container: build/logspout Dockerfile
-	docker build --no-cache -t logspout .
+build/container: build/lenz Dockerfile
+	docker build --no-cache -t lenz .
 	touch build/container
 
-build/logspout: *.go
-	go build -o build/logspout
+build/lenz: *.go
+	go build -o build/lenz
 
 release:
-	docker tag logspout progrium/logspout
-	docker push progrium/logspout
+	docker tag lenz CMGS/lenz
+	docker push CMGS/lenz
 
 .PHONY: clean
 clean:
