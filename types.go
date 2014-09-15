@@ -39,9 +39,10 @@ func (s *Source) All() bool {
 }
 
 type Target struct {
-	Type      string `json:"type"`
-	Addr      string `json:"addr"`
-	AppendTag string `json:"append_tag,omitempty"`
+	Type           string `json:"type"`
+	Addr           string `json:"addr"`
+	AppendTag      string `json:"append_tag,omitempty"`
+	StructuredData string `json:"structured_data,omitempty"`
 }
 
 func marshal(obj interface{}) []byte {

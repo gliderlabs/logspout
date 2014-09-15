@@ -80,7 +80,13 @@ func (rm *RouteManager) Add(route *Route) error {
 	go func() {
 		logstream := make(chan *Log)
 		defer close(logstream)
-		go syslogStreamer(route.Target, types, logstream)
+		switch route.Target.Type {
+		case "rfc5424":
+			go rfc5424Streamer(route.Target, types, logstream)
+		case "syslog":
+		default:
+			go syslogStreamer(route.Target, types, logstream)
+		}
 		rm.attacher.Listen(route.Source, logstream, route.closer)
 	}()
 	if rm.persistor != nil {
