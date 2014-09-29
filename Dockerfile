@@ -12,5 +12,5 @@ VOLUME /mnt/routes
 
 EXPOSE 8000
 
-ENTRYPOINT ["/home/run.sh"]
+#ENTRYPOINT ["/home/run.sh"]
 CMD []
