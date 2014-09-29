@@ -1,3 +1,3 @@
 #!/bin/sh
 
-/bin/logspout $LOG_SERVER 
+/bin/logspout syslog://$LOG_SERVER 
