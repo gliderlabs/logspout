@@ -80,7 +80,12 @@ func (rm *RouteManager) Add(route *Route) error {
 	go func() {
 		logstream := make(chan *Log)
 		defer close(logstream)
-		go syslogStreamer(route.Target, types, logstream)
+        if route.Target.Type == "syslog" {
+		    go syslogStreamer(route.Target, types, logstream)
+        }
+        if route.Target.Type == "redis" {
+		    go redisStreamer(route.Target, types, logstream)
+        }
 		rm.attacher.Listen(route.Source, logstream, route.closer)
 	}()
 	if rm.persistor != nil {
