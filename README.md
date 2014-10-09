@@ -26,7 +26,7 @@ Likewise, a default redis target URI may be supplied:
 
 	$ docker run -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout redis://redis.papertrailapp.com:6379
 
-Logs will be appended to a key matching the container name.
+Logs will be appended to list stored at a key matching the container name.
 
 #### Inspect log streams using curl
 
