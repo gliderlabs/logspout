@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
-	"log/syslog"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/robxu9/logspout/pkg/syslog"
 
 	"code.google.com/p/go.net/websocket"
 	"github.com/fsouza/go-dockerclient"
@@ -56,14 +56,15 @@ func (c Colorizer) Get(key string) string {
 
 func syslogStreamer(target Target, types []string, logstream chan *Log) {
 	typestr := "," + strings.Join(types, ",") + ","
+	remote, err := syslog.Dial("udp", target.Addr, syslog.LOG_USER|syslog.LOG_INFO, "")
+	assert(err, "syslog")
+	defer remote.Close()
 	for logline := range logstream {
 		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
 			continue
 		}
 		tag := logline.Name + target.AppendTag
-		remote, err := syslog.Dial("udp", target.Addr, syslog.LOG_USER|syslog.LOG_INFO, tag)
-		assert(err, "syslog")
-		io.WriteString(remote, logline.Data)
+		remote.WriteWithTag(logline.Data, tag)
 	}
 }
 
