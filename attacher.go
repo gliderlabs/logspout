@@ -131,7 +131,7 @@ func (m *AttachManager) Listen(source *Source, logstream chan *Log, closer <-cha
 			if event.Type == "attach" && (source.All() ||
 				(source.ID != "" && strings.HasPrefix(event.ID, source.ID)) ||
 				(source.Name != "" && event.Name == source.Name) ||
-				(source.Prefix != "" && strings.HasPrefix(event.Name, source.Name)) ||
+				(source.Prefix != "" && strings.HasPrefix(event.Name, source.Prefix)) ||
 				(source.Filter != "" && strings.Contains(event.Name, source.Filter))) {
 				pump := m.Get(event.ID)
 				pump.AddListener(logstream)
