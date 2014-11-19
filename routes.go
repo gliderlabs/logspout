@@ -83,7 +83,7 @@ func (rm *RouteManager) Add(route *Route) error {
 		switch route.Target.Type {
 		case "syslog":
 			go syslogStreamer(route.Target, types, logstream)
-		case "udp":
+		case "udp+json":
 			go udpStreamer(route.Target, types, logstream)
 		}
 		rm.attacher.Listen(route.Source, logstream, route.closer)
