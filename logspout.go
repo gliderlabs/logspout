@@ -1,10 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"log/syslog"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -64,6 +66,22 @@ func syslogStreamer(target Target, types []string, logstream chan *Log) {
 		remote, err := syslog.Dial("udp", target.Addr, syslog.LOG_USER|syslog.LOG_INFO, tag)
 		assert(err, "syslog")
 		io.WriteString(remote, logline.Data)
+	}
+}
+
+func udpStreamer(target Target, types []string, logstream chan *Log) {
+	typestr := "," + strings.Join(types, ",") + ","
+	addr, err := net.ResolveUDPAddr("udp", target.Addr)
+	assert(err, "resolve udp failed")
+	conn, err := net.DialUDP("udp", nil, addr)
+	assert(err, "connect udp failed")
+	encoder := json.NewEncoder(conn)
+	defer conn.Close()
+	for logline := range logstream {
+		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
+			continue
+		}
+		encoder.Encode(logline)
 	}
 }
 
