@@ -88,7 +88,7 @@ Takes a JSON object like this:
 		}
 	}
 
-The `source` field should be an object with `filter`, `name`, or `id` fields. You can specify specific log types with the `types` field to collect only `stdout` or `stderr`. If you don't specify `types`, it will route all types. 
+The `source` field should be an object with `filter`, `name`, `prefix`, or `id` fields. `prefix` allows a string match against the start of a container name (e.g. "frontend" will match containers named like "frontend-1"). You can specify specific log types with the `types` field to collect only `stdout` or `stderr`. If you don't specify `types`, it will route all types.
 
 To route all logs of all types on all containers, don't specify a `source`. 
 
