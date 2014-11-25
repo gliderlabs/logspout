@@ -14,10 +14,11 @@ type AttachEvent struct {
 }
 
 type Log struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Data string `json:"data"`
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Image string `json:"image"`
+	Type  string `json:"type"`
+	Data  string `json:"data"`
 }
 
 type Route struct {
@@ -30,7 +31,7 @@ type Route struct {
 type Source struct {
 	ID     string   `json:"id,omitempty"`
 	Name   string   `json:"name,omitempty"`
-    Prefix string   `json:"prefix,omitempty"`
+	Prefix string   `json:"prefix,omitempty"`
 	Filter string   `json:"filter,omitempty"`
 	Types  []string `json:"types,omitempty"`
 }

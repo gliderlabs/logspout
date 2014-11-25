@@ -12,10 +12,12 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"code.google.com/p/go.net/websocket"
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/go-martini/martini"
+	elastigo "github.com/mattbaird/elastigo/lib"
 )
 
 var debugMode bool
@@ -82,6 +84,44 @@ func udpStreamer(target Target, types []string, logstream chan *Log) {
 			continue
 		}
 		encoder.Encode(logline)
+	}
+}
+
+func elasticsearchStreamer(target Target, types []string, logstream chan *Log) {
+	typestr := "," + strings.Join(types, ",") + ","
+	c := elastigo.NewConn()
+	splitAddr := strings.Split(target.Addr, ":")
+	c.Domain = splitAddr[0]
+	if len(splitAddr) > 1 {
+		c.Port = splitAddr[1]
+	}
+	indexer := c.NewBulkIndexerErrors(10, 1)
+	indexer.BufferDelayMax = 100 * time.Millisecond
+	indexer.BulkMaxDocs = 10
+	indexer.Start()
+	defer indexer.Stop()
+	const indexDateStampLayout = "2006.01.02"
+	var tmpMap map[string]interface{}
+	for logline := range logstream {
+		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
+			continue
+		}
+		now := time.Now()
+		index := "logstash-" + now.Format(indexDateStampLayout)
+		err := json.Unmarshal([]byte(logline.Data), &tmpMap)
+		if err != nil {
+			tmpMap = map[string]interface{}{
+				"@timestamp": now,
+				"message":    logline.Data,
+			}
+		} else {
+			if _, present := tmpMap["@timestamp"]; !present {
+				tmpMap["@timestamp"] = now
+			}
+		}
+		tmpMap["container"] = logline.Name
+		tmpMap["image"] = logline.Image
+		indexer.Index(index, "log", "", "", &now, tmpMap, false)
 	}
 }
 
