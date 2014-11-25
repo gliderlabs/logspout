@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 )
 
 type AttachManager struct {
@@ -46,6 +46,14 @@ func (m *AttachManager) attach(id string) {
 	container, err := m.client.InspectContainer(id)
 	assert(err, "attacher")
 	name := container.Name[1:]
+	allImages, _ := m.client.ListImages(false)
+	var image string
+	for _, img := range allImages {
+		if img.ID == container.Image {
+			image = img.RepoTags[0]
+			break
+		}
+	}
 	success := make(chan struct{})
 	failure := make(chan error)
 	outrd, outwr := io.Pipe()
@@ -76,7 +84,7 @@ func (m *AttachManager) attach(id string) {
 	_, ok := <-success
 	if ok {
 		m.Lock()
-		m.attached[id] = NewLogPump(outrd, errrd, id, name)
+		m.attached[id] = NewLogPump(outrd, errrd, id, name, image)
 		m.Unlock()
 		success <- struct{}{}
 		m.send(&AttachEvent{ID: id, Name: name, Type: "attach"})
@@ -157,7 +165,7 @@ type LogPump struct {
 	channels map[chan *Log]struct{}
 }
 
-func NewLogPump(stdout, stderr io.Reader, id, name string) *LogPump {
+func NewLogPump(stdout, stderr io.Reader, id, name string, image string) *LogPump {
 	obj := &LogPump{
 		ID:       id,
 		Name:     name,
@@ -174,10 +182,11 @@ func NewLogPump(stdout, stderr io.Reader, id, name string) *LogPump {
 				return
 			}
 			obj.send(&Log{
-				Data: strings.TrimSuffix(string(data), "\n"),
-				ID:   id,
-				Name: name,
-				Type: typ,
+				Data:  strings.TrimSuffix(string(data), "\n"),
+				ID:    id,
+				Name:  name,
+				Image: image,
+				Type:  typ,
 			})
 		}
 	}
