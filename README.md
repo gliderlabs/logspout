@@ -39,8 +39,8 @@ See [Streaming Endpoints](#streaming-endpoints) for all options.
 
 Along with streaming endpoints, logspout also exposes a `/routes` resource to create and manage routes. 
 
-	$ curl $(docker port `docker ps -lq` 8000)/logs -X POST \
-		-d '{"source": {"filter": "db", "types": ["stderr"]}, target": {"type": "syslog", "addr": "logs.papertrailapp.com:55555"}}'
+	$ curl $(docker port `docker ps -lq` 8000)/routes -X POST \
+		-d '{"source": {"filter": "db", "types": ["stderr"]}, "target": {"type": "syslog", "addr": "logs.papertrailapp.com:55555"}}'
 
 That example creates a new syslog route to [Papertrail](https://papertrailapp.com) of only `stderr` for containers with `db` in their name. 
 
