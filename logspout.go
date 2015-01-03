@@ -16,6 +16,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/go-martini/martini"
+	"github.com/Shopify/sarama"
 )
 
 var debugMode bool
@@ -54,6 +55,31 @@ func (c Colorizer) Get(key string) string {
 		bright = ""
 	}
 	return "\x1b[" + bright + "3" + strconv.Itoa(7-(i%7)) + "m"
+}
+
+func kafkaStreamer(target Target, types []string, logstream chan *Log) {
+	typestr := "," + strings.Join(types, ",") + ","
+
+    client, err := sarama.NewClient("logspout", []string{target.Addr}, sarama.NewClientConfig())
+    assert(err, "kafka.client")
+    defer client.Close()
+
+    producer, err := sarama.NewSimpleProducer(client, "logspout", nil)
+    assert(err, "kafka.producer")
+    defer producer.Close()
+
+    for logline := range logstream {
+		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
+			continue
+		}
+		tag := logline.Name + target.AppendTag
+        err = producer.SendMessage(sarama.StringEncoder(tag), sarama.StringEncoder(logline.Data))
+        if err == sarama.LeaderNotAvailable {
+            continue // This error is thrown when a new topic created.  Just continue on.
+            // It's probably better to retry until it's sent...
+        }
+        assert(err, "kafka")
+    }
 }
 
 func syslogStreamer(target Target, types []string, logstream chan *Log) {
