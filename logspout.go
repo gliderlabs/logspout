@@ -60,20 +60,31 @@ func (c Colorizer) Get(key string) string {
 func kafkaStreamer(target Target, types []string, logstream chan *Log) {
 	typestr := "," + strings.Join(types, ",") + ","
 
+    // TODO: Make it configurable to aggregate or keep separate the streams?
+    producers := make(map[string]*sarama.SimpleProducer);
+
     client, err := sarama.NewClient("logspout", []string{target.Addr}, sarama.NewClientConfig())
     assert(err, "kafka.client")
     defer client.Close()
 
-    producer, err := sarama.NewSimpleProducer(client, "logspout", nil)
-    assert(err, "kafka.producer")
-    defer producer.Close()
+    defer func() {
+        for _, p := range producers {
+            p.Close();
+        }
+    }()
 
     for logline := range logstream {
 		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
 			continue
 		}
-		tag := logline.Name + target.AppendTag
-        err = producer.SendMessage(sarama.StringEncoder(tag), sarama.StringEncoder(logline.Data))
+        producer, exists := producers[logline.Name]
+        if !exists {
+            p, err := sarama.NewSimpleProducer(client, logline.Name+"-logspout", nil)
+            assert(err, "kafka.producer")
+            producers[logline.Name] = p
+            producer = p
+        }
+        err = producer.SendMessage(nil, sarama.StringEncoder(logline.Data))
         if err == sarama.LeaderNotAvailable {
             continue // This error is thrown when a new topic created.  Just continue on.
             // It's probably better to retry until it's sent...
