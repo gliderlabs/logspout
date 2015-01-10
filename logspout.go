@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -66,6 +67,22 @@ func syslogStreamer(target Target, types []string, logstream chan *Log) {
 		remote, err := syslog.Dial("udp", target.Addr, syslog.LOG_USER|syslog.LOG_INFO, tag)
 		assert(err, "syslog")
 		io.WriteString(remote, logline.Data)
+	}
+}
+
+func udpStreamer(target Target, types []string, logstream chan *Log) {
+	typestr := "," + strings.Join(types, ",") + ","
+	addr, err := net.ResolveUDPAddr("udp", target.Addr)
+	assert(err, "resolve udp failed")
+	conn, err := net.DialUDP("udp", nil, addr)
+	assert(err, "connect udp failed")
+	encoder := json.NewEncoder(conn)
+	defer conn.Close()
+	for logline := range logstream {
+		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
+			continue
+		}
+		encoder.Encode(logline)
 	}
 }
 
@@ -159,7 +176,7 @@ func httpStreamer(w http.ResponseWriter, req *http.Request, logstream chan *Log,
 func main() {
 	debugMode = getopt("DEBUG", "") != ""
 	port := getopt("PORT", "8000")
-	endpoint := getopt("DOCKER", "unix:///var/run/docker.sock")
+	endpoint := getopt("DOCKER_HOST", "unix:///var/run/docker.sock")
 	routespath := getopt("ROUTESPATH", "/var/lib/logspout")
 
 	client, err := docker.NewClient(endpoint)

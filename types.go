@@ -30,12 +30,13 @@ type Route struct {
 type Source struct {
 	ID     string   `json:"id,omitempty"`
 	Name   string   `json:"name,omitempty"`
+    Prefix string   `json:"prefix,omitempty"`
 	Filter string   `json:"filter,omitempty"`
 	Types  []string `json:"types,omitempty"`
 }
 
 func (s *Source) All() bool {
-	return s.ID == "" && s.Name == "" && s.Filter == ""
+	return s.ID == "" && s.Name == "" && s.Filter == "" && s.Prefix == ""
 }
 
 type Target struct {

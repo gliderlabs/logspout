@@ -84,8 +84,9 @@ func (rm *RouteManager) Add(route *Route) error {
 		case "rfc5424":
 			go rfc5424Streamer(route.Target, types, logstream)
 		case "syslog":
-		default:
 			go syslogStreamer(route.Target, types, logstream)
+		case "udp+json":
+			go udpStreamer(route.Target, types, logstream)
 		}
 		rm.attacher.Listen(route.Source, logstream, route.closer)
 	}()

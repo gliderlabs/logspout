@@ -33,7 +33,7 @@ func NewAttachManager(client *docker.Client) *AttachManager {
 		assert(client.AddEventListener(events), "attacher")
 		for msg := range events {
 			debug("event:", msg.ID[:12], msg.Status)
-			if msg.Status == "start" {
+			if msg.Status == "start" || msg.Status == "restart" {
 				go m.attach(msg.ID[:12])
 			}
 		}
@@ -131,6 +131,7 @@ func (m *AttachManager) Listen(source *Source, logstream chan *Log, closer <-cha
 			if event.Type == "attach" && (source.All() ||
 				(source.ID != "" && strings.HasPrefix(event.ID, source.ID)) ||
 				(source.Name != "" && event.Name == source.Name) ||
+				(source.Prefix != "" && strings.HasPrefix(event.Name, source.Prefix)) ||
 				(source.Filter != "" && strings.Contains(event.Name, source.Filter))) {
 				pump := m.Get(event.ID)
 				pump.AddListener(logstream)
