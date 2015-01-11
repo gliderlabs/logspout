@@ -12,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"code.google.com/p/go.net/websocket"
 	"github.com/fsouza/go-dockerclient"
@@ -82,6 +83,35 @@ func udpStreamer(target Target, types []string, logstream chan *Log) {
 			continue
 		}
 		encoder.Encode(logline)
+	}
+}
+
+func rfc5424Streamer(target Target, types []string, logstream chan *Log) {
+	typestr := "," + strings.Join(types, ",") + ","
+
+	pri := syslog.LOG_USER | syslog.LOG_INFO
+	hostname, _ := os.Hostname()
+
+	c, err := net.Dial("udp", target.Addr)
+	assert(err, "net dial rfc5424")
+
+	if hostname == "" {
+		hostname = c.LocalAddr().String()
+	}
+
+	for logline := range logstream {
+		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
+			continue
+		}
+		tag := logline.Name + target.AppendTag
+		nl := ""
+		if !strings.HasSuffix(logline.Data, "\n") {
+			nl = "\n"
+		}
+
+		timestamp := time.Now().Format(time.RFC3339)
+		_, err := fmt.Fprintf(c, "<%d>1 %s %s %s %d - [%s] %s%s", pri, timestamp, hostname, tag, os.Getpid(), target.StructuredData, logline.Data, nl)
+		assert(err, "rfc5424")
 	}
 }
 
@@ -158,7 +188,29 @@ func main() {
 		u, err := url.Parse(os.Args[1])
 		assert(err, "url")
 		log.Println("routing all to " + os.Args[1])
-		router.Add(&Route{Target: Target{Type: u.Scheme, Addr: u.Host}})
+
+		r := Route{
+			Target: Target{
+				Type: u.Scheme,
+				Addr: u.Host,
+			},
+		}
+		if u.RawQuery != "" {
+			v, err := url.ParseQuery(u.RawQuery)
+			assert(err, "query")
+
+			if v.Get("filter") != "" || v.Get("types") != "" {
+				r.Source = &Source{
+					Filter: v.Get("filter"),
+					Types:  strings.Split(v.Get("types"), ","),
+				}
+			}
+
+			r.Target.StructuredData = v.Get("structuredData")
+			r.Target.AppendTag = v.Get("appendTag")
+		}
+
+		router.Add(&r)
 	}
 
 	if _, err := os.Stat(routespath); err == nil {

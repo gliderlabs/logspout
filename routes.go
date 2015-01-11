@@ -81,6 +81,8 @@ func (rm *RouteManager) Add(route *Route) error {
 		logstream := make(chan *Log)
 		defer close(logstream)
 		switch route.Target.Type {
+		case "rfc5424":
+			go rfc5424Streamer(route.Target, types, logstream)
 		case "syslog":
 			go syslogStreamer(route.Target, types, logstream)
 		case "udp+json":
