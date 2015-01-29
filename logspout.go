@@ -76,7 +76,7 @@ func udpStreamer(target Target, types []string, logstream chan *Log) {
 	assert(err, "resolve udp failed")
 	conn, err := net.DialUDP("udp", nil, addr)
 	assert(err, "connect udp failed")
-	encoder := json.NewEncoder(conn)
+	encoder := json.NewEncoder(&IgnorantWriter{conn})
 	defer conn.Close()
 	for logline := range logstream {
 		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
