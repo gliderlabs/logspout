@@ -185,32 +185,34 @@ func main() {
 	router := NewRouteManager(attacher)
 
 	if len(os.Args) > 1 {
-		u, err := url.Parse(os.Args[1])
-		assert(err, "url")
-		log.Println("routing all to " + os.Args[1])
+		routes := strings.Split(os.Args[1], ",")
+		for _, route := range routes {
+			u, err := url.Parse(route)
+			assert(err, "url")
+			log.Println("routing all to " + route)
 
-		r := Route{
-			Target: Target{
-				Type: u.Scheme,
-				Addr: u.Host,
-			},
-		}
-		if u.RawQuery != "" {
-			v, err := url.ParseQuery(u.RawQuery)
-			assert(err, "query")
-
-			if v.Get("filter") != "" || v.Get("types") != "" {
-				r.Source = &Source{
-					Filter: v.Get("filter"),
-					Types:  strings.Split(v.Get("types"), ","),
-				}
+			r := Route{
+				Target: Target{
+					Type: u.Scheme,
+					Addr: u.Host,
+				},
 			}
+			if u.RawQuery != "" {
+				v, err := url.ParseQuery(u.RawQuery)
+				assert(err, "query")
 
-			r.Target.StructuredData = v.Get("structuredData")
-			r.Target.AppendTag = v.Get("appendTag")
+				if v.Get("filter") != "" || v.Get("types") != "" {
+					r.Source = &Source{
+						Filter: v.Get("filter"),
+						Types:  strings.Split(v.Get("types"), ","),
+					}
+				}
+
+				r.Target.StructuredData = v.Get("structuredData")
+				r.Target.AppendTag = v.Get("appendTag")
+			}
+			router.Add(&r)
 		}
-
-		router.Add(&r)
 	}
 
 	if _, err := os.Stat(routespath); err == nil {
