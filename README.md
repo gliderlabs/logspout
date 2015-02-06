@@ -24,11 +24,11 @@ Logs will be tagged with the container name. The hostname will be the hostname o
 
 #### Route all container output to remote Rabbitmq broker
 
-	The simplest way to use logspout is to just take all logs and ship to a remote Kafka broker. Just pass Rabbit target URI (with ampq://) as the command. Also, we always mount the Docker Unix socket with `-v` to `/tmp/docker.sock`:
+The simplest way to use logspout is to just take all logs and ship to a remote Kafka broker. Just pass Rabbit target URI (with ampq://) as the command. Also, we always mount the Docker Unix socket with `-v` to `/tmp/docker.sock`:
 
-	 $ docker run -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout rabbitmq://amqp://guest:guest@localhost:5672/
+	 $ docker run -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout amqp://guest:guest@localhost:5672/
 
-     This is based on the Kafka plugin https://github.com/progrium/logspout/pull/35/
+This is based on the Kafka plugin https://github.com/progrium/logspout/pull/35/
 
 #### Inspect log streams using curl
 

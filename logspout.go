@@ -63,7 +63,7 @@ func rabbitmqStreamer(target Target, types []string, logstream chan *Log) {
 	typestr := "," + strings.Join(types, ",") + ","
 
     // Connects opens an AMQP connection from the credentials in the URL.
-    conn, err := amqp.Dial([]string{target.Addr})
+    conn, err := amqp.Dial(os.Args[1])
     if err != nil {
        log.Fatalf("connection.open: %s", err)
     }
