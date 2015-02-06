@@ -95,25 +95,26 @@ func rabbitmqStreamer(target Target, types []string, logstream chan *Log) {
 
     // Prepare this message to be persistent.  Your publishing requirements may
     // be different.
-    msg := amqp.Publishing{
-        Headers: amqp.Table{},
-        ContentType: "text/plain",
-        ContentEncoding: "UTF-8",
+    	msg := amqp.Publishing{
+        	Headers: amqp.Table{},
+        	ContentType: "text/plain",
+        	ContentEncoding: "UTF-8",
     //    DeliveryMode: amqp.Transient,
-        DeliveryMode: amqp.Persistent,
-        Priority: 0,
-        Timestamp:    time.Now(),
-        Body:         []byte(logline.Data),
-    }
+        	DeliveryMode: amqp.Persistent,
+        	Priority: 0,
+        	Timestamp:    time.Now(),
+        	Body:         []byte(logline.Data),
+    	}
 
     // This is not a mandatory delivery, so it will be dropped if there are no
     // queues bound to the logstash exchange.
-    err = c.Publish("logstash_exchange", "info", false, false, msg)
-    if err != nil {
+    	err = c.Publish("logstash_exchange", "info", false, false, msg)
+    	if err != nil {
         // Since publish is asynchronous this can happen if the network connection
         // is reset or if the server has run out of resources.
-        log.Fatalf("basic.publish: %v", err)
-    }
+        	log.Fatalf("basic.publish: %v", err)
+    	}
+	}
 }
 
 func syslogStreamer(target Target, types []string, logstream chan *Log) {
