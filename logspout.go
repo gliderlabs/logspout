@@ -17,6 +17,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/go-martini/martini"
+	"github.com/streadway/amqp"
 )
 
 var debugMode bool
@@ -55,6 +56,64 @@ func (c Colorizer) Get(key string) string {
 		bright = ""
 	}
 	return "\x1b[" + bright + "3" + strconv.Itoa(7-(i%7)) + "m"
+}
+
+
+func rabbitmqStreamer(target Target, types []string, logstream chan *Log) {
+	typestr := "," + strings.Join(types, ",") + ","
+
+    // Connects opens an AMQP connection from the credentials in the URL.
+    conn, err := amqp.Dial([]string{target.Addr})
+    if err != nil {
+       log.Fatalf("connection.open: %s", err)
+    }
+
+    // This waits for a server acknowledgment which means the sockets will have
+    // flushed all outbound publishings prior to returning.  It's important to
+    // block on Close to not lose any publishings.
+    defer conn.Close()
+
+    c, err := conn.Channel()
+    if err != nil {
+        log.Fatalf("channel.open: %s", err)
+    }
+
+    for logline := range logstream {
+		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
+			continue
+		}
+
+// We declare our topology on both the publisher and consumer to ensure they
+// are the same.  This is part of AMQP being a programmable messaging model.
+//
+// See the Channel.Consume example for the complimentary declare.
+// UNCOMMENT ME WHEN THIS STUFF IS READY
+//err = c.ExchangeDeclare("logstash_exchange", "topic", true, false, false, false, nil)
+//if err != nil {
+//    log.Fatalf("exchange.declare: %v", err)
+//}
+
+    // Prepare this message to be persistent.  Your publishing requirements may
+    // be different.
+    msg := amqp.Publishing{
+        Headers: amqp.Table{},
+        ContentType: "text/plain",
+        ContentEncoding: "UTF-8",
+    //    DeliveryMode: amqp.Transient,
+        DeliveryMode: amqp.Persistent,
+        Priority: 0,
+        Timestamp:    time.Now(),
+        Body:         []byte(logline.Data),
+    }
+
+    // This is not a mandatory delivery, so it will be dropped if there are no
+    // queues bound to the logstash exchange.
+    err = c.Publish("logstash_exchange", "info", false, false, msg)
+    if err != nil {
+        // Since publish is asynchronous this can happen if the network connection
+        // is reset or if the server has run out of resources.
+        log.Fatalf("basic.publish: %v", err)
+    }
 }
 
 func syslogStreamer(target Target, types []string, logstream chan *Log) {
