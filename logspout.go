@@ -16,6 +16,7 @@ import (
 
 	"code.google.com/p/go.net/websocket"
 	"github.com/fsouza/go-dockerclient"
+	"github.com/garyburd/redigo/redis"
 	"github.com/go-martini/martini"
 )
 
@@ -112,6 +113,37 @@ func rfc5424Streamer(target Target, types []string, logstream chan *Log) {
 		timestamp := time.Now().Format(time.RFC3339)
 		_, err := fmt.Fprintf(c, "<%d>1 %s %s %s %d - [%s] %s%s", pri, timestamp, hostname, tag, os.Getpid(), target.StructuredData, logline.Data, nl)
 		assert(err, "rfc5424")
+	}
+}
+
+func redisStreamer(target Target, types []string, logstream chan *Log) {
+	pool := &redis.Pool{
+		MaxIdle: 10,
+		IdleTimeout: 30 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			c, err := redis.Dial("tcp", target.Addr)
+			if err != nil {
+				return nil, err
+			}
+			return c, err
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
+	typestr := "," + strings.Join(types, ",") + ","
+	conn := pool.Get()
+	defer conn.Close()
+	for logline := range logstream {
+		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
+			continue
+		}
+		tag := logline.Name + target.AppendTag
+		_, err := conn.Do("RPUSH", tag, logline.Data)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 

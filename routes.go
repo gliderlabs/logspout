@@ -87,6 +87,8 @@ func (rm *RouteManager) Add(route *Route) error {
 			go syslogStreamer(route.Target, types, logstream)
 		case "udp+json":
 			go udpStreamer(route.Target, types, logstream)
+		case "redis":
+			go redisStreamer(route.Target, types, logstream)
 		}
 		rm.attacher.Listen(route.Source, logstream, route.closer)
 	}()
