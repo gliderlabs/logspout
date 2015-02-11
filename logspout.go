@@ -45,7 +45,7 @@ func getopt(name, dfault string) string {
 type Colorizer map[string]int
 
 // returns up to 14 color escape codes (then repeats) for each unique key
-func (c Colorizer) Get(key string) string {
+func (c Colorizer) Get(key string) string { 	
 	i, exists := c[key]
 	if !exists {
 		c[key] = len(c)
@@ -61,6 +61,8 @@ func (c Colorizer) Get(key string) string {
 
 func rabbitmqStreamer(target Target, types []string, logstream chan *Log) {
 	typestr := "," + strings.Join(types, ",") + ","
+
+	log.Printf("Ehrmegerd")
 
     // Connects opens an AMQP connection from the credentials in the URL.
     conn, err := amqp.Dial(os.Args[1])
@@ -83,32 +85,32 @@ func rabbitmqStreamer(target Target, types []string, logstream chan *Log) {
 			continue
 		}
 
-// We declare our topology on both the publisher and consumer to ensure they
-// are the same.  This is part of AMQP being a programmable messaging model.
-//
-// See the Channel.Consume example for the complimentary declare.
-// UNCOMMENT ME WHEN THIS STUFF IS READY
-//err = c.ExchangeDeclare("logstash_exchange", "topic", true, false, false, false, nil)
-//if err != nil {
-//    log.Fatalf("exchange.declare: %v", err)
-//}
+		// We declare our topology on both the publisher and consumer to ensure they
+		// are the same.  This is part of AMQP being a programmable messaging model.
+		//
+		// See the Channel.Consume example for the complimentary declare.
+		// UNCOMMENT ME WHEN THIS STUFF IS READY
+		err = c.ExchangeDeclarePassive("logstash_exchange", "direct", true, false, false, false, nil)
+		if err != nil {
+    		log.Fatalf("exchange.declare: %v", err)
+		}
 
-    // Prepare this message to be persistent.  Your publishing requirements may
-    // be different.
+    		// Prepare this message to be persistent.  Your publishing requirements may
+    		// be different.
     	msg := amqp.Publishing{
-        	Headers: amqp.Table{},
-        	ContentType: "text/plain",
-        	ContentEncoding: "UTF-8",
-    //    DeliveryMode: amqp.Transient,
+        	//Headers: amqp.Table{},
+        	//ContentType: "text/plain",
+        	//ContentEncoding: "UTF-8",
+    		//    DeliveryMode: amqp.Transient,
         	DeliveryMode: amqp.Persistent,
         	Priority: 0,
         	Timestamp:    time.Now(),
         	Body:         []byte(logline.Data),
     	}
 
-    // This is not a mandatory delivery, so it will be dropped if there are no
-    // queues bound to the logstash exchange.
-    	err = c.Publish("logstash_exchange", "info", false, false, msg)
+    	// This is not a mandatory delivery, so it will be dropped if there are no
+    	// queues bound to the logstash exchange.
+    	err = c.Publish("logstash_exchange", "logstash", false, false, msg)
     	if err != nil {
         // Since publish is asynchronous this can happen if the network connection
         // is reset or if the server has run out of resources.
