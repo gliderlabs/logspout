@@ -1,10 +1,12 @@
 # logspout
 
-A log router for Docker container output that runs entirely inside Docker. It attaches to all containers on a host, then routes their logs wherever you want. 
+> Currently `progrium/logspout:latest` on Docker Hub is pointing to the `stable` branch as `master` goes through some refactoring. For the moment, if you want to use `master`, you can manually build it. This is only temporary until the dust settles.
+
+A log router for Docker container output that runs entirely inside Docker. It attaches to all containers on a host, then routes their logs wherever you want.
 
 It's a 100% stateless log appliance (unless you persist routes). It's not meant for managing log files or looking at history. It is just a means to get your logs out to live somewhere else, where they belong.
 
-For now it only captures stdout and stderr, but soon Docker will let us hook into more ... perhaps getting everything from every container's /dev/log. 
+For now it only captures stdout and stderr, but soon Docker will let us hook into more ... perhaps getting everything from every container's /dev/log.
 
 ## Getting logspout
 
@@ -37,14 +39,14 @@ See [Streaming Endpoints](#streaming-endpoints) for all options.
 
 #### Create custom routes via HTTP
 
-Along with streaming endpoints, logspout also exposes a `/routes` resource to create and manage routes. 
+Along with streaming endpoints, logspout also exposes a `/routes` resource to create and manage routes.
 
 	$ curl $(docker port `docker ps -lq` 8000)/routes -X POST \
 		-d '{"source": {"filter": "db", "types": ["stderr"]}, "target": {"type": "syslog", "addr": "logs.papertrailapp.com:55555"}}'
 
-That example creates a new syslog route to [Papertrail](https://papertrailapp.com) of only `stderr` for containers with `db` in their name. 
+That example creates a new syslog route to [Papertrail](https://papertrailapp.com) of only `stderr` for containers with `db` in their name.
 
-By default, routes are ephemeral. But if you mount a volume to `/mnt/routes`, they will be persisted to disk. 
+By default, routes are ephemeral. But if you mount a volume to `/mnt/routes`, they will be persisted to disk.
 
 See [Routes Resource](#routes-resource) for all options.
 
@@ -90,7 +92,7 @@ Takes a JSON object like this:
 
 The `source` field should be an object with `filter`, `name`, `prefix`, or `id` fields. `prefix` allows a string match against the start of a container name (e.g. "frontend" will match containers named like "frontend-1"). You can specify specific log types with the `types` field to collect only `stdout` or `stderr`. If you don't specify `types`, it will route all types.
 
-To route all logs of all types on all containers, don't specify a `source`. 
+To route all logs of all types on all containers, don't specify a `source`.
 
 The `append_tag` field of `target` is optional and specific to `syslog`. It lets you append to the tag of syslog packets for this route. By default the tag is `<container-name>`, so an `append_tag` value of `.app` would make the tag `<container-name>.app`.
 
