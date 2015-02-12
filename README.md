@@ -1,6 +1,6 @@
 # logspout
 
-> Currently `progrium/logspout:latest` on Docker Hub is pointing to the `stable` branch as `master` goes through some refactoring. For the moment, if you want to use `master`, you can manually build it. This is only temporary until the dust settles.
+> Docker Hub automated builds for `gliderlabs/logspout:latest` and `progrium/logspout:latest` are now pointing to the `release` branch. For `master`, use `gliderlabs/logspout:master`. Individual versions are also available as saved images in [releases](https://github.com/gliderlabs/logspout/releases).
 
 A log router for Docker container output that runs entirely inside Docker. It attaches to all containers on a host, then routes their logs wherever you want.
 

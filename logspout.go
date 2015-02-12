@@ -174,10 +174,15 @@ func httpStreamer(w http.ResponseWriter, req *http.Request, logstream chan *Log,
 }
 
 func main() {
+	if len(os.Args) == 2 && os.Args[1] == "--version" {
+		fmt.Println(Version)
+		os.Exit(0)
+	}
+
 	debugMode = getopt("DEBUG", "") != ""
 	port := getopt("PORT", "8000")
-	endpoint := getopt("DOCKER_HOST", "unix:///var/run/docker.sock")
-	routespath := getopt("ROUTESPATH", "/var/lib/logspout")
+	endpoint := getopt("DOCKER_HOST", "unix:///tmp/docker.sock")
+	routespath := getopt("ROUTESPATH", "/mnt/routes")
 
 	client, err := docker.NewClient(endpoint)
 	assert(err, "docker")
@@ -286,6 +291,6 @@ func main() {
 		}
 	})
 
-	log.Println("logspout serving http on :" + port)
+	log.Printf("logspout v%s serving http on :%s", Version, port)
 	log.Fatal(http.ListenAndServe(":"+port, m))
 }

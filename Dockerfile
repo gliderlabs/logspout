@@ -1,13 +1,13 @@
-FROM flynn/busybox
-MAINTAINER Jeff Lindsay <progrium@gmail.com>
-
-ADD ./stage/logspout /bin/logspout
-
-ENV DOCKER_HOST unix:///tmp/docker.sock
-ENV ROUTESPATH /mnt/routes
+FROM gliderlabs/alpine:3.1
+ENTRYPOINT ["/bin/logspout"]
 VOLUME /mnt/routes
-
 EXPOSE 8000
 
-ENTRYPOINT ["/bin/logspout"]
-CMD []
+COPY . /go/src/github.com/progrium/logspout
+RUN apk-install go git mercurial \
+	&& cd /go/src/github.com/progrium/logspout \
+	&& export GOPATH=/go \
+	&& go get \
+	&& go build -o /bin/logspout \
+	&& rm -rf /go \
+	&& apk del go git mercurial

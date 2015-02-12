@@ -1,18 +1,26 @@
-build/container: stage/logspout Dockerfile
-	docker build --no-cache -t logspout .
-	touch build/container
+NAME=logspout
 
-build/logspout: *.go
-	GOOS=linux GOARCH=amd64 go build -o build/logspout
+dev:
+	docker build -f Dockerfile.dev -t $(NAME)-dev .
+	docker run \
+		-v /var/run/docker.sock:/tmp/docker.sock \
+		-p 8000:8000 \
+		$(NAME)-dev
 
-stage/logspout: build/logspout
-	mkdir -p stage
-	cp build/logspout stage/logspout
+build:
+	docker build -t $(NAME) .
+	@docker run $(NAME) --version > .version
 
-release:
-	docker tag logspout progrium/logspout
-	docker push progrium/logspout
+.version: build
 
-.PHONY: clean
-clean:
-	rm -rf build
+release: .version
+	rm -rf release && mkdir release
+	go get github.com/progrium/gh-release/...
+	docker rmi -f $(NAME):v$(shell cat .version) &> /dev/null || true
+	docker tag $(NAME) $(NAME):v$(shell cat .version)
+	docker save $(NAME):v$(shell cat .version) \
+		| gzip -9 > release/$(NAME)_v$(shell cat .version).tgz
+	gh-release create gliderlabs/$(NAME) $(shell cat .version) \
+		$(shell git rev-parse --abbrev-ref HEAD) v$(shell cat .version)
+
+.PHONY: release
