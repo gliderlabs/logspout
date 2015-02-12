@@ -1,0 +1,19 @@
+machine:
+  services:
+    - docker
+
+dependencies:
+  pre:
+    - rm ~/.gitconfig
+  override:
+    - make build
+
+test:
+  override:
+    - /bin/true
+
+deployment:
+  release:
+    branch: release
+    commands:
+      - make release
