@@ -10,7 +10,7 @@ dev:
 build:
 	docker build -t $(NAME) .
 	@docker run $(NAME) --version > .version
-	@echo "Version: $(shell cat .version)"
+	@echo Version: $(shell cat .version)
 .version: build
 
 release: .version
