@@ -19,6 +19,7 @@ import (
 	"github.com/go-martini/martini"
 )
 
+var Version string
 var debugMode bool
 
 func debug(v ...interface{}) {
@@ -291,6 +292,6 @@ func main() {
 		}
 	})
 
-	log.Printf("logspout v%s serving http on :%s", Version, port)
+	log.Printf("logspout %s serving http on :%s", Version, port)
 	log.Fatal(http.ListenAndServe(":"+port, m))
 }

@@ -8,4 +8,4 @@ RUN apk-install go git mercurial
 COPY . /go/src/github.com/progrium/logspout
 RUN cd /go/src/github.com/progrium/logspout \
 	&& go get \
-	&& go build -o /bin/logspout
+	&& go build -ldflags "-X main.Version dev" -o /bin/logspout
