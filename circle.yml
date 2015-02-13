@@ -4,9 +4,11 @@ machine:
 
 dependencies:
   pre:
-    - rm ~/.gitconfig
+    - make circleci
   override:
     - make build
+  post:
+    - cp build/* $CIRCLE_ARTIFACTS
 
 test:
   override:
