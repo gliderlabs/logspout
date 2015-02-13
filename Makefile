@@ -22,7 +22,7 @@ release: build
 
 circleci:
 	rm ~/.gitconfig
-ifneq ($CIRCLE_BRANCH, release)
+ifneq ($(CIRCLE_BRANCH), release)
 	echo build-$$CIRCLE_BUILD_NUM > VERSION
 endif
 
