@@ -10,9 +10,13 @@ For now it only captures stdout and stderr, but soon Docker will let us hook int
 
 ## Getting logspout
 
-Logspout is a very small Docker container (14MB virtual, based on busybox), so you can just pull it from the index:
+Logspout is a very small Docker container (14MB virtual, based on [Alpine](https://github.com/gliderlabs/docker-alpine)). Pull the latest release from the index:
 
-	$ docker pull progrium/logspout
+	$ docker pull gliderlabs/logspout:latest
+
+You can also download and load a specific version:
+
+	$ curl -s dl.gliderlabs.com/logspout/v2.tgz | docker load
 
 ## Using logspout
 
@@ -141,7 +145,7 @@ Returns a JSON route object:
 
 ## Sponsor
 
-This project was made possible by [DigitalOcean](http://digitalocean.com).
+This project was made possible by [DigitalOcean](http://digitalocean.com) and [Deis](http://deis.io).
 
 ## License
 
