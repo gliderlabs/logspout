@@ -147,6 +147,8 @@ Returns a JSON route object:
 
 As usual, pull requests are welcome. You can also propose releases by opening a PR against the `release` branch from `master`. Please be sure to bump the version and update `CHANGELOG.md` and include your changelog text in the PR body.
 
+Discuss logspout development with us on Freenode in `#gliderlabs`.
+
 ## Sponsor
 
 This project was made possible by [DigitalOcean](http://digitalocean.com) and [Deis](http://deis.io).
