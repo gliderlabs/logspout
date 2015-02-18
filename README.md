@@ -20,13 +20,19 @@ You can also download and load a specific version:
 
 ## Using logspout
 
-#### Route all container output to remote syslog
+#### Route all container output to a remote
 
 The simplest way to use logspout is to just take all logs and ship to a remote syslog. Just pass a comma separated list of syslog target URIs as the command. Also, we always mount the Docker Unix socket with `-v` to `/tmp/docker.sock`:
 
 	$ docker run -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout syslog://logs.papertrailapp.com:55555,syslog://mysyslogserver.com:514
 
 Logs will be tagged with the container name. The hostname will be the hostname of the logspout container, so you probably want to set the container hostname to the actual hostname by adding `-h $HOSTNAME`.
+
+Likewise, a default redis target URI may be supplied:
+
+	$ docker run -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout redis://redis.papertrailapp.com:6379
+
+Logs will be appended to list stored at a key matching the container name.
 
 #### Inspect log streams using curl
 
@@ -74,7 +80,7 @@ Since `/logs` and `/logs/filter:<string>` endpoints can return logs from multipl
 
 ### Routes Resource
 
-Routes let you configure logspout to hand-off logs to another system. Right now the only supported target type is via UDP `syslog`, but hey that's pretty much everything.
+Routes let you configure logspout to hand-off logs to another system. Right now the only supported targets are via `redis` and UDP `syslog`.
 
 #### Creating a route
 
