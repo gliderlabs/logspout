@@ -3,7 +3,7 @@ VERSION=$(shell cat VERSION)
 
 dev:
 	docker build -f Dockerfile.dev -t $(NAME):dev .
-	docker run \
+	docker run --rm \
 		-v /var/run/docker.sock:/tmp/docker.sock \
 		-p 8000:8000 \
 		$(NAME):dev
