@@ -17,6 +17,7 @@ import (
 	"code.google.com/p/go.net/websocket"
 	"github.com/fsouza/go-dockerclient"
 	"github.com/go-martini/martini"
+	"github.com/Shopify/sarama"
 )
 
 var Version string
@@ -56,6 +57,42 @@ func (c Colorizer) Get(key string) string {
 		bright = ""
 	}
 	return "\x1b[" + bright + "3" + strconv.Itoa(7-(i%7)) + "m"
+}
+
+func kafkaStreamer(target Target, types []string, logstream chan *Log) {
+	typestr := "," + strings.Join(types, ",") + ","
+
+    // TODO: Make it configurable to aggregate or keep separate the streams?
+    producers := make(map[string]*sarama.SimpleProducer);
+
+    client, err := sarama.NewClient("logspout", []string{target.Addr}, sarama.NewClientConfig())
+    assert(err, "kafka.client")
+    defer client.Close()
+
+    defer func() {
+        for _, p := range producers {
+            p.Close();
+        }
+    }()
+
+    for logline := range logstream {
+		if typestr != ",," && !strings.Contains(typestr, logline.Type) {
+			continue
+		}
+        producer, exists := producers[logline.Name]
+        if !exists {
+            p, err := sarama.NewSimpleProducer(client, logline.Name+"-logspout", nil)
+            assert(err, "kafka.producer")
+            producers[logline.Name] = p
+            producer = p
+        }
+        err = producer.SendMessage(nil, sarama.StringEncoder(logline.Data))
+        if err == sarama.LeaderNotAvailable {
+            continue // This error is thrown when a new topic created.  Just continue on.
+            // It's probably better to retry until it's sent...
+        }
+        assert(err, "kafka")
+    }
 }
 
 func syslogStreamer(target Target, types []string, logstream chan *Log) {

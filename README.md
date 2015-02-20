@@ -28,6 +28,12 @@ The simplest way to use logspout is to just take all logs and ship to a remote s
 
 Logs will be tagged with the container name. The hostname will be the hostname of the logspout container, so you probably want to set the container hostname to the actual hostname by adding `-h $HOSTNAME`.
 
+#### Route all container output to remote Kafka broker
+
+The simplest way to use logspout is to just take all logs and ship to a remote Kafka broker. Just pass a Kafka target URI as the command. Also, we always mount the Docker Unix socket with `-v` to `/tmp/docker.sock`:
+
+	$ docker run -v=/var/run/docker.sock:/tmp/docker.sock progrium/logspout kafka://kafka.service.consul:9092
+
 #### Inspect log streams using curl
 
 Whether or not you run it with a default routing target, if you publish its port 8000, you can connect with curl to see your local aggregated logs in realtime.
