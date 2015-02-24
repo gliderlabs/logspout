@@ -1,4 +1,4 @@
-package main
+package router
 
 import (
 	"encoding/json"
@@ -30,7 +30,7 @@ type Route struct {
 type Source struct {
 	ID     string   `json:"id,omitempty"`
 	Name   string   `json:"name,omitempty"`
-    Prefix string   `json:"prefix,omitempty"`
+	Prefix string   `json:"prefix,omitempty"`
 	Filter string   `json:"filter,omitempty"`
 	Types  []string `json:"types,omitempty"`
 }

@@ -1,14 +1,37 @@
-package main
+package router
 
 import (
 	"bufio"
 	"io"
 	"log"
+	"os"
 	"strings"
 	"sync"
 
 	"github.com/fsouza/go-dockerclient"
 )
+
+var Attacher *AttachManager
+
+func getopt(name, dfault string) string {
+	value := os.Getenv(name)
+	if value == "" {
+		value = dfault
+	}
+	return value
+}
+
+func debug(v ...interface{}) {
+	if getopt("DEBUG", "") != "" {
+		log.Println(v...)
+	}
+}
+
+func assert(err error, context string) {
+	if err != nil {
+		log.Fatal(context+": ", err)
+	}
+}
 
 type AttachManager struct {
 	sync.Mutex

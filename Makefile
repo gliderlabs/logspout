@@ -2,9 +2,11 @@ NAME=logspout
 VERSION=$(shell cat VERSION)
 
 dev:
-	docker build -f Dockerfile.dev -t $(NAME):dev .
-	docker run --rm \
+	@docker history logspout:dev &> /dev/null \
+		|| docker build -f Dockerfile.dev -t $(NAME):dev .
+	@docker run --rm \
 		-v /var/run/docker.sock:/tmp/docker.sock \
+		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
 		-p 8000:8000 \
 		$(NAME):dev
 
