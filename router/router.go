@@ -1,4 +1,4 @@
-package main
+package router
 
 import (
 	"crypto/sha1"
@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 )
+
+var Router *RouteManager
 
 type RouteStore interface {
 	Get(id string) (*Route, error)
