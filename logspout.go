@@ -76,6 +76,10 @@ func main() {
 
 				r.Target.StructuredData = v.Get("structuredData")
 				r.Target.AppendTag = v.Get("appendTag")
+
+				if v.Get("useContainerHostname") == "true" {
+					r.Target.UseContainerHostname = true
+				}
 			}
 			router.Router.Add(&r)
 		}

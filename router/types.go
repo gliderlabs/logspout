@@ -14,10 +14,11 @@ type AttachEvent struct {
 }
 
 type Log struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Data string `json:"data"`
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	Hostname string `json:"hostname"`
+	Type     string `json:"type"`
+	Data     string `json:"data"`
 }
 
 type Route struct {
@@ -40,10 +41,11 @@ func (s *Source) All() bool {
 }
 
 type Target struct {
-	Type           string `json:"type"`
-	Addr           string `json:"addr"`
-	AppendTag      string `json:"append_tag,omitempty"`
-	StructuredData string `json:"structured_data,omitempty"`
+	Type                 string `json:"type"`
+	Addr                 string `json:"addr"`
+	AppendTag            string `json:"append_tag,omitempty"`
+	StructuredData       string `json:"structured_data,omitempty"`
+	UseContainerHostname bool `json:"send_container_hostname,omitempty"`
 }
 
 func marshal(obj interface{}) []byte {
