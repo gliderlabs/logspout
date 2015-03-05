@@ -91,7 +91,9 @@ func rfc5424Streamer(target Target, types []string, logstream chan *Log) {
 		if !strings.HasSuffix(logline.Data, "\n") {
 			nl = "\n"
 		}
-
+		if target.UseContainerHostname {
+			hostname = logline.Hostname
+		}
 		timestamp := time.Now().Format(time.RFC3339)
 		_, err := fmt.Fprintf(c, "<%d>1 %s %s %s %d - [%s] %s%s", pri, timestamp, hostname, tag, os.Getpid(), target.StructuredData, logline.Data, nl)
 		assert(err, "rfc5424")

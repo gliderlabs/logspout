@@ -69,6 +69,7 @@ func (m *AttachManager) attach(id string) {
 	container, err := m.client.InspectContainer(id)
 	assert(err, "attacher")
 	name := container.Name[1:]
+	hostname := container.Config.Hostname
 	success := make(chan struct{})
 	failure := make(chan error)
 	outrd, outwr := io.Pipe()
@@ -99,7 +100,7 @@ func (m *AttachManager) attach(id string) {
 	_, ok := <-success
 	if ok {
 		m.Lock()
-		m.attached[id] = NewLogPump(outrd, errrd, id, name)
+		m.attached[id] = NewLogPump(outrd, errrd, id, name, hostname)
 		m.Unlock()
 		success <- struct{}{}
 		m.send(&AttachEvent{ID: id, Name: name, Type: "attach"})
@@ -180,7 +181,7 @@ type LogPump struct {
 	channels map[chan *Log]struct{}
 }
 
-func NewLogPump(stdout, stderr io.Reader, id, name string) *LogPump {
+func NewLogPump(stdout, stderr io.Reader, id, name string, hostname string) *LogPump {
 	obj := &LogPump{
 		ID:       id,
 		Name:     name,
@@ -200,6 +201,7 @@ func NewLogPump(stdout, stderr io.Reader, id, name string) *LogPump {
 				Data: strings.TrimSuffix(string(data), "\n"),
 				ID:   id,
 				Name: name,
+				Hostname: hostname,
 				Type: typ,
 			})
 		}
