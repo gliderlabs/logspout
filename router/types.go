@@ -10,19 +10,24 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
+// Extension type for adding HTTP endpoints
 type HttpHandler func(routes *RouteManager, router LogRouter) http.Handler
 
+// Extension type for adding new log adapters
 type AdapterFactory func(route *Route) (LogAdapter, error)
 
+// LogAdapters are streamed logs
 type LogAdapter interface {
 	Stream(logstream chan *Message)
 }
 
+// LogRouters send logs to LogAdapters via Routes
 type LogRouter interface {
 	RoutingFrom(containerID string) bool
 	Route(route *Route, logstream chan *Message)
 }
 
+// RouteStores are collections of Routes
 type RouteStore interface {
 	Get(id string) (*Route, error)
 	GetAll() ([]*Route, error)
@@ -30,6 +35,7 @@ type RouteStore interface {
 	Remove(id string) bool
 }
 
+// Messages are log messages
 type Message struct {
 	Container *docker.Container
 	Source    string
@@ -37,6 +43,7 @@ type Message struct {
 	Time      time.Time
 }
 
+// Routes represent what subset of logs should go where
 type Route struct {
 	ID            string            `json:"id"`
 	FilterID      string            `json:"filter_id,omitempty"`

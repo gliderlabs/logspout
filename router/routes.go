@@ -67,19 +67,22 @@ func (rm *RouteManager) AddFromUri(uri string) error {
 		Adapter: u.Scheme,
 	}
 	if u.RawQuery != "" {
-		v, err := url.ParseQuery(u.RawQuery)
+		params, err := url.ParseQuery(u.RawQuery)
 		if err != nil {
 			return err
 		}
-
-		if v.Get("filter.id") != "" {
-			r.FilterID = v.Get("filter.id")
-		}
-		if v.Get("filter.name") != "" {
-			r.FilterName = v.Get("filter.name")
-		}
-		if v.Get("filter.sources") != "" {
-			r.FilterSources = strings.Split(v.Get("filter.sources"), ",")
+		for key, _ := range params {
+			value := params.Get(key)
+			switch key {
+			case "filter.id":
+				r.FilterID = value
+			case "filter.name":
+				r.FilterName = value
+			case "filter.sources":
+				r.FilterSources = strings.Split(value, ",")
+			default:
+				r.Options[key] = value
+			}
 		}
 	}
 	return rm.Add(r)
