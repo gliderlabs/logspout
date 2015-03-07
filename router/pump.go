@@ -135,7 +135,7 @@ func (p *LogsPump) update(event *docker.APIEvents) {
 	}
 }
 
-func (p *LogsPump) Routing(id string) bool {
+func (p *LogsPump) RoutingFrom(id string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	_, monitoring := p.pumps[normalID(id)]
@@ -145,11 +145,11 @@ func (p *LogsPump) Routing(id string) bool {
 func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 	p.mu.Lock()
 	for _, pump := range p.pumps {
-		if route.MatchAll() || route.MatchContainer(
+		if route.MatchContainer(
 			normalID(pump.container.ID),
 			normalName(pump.container.Name)) {
 
-			pump.add(logstream)
+			pump.add(logstream, route)
 			defer pump.remove(logstream)
 		}
 	}
@@ -166,11 +166,11 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 		case event := <-updates:
 			switch event.Status {
 			case "create":
-				if route.MatchAll() || route.MatchContainer(
+				if route.MatchContainer(
 					normalID(event.pump.container.ID),
 					normalName(event.pump.container.Name)) {
 
-					event.pump.add(logstream)
+					event.pump.add(logstream, route)
 					defer event.pump.remove(logstream)
 				}
 			case "destroy":
@@ -189,13 +189,13 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 type containerPump struct {
 	sync.Mutex
 	container  *docker.Container
-	logstreams map[chan *Message]struct{}
+	logstreams map[chan *Message]*Route
 }
 
 func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *containerPump {
 	cp := &containerPump{
 		container:  container,
-		logstreams: make(map[chan *Message]struct{}),
+		logstreams: make(map[chan *Message]*Route),
 	}
 	pump := func(source string, input io.Reader) {
 		buf := bufio.NewReader(input)
@@ -223,7 +223,10 @@ func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *co
 func (cp *containerPump) send(msg *Message) {
 	cp.Lock()
 	defer cp.Unlock()
-	for logstream, _ := range cp.logstreams {
+	for logstream, route := range cp.logstreams {
+		if !route.MatchMessage(msg) {
+			continue
+		}
 		select {
 		case logstream <- msg:
 		case <-time.After(time.Second * 1):
@@ -236,10 +239,10 @@ func (cp *containerPump) send(msg *Message) {
 	}
 }
 
-func (cp *containerPump) add(logstream chan *Message) {
+func (cp *containerPump) add(logstream chan *Message, route *Route) {
 	cp.Lock()
 	defer cp.Unlock()
-	cp.logstreams[logstream] = struct{}{}
+	cp.logstreams[logstream] = route
 }
 
 func (cp *containerPump) remove(logstream chan *Message) {

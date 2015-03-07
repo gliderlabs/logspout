@@ -32,7 +32,7 @@ func LogStreamer(routes *router.RouteManager, pump router.LogRouter) http.Handle
 			route.FilterName = params["value"]
 		}
 
-		if route.FilterID != "" && !pump.Routing(route.FilterID) {
+		if route.FilterID != "" && !pump.RoutingFrom(route.FilterID) {
 			http.NotFound(w, req)
 			return
 		}

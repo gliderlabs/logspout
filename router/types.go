@@ -19,7 +19,7 @@ type LogAdapter interface {
 }
 
 type LogRouter interface {
-	Routing(containerID string) bool
+	RoutingFrom(containerID string) bool
 	Route(route *Route, logstream chan *Message)
 }
 
@@ -46,7 +46,7 @@ type Route struct {
 	Address       string            `json:"address"`
 	Options       map[string]string `json:"options,omitempty"`
 	closer        chan bool
-	closerRcv     <-chan bool
+	closerRcv     <-chan bool // used instead of closer when set
 }
 
 func (r *Route) Closer() <-chan bool {
@@ -64,18 +64,21 @@ func (r *Route) Close() {
 	r.closer <- true
 }
 
-func (r *Route) MultiContainer() bool {
-	return r.MatchAll() || strings.Contains(r.FilterName, "*")
-}
-
-func (r *Route) MatchAll() bool {
+func (r *Route) matchAll() bool {
 	if r.FilterID == "" && r.FilterName == "" && len(r.FilterSources) == 0 {
 		return true
 	}
 	return false
 }
 
+func (r *Route) MultiContainer() bool {
+	return r.matchAll() || strings.Contains(r.FilterName, "*")
+}
+
 func (r *Route) MatchContainer(id, name string) bool {
+	if r.matchAll() {
+		return true
+	}
 	if r.FilterID != "" && !strings.HasPrefix(id, r.FilterID) {
 		return false
 	}
@@ -86,14 +89,14 @@ func (r *Route) MatchContainer(id, name string) bool {
 	return true
 }
 
-func (r *Route) Match(message *Message) bool {
-	if r.MatchAll() {
+func (r *Route) MatchMessage(message *Message) bool {
+	if r.matchAll() {
 		return true
 	}
 	if len(r.FilterSources) > 0 && !contains(r.FilterSources, message.Source) {
 		return false
 	}
-	return r.MatchContainer(message.Container.ID, message.Container.Name[1:])
+	return true
 }
 
 func contains(strs []string, str string) bool {

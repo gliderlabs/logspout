@@ -58,8 +58,12 @@ func main() {
 	}
 	if uris != "" {
 		for _, uri := range strings.Split(uris, ",") {
+			err := routes.AddFromUri(uri)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
 			log.Println("routing all to " + uri)
-			routes.AddFromUri(uri)
 		}
 	}
 
