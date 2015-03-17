@@ -1,7 +1,8 @@
-//go:generate go-extpoints . AdapterFactory HttpHandler
+//go:generate go-extpoints . AdapterFactory HttpHandler ConnectionFactory
 package router
 
 import (
+	"net"
 	"net/http"
 	"path"
 	"strings"
@@ -15,6 +16,9 @@ type HttpHandler func(routes *RouteManager, router LogRouter) http.Handler
 
 // Extension type for adding new log adapters
 type AdapterFactory func(route *Route) (LogAdapter, error)
+
+// Extension type for connection types used by adapters
+type ConnectionFactory func(addr string, options map[string]string) (net.Conn, error)
 
 // LogAdapters are streamed logs
 type LogAdapter interface {
@@ -54,6 +58,18 @@ type Route struct {
 	Options       map[string]string `json:"options,omitempty"`
 	closer        chan bool
 	closerRcv     <-chan bool // used instead of closer when set
+}
+
+func (r *Route) AdapterType() string {
+	return strings.Split(r.Adapter, "+")[0]
+}
+
+func (r *Route) AdapterConnType(dfault string) string {
+	parts := strings.Split(r.Adapter, "+")
+	if len(parts) > 1 {
+		return parts[1]
+	}
+	return dfault
 }
 
 func (r *Route) Closer() <-chan bool {

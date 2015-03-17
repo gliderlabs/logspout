@@ -187,3 +187,37 @@ func (ep *adapterFactoryExt) All() map[string]AdapterFactory {
 	return all
 }
 
+// ConnectionFactory
+
+var ConnectionFactories = &connectionFactoryExt{
+	newExtensionPoint(new(ConnectionFactory)),
+}
+
+type connectionFactoryExt struct {
+	*extensionPoint
+}
+
+func (ep *connectionFactoryExt) Unregister(name string) bool {
+	return ep.unregister(name)
+}
+
+func (ep *connectionFactoryExt) Register(component ConnectionFactory, name string) bool {
+	return ep.register(component, name)
+}
+
+func (ep *connectionFactoryExt) Lookup(name string) (ConnectionFactory, bool) {
+	ext, ok := ep.lookup(name)
+	if !ok {
+		return nil, ok
+	}
+	return ext.(ConnectionFactory), ok
+}
+
+func (ep *connectionFactoryExt) All() map[string]ConnectionFactory {
+	all := make(map[string]ConnectionFactory)
+	for k, v := range ep.all() {
+		all[k] = v.(ConnectionFactory)
+	}
+	return all
+}
+
