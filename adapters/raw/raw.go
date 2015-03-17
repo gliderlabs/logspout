@@ -1,4 +1,4 @@
-package rawudp
+package raw
 
 import (
 	"errors"

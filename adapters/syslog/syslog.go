@@ -1,6 +1,8 @@
 package syslog
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"log/syslog"
 	"net"
@@ -47,10 +49,10 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	var tmplStr string
 	switch format {
 	case "rfc5424":
-		tmplStr = fmt.Fprints("<%d>1 {{.Timestamp}} %s %s %d - [%s] %s\n",
+		tmplStr = fmt.Sprintf("<%d>1 {{.Timestamp}} %s %s %d - [%s] %s\n",
 			priority, hostname, tag, pid, structuredData, data)
 	case "rfc3164":
-		tmplStr = fmt.Fprints("<%s>{{.Timestamp}} %s %s[%s]: %s\n",
+		tmplStr = fmt.Sprintf("<%s>{{.Timestamp}} %s %s[%s]: %s\n",
 			priority, hostname, tag, pid, data)
 	default:
 		return nil, errors.New("unsupported syslog format: " + format)
@@ -88,7 +90,7 @@ type SyslogMessage struct {
 	adapter *SyslogAdapter
 }
 
-func (m *SyslogMessage) Priority() int {
+func (m *SyslogMessage) Priority() syslog.Priority {
 	switch m.Message.Source {
 	case "stdout":
 		return syslog.LOG_USER | syslog.LOG_INFO
