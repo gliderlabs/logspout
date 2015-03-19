@@ -1,4 +1,4 @@
-//go:generate go-extpoints . AdapterFactory HttpHandler ConnectionFactory
+//go:generate go-extpoints . AdapterFactory HttpHandler AdapterTransport
 package router
 
 import (
@@ -17,8 +17,10 @@ type HttpHandler func(routes *RouteManager, router LogRouter) http.Handler
 // Extension type for adding new log adapters
 type AdapterFactory func(route *Route) (LogAdapter, error)
 
-// Extension type for connection types used by adapters
-type ConnectionFactory func(addr string, options map[string]string) (net.Conn, error)
+// Extension type for connection transports used by adapters
+type AdapterTransport interface {
+	Dial(addr string, options map[string]string) (net.Conn, error)
+}
 
 // LogAdapters are streamed logs
 type LogAdapter interface {
@@ -64,7 +66,7 @@ func (r *Route) AdapterType() string {
 	return strings.Split(r.Adapter, "+")[0]
 }
 
-func (r *Route) AdapterConnType(dfault string) string {
+func (r *Route) AdapterTransport(dfault string) string {
 	parts := strings.Split(r.Adapter, "+")
 	if len(parts) > 1 {
 		return parts[1]

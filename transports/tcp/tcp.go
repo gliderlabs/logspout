@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	router.ConnectionFactories.Register(NewTCPFactory, "tcp")
+	router.AdapterTransports.Register(new(tcpTransport), "tcp")
 	// convenience adapters around raw adapter
 	router.AdapterFactories.Register(NewRawTCPAdapter, "tcp")
 }
@@ -18,7 +18,9 @@ func NewRawTCPAdapter(route *router.Route) (router.LogAdapter, error) {
 	return raw.NewRawAdapter(route)
 }
 
-func NewTCPFactory(addr string, options map[string]string) (net.Conn, error) {
+type tcpTransport int
+
+func (_ *tcpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
 	raddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		return nil, err

@@ -13,7 +13,7 @@ const (
 )
 
 func init() {
-	router.ConnectionFactories.Register(NewUDPFactory, "udp")
+	router.AdapterTransports.Register(new(udpTransport), "udp")
 	// convenience adapters around raw adapter
 	router.AdapterFactories.Register(NewRawUDPAdapter, "udp")
 }
@@ -23,7 +23,9 @@ func NewRawUDPAdapter(route *router.Route) (router.LogAdapter, error) {
 	return raw.NewRawAdapter(route)
 }
 
-func NewUDPFactory(addr string, options map[string]string) (net.Conn, error) {
+type udpTransport int
+
+func (_ *udpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
 	raddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return nil, err

@@ -15,11 +15,11 @@ func init() {
 }
 
 func NewRawAdapter(route *router.Route) (router.LogAdapter, error) {
-	connFactory, found := router.ConnectionFactories.Lookup(route.AdapterConnType("udp"))
+	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
 	if !found {
 		return nil, errors.New("unable to find adapter: " + route.Adapter)
 	}
-	conn, err := connFactory(route.Address, route.Options)
+	conn, err := transport.Dial(route.Address, route.Options)
 	if err != nil {
 		return nil, err
 	}

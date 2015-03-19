@@ -187,36 +187,36 @@ func (ep *adapterFactoryExt) All() map[string]AdapterFactory {
 	return all
 }
 
-// ConnectionFactory
+// AdapterTransport
 
-var ConnectionFactories = &connectionFactoryExt{
-	newExtensionPoint(new(ConnectionFactory)),
+var AdapterTransports = &adapterTransportExt{
+	newExtensionPoint(new(AdapterTransport)),
 }
 
-type connectionFactoryExt struct {
+type adapterTransportExt struct {
 	*extensionPoint
 }
 
-func (ep *connectionFactoryExt) Unregister(name string) bool {
+func (ep *adapterTransportExt) Unregister(name string) bool {
 	return ep.unregister(name)
 }
 
-func (ep *connectionFactoryExt) Register(component ConnectionFactory, name string) bool {
+func (ep *adapterTransportExt) Register(component AdapterTransport, name string) bool {
 	return ep.register(component, name)
 }
 
-func (ep *connectionFactoryExt) Lookup(name string) (ConnectionFactory, bool) {
+func (ep *adapterTransportExt) Lookup(name string) (AdapterTransport, bool) {
 	ext, ok := ep.lookup(name)
 	if !ok {
 		return nil, ok
 	}
-	return ext.(ConnectionFactory), ok
+	return ext.(AdapterTransport), ok
 }
 
-func (ep *connectionFactoryExt) All() map[string]ConnectionFactory {
-	all := make(map[string]ConnectionFactory)
+func (ep *adapterTransportExt) All() map[string]AdapterTransport {
+	all := make(map[string]AdapterTransport)
 	for k, v := range ep.all() {
-		all[k] = v.(ConnectionFactory)
+		all[k] = v.(AdapterTransport)
 	}
 	return all
 }
