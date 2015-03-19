@@ -10,10 +10,10 @@ import (
 func init() {
 	router.AdapterTransports.Register(new(tcpTransport), "tcp")
 	// convenience adapters around raw adapter
-	router.AdapterFactories.Register(NewRawTCPAdapter, "tcp")
+	router.AdapterFactories.Register(rawTCPAdapter, "tcp")
 }
 
-func NewRawTCPAdapter(route *router.Route) (router.LogAdapter, error) {
+func rawTCPAdapter(route *router.Route) (router.LogAdapter, error) {
 	route.Adapter = "raw+tcp"
 	return raw.NewRawAdapter(route)
 }

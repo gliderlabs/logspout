@@ -15,10 +15,10 @@ const (
 func init() {
 	router.AdapterTransports.Register(new(udpTransport), "udp")
 	// convenience adapters around raw adapter
-	router.AdapterFactories.Register(NewRawUDPAdapter, "udp")
+	router.AdapterFactories.Register(rawUDPAdapter, "udp")
 }
 
-func NewRawUDPAdapter(route *router.Route) (router.LogAdapter, error) {
+func rawUDPAdapter(route *router.Route) (router.LogAdapter, error) {
 	route.Adapter = "raw+udp"
 	return raw.NewRawAdapter(route)
 }

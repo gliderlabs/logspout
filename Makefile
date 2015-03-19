@@ -9,7 +9,7 @@ dev:
 		-v /var/run/docker.sock:/tmp/docker.sock \
 		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
 		-p 8000:8000 \
-		-e ROUTE_URIS=tcp://172.17.0.66:9000 \
+		-e ROUTE_URIS=$(ROUTE) \
 		$(NAME):dev
 
 build:
