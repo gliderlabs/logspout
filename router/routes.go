@@ -58,7 +58,8 @@ func (rm *RouteManager) GetAll() ([]*Route, error) {
 }
 
 func (rm *RouteManager) AddFromUri(uri string) error {
-	u, err := url.Parse(uri)
+	expandedRoute := os.ExpandEnv(uri)
+	u, err := url.Parse(expandedRoute)
 	if err != nil {
 		return err
 	}
