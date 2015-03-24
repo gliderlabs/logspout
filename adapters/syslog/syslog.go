@@ -1,6 +1,7 @@
 package syslog
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -76,7 +77,14 @@ type SyslogAdapter struct {
 
 func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 	for message := range logstream {
-		err := a.tmpl.Execute(a.conn, &SyslogMessage{message, a})
+		buf := new(bytes.Buffer)
+		err := a.tmpl.Execute(buf, &SyslogMessage{message, a})
+		if err != nil {
+			log.Println("syslog:", err)
+			a.route.Close()
+			return
+		}
+		_, err = a.conn.Write(buf.Bytes())
 		if err != nil {
 			log.Println("syslog:", err)
 			a.route.Close()

@@ -86,6 +86,9 @@ func (p *LogsPump) monitorLogs(event *docker.APIEvents, backlog bool) {
 	if container.Config.Tty {
 		return
 	}
+	if p.shouldIgnoreContainer(container) {
+		return
+	}
 	var tail string
 	if backlog {
 		tail = "all"
@@ -117,6 +120,16 @@ func (p *LogsPump) monitorLogs(event *docker.APIEvents, backlog bool) {
 		delete(p.pumps, id)
 		p.mu.Unlock()
 	}()
+}
+
+func (p *LogsPump) shouldIgnoreContainer(cont *docker.Container) bool {
+	for _, kv := range(cont.Config.Env) {
+		kvp := strings.SplitN(kv, "=", 2)
+		if len(kvp) == 2 && kvp[0] == "LOGSPOUT" && strings.ToLower(kvp[1]) == "ignore" {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *LogsPump) update(event *docker.APIEvents) {
