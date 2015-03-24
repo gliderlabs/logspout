@@ -108,7 +108,7 @@ func (r *Route) MatchContainer(id, name string) bool {
 		return false
 	}
 	match, err := path.Match(r.FilterName, name)
-	if err != nil || (r.FilterName != "" && match) {
+	if err != nil || (r.FilterName != "" && !match) {
 		return false
 	}
 	return true

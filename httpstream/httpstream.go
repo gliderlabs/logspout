@@ -25,7 +25,7 @@ func LogStreamer(routes *router.RouteManager, pump router.LogRouter) http.Handle
 
 		if params["value"] != "" {
 			switch params["predicate"] {
-			case  "id":
+			case "id":
 				route.FilterID = params["value"]
 				if len(route.ID) > 12 {
 					route.FilterID = route.FilterID[:12]
