@@ -22,14 +22,17 @@ func LogStreamer(routes *router.RouteManager, pump router.LogRouter) http.Handle
 	logsHandler := func(w http.ResponseWriter, req *http.Request) {
 		params := mux.Vars(req)
 		route := new(router.Route)
-		switch {
-		case params["predicate"] == "id" && params["value"] != "":
-			route.FilterID = params["value"]
-			if len(route.ID) > 12 {
-				route.FilterID = route.FilterID[:12]
+
+		if params["value"] != "" {
+			switch params["predicate"] {
+			case  "id":
+				route.FilterID = params["value"]
+				if len(route.ID) > 12 {
+					route.FilterID = route.FilterID[:12]
+				}
+			case "name":
+				route.FilterName = params["value"]
 			}
-		case params["predicate"] == "name" && params["value"] != "":
-			route.FilterName = params["value"]
 		}
 
 		if route.FilterID != "" && !pump.RoutingFrom(route.FilterID) {
