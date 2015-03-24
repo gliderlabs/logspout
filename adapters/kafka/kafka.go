@@ -34,11 +34,6 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 
-	config, err := buildConfig(route.Options)
-	if err != nil {
-		return nil, fmt.Errorf("couldn't prepare Kafka config from route options: %v", err)
-	}
-
 	var tmpl *template.Template
 	if text := os.Getenv("KAFKA_FORMAT"); text != "" {
 		tmpl, err = template.New("kafka").Parse(text)
@@ -47,6 +42,7 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 		}
 	}
 
+	config := buildConfig(route.Options)
 	client, err := sarama.NewClient(brokers, config)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create Kafka client: %v", err)
@@ -85,14 +81,22 @@ func (a *KafkaAdapter) Stream(logstream chan *router.Message) {
 	a.client.Close()
 }
 
-func buildConfig(options map[string]string) (*sarama.Config, error) {
+func buildConfig(options map[string]string) *sarama.Config {
 	config := sarama.NewConfig()
 	config.ClientID = "logspout"
 	config.Producer.Flush.Frequency = 1 * time.Second
-	config.Producer.Compression = sarama.CompressionSnappy
 	config.Producer.RequiredAcks = sarama.WaitForLocal
 
-	return config, nil
+	if opt := options["compression.codec"]; opt != "" {
+		switch opt {
+		case "gzip":
+			config.Producer.Compression = sarama.CompressionGZIP
+		case "snappy":
+			config.Producer.Compression = sarama.CompressionSnappy
+		}
+	}
+
+	return config
 }
 
 func (a *KafkaAdapter) formatMessage(message *router.Message) (*sarama.ProducerMessage, error) {
