@@ -35,10 +35,10 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 
 	var tmpl *template.Template
-	if text := os.Getenv("KAFKA_FORMAT"); text != "" {
+	if text := os.Getenv("KAFKA_TEMPLATE"); text != "" {
 		tmpl, err = template.New("kafka").Parse(text)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't create template from KAFKA_FORMAT: %v", err)
+			return nil, err
 		}
 	}
 
