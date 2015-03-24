@@ -46,15 +46,15 @@ func LogStreamer(routes *router.RouteManager, pump router.LogRouter) http.Handle
 		var closer <-chan bool
 		if req.Header.Get("Upgrade") == "websocket" {
 			closerBi := make(chan bool)
-			go websocketStreamer(w, req, logstream, closerBi)
+			defer websocketStreamer(w, req, logstream, closerBi)
 			closer = closerBi
 		} else {
-			go httpStreamer(w, req, logstream, route.MultiContainer())
+			defer httpStreamer(w, req, logstream, route.MultiContainer())
 			closer = w.(http.CloseNotifier).CloseNotify()
 		}
 		route.OverrideCloser(closer)
 
-		pump.Route(route, logstream)
+		go pump.Route(route, logstream)
 	}
 	logs.HandleFunc("/logs/{predicate:[a-zA-Z]+}:{value}", logsHandler).Methods("GET")
 	logs.HandleFunc("/logs", logsHandler).Methods("GET")
