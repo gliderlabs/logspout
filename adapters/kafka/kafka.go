@@ -23,7 +23,6 @@ type KafkaAdapter struct {
 	brokers  []string
 	topic    string
 	config   *sarama.Config
-	client   sarama.Client
 	producer sarama.AsyncProducer
 	tmpl     *template.Template
 }
@@ -43,14 +42,8 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 
 	config := buildConfig(route.Options)
-	client, err := sarama.NewClient(brokers, config)
+	producer, err := sarama.NewAsyncProducer(brokers, config)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't create Kafka client: %v", err)
-	}
-
-	producer, err := sarama.NewAsyncProducerFromClient(client)
-	if err != nil {
-		client.Close()
 		return nil, fmt.Errorf("couldn't create Kafka producer: %v", err)
 	}
 
@@ -59,13 +52,13 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 		brokers:  brokers,
 		topic:    topic,
 		config:   config,
-		client:   client,
 		producer: producer,
 		tmpl:     tmpl,
 	}, nil
 }
 
 func (a *KafkaAdapter) Stream(logstream chan *router.Message) {
+	defer a.producer.Close()
 	for rm := range logstream {
 		message, err := a.formatMessage(rm)
 		if err != nil {
@@ -76,9 +69,6 @@ func (a *KafkaAdapter) Stream(logstream chan *router.Message) {
 
 		a.producer.Input() <- message
 	}
-
-	a.producer.Close()
-	a.client.Close()
 }
 
 func buildConfig(options map[string]string) *sarama.Config {
