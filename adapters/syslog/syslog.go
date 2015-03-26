@@ -17,7 +17,7 @@ import (
 var hostname string
 
 func init() {
-	hostname, _ := os.Hostname()
+	hostname, _ = os.Hostname()
 	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
 }
 
