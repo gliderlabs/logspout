@@ -5,17 +5,12 @@ import (
 	"errors"
 	"log"
 	"net"
-	"os"
 
 	"github.com/gliderlabs/logspout/router"
 )
 
-var hostname string
-
 func init() {
 	router.AdapterFactories.Register(NewLogstashAdapter, "logstash")
-
-	hostname, _ = os.Hostname()
 }
 
 // LogstashAdapter is an adapter that streams UPD JSON to Logstash.
@@ -47,8 +42,10 @@ func (a *LogstashAdapter) Stream(logstream chan *router.Message) {
 		msg := LogstashMessage{
 			Time:     m.Time.Unix(),
 			Message:  m.Data,
-			Hostname: hostname,
+			Name:     m.Container.Name,
+			ID:       m.Container.ID,
 			Image:    m.Container.Config.Image,
+			Hostname: m.Container.Config.Hostname,
 		}
 		js, err := json.Marshal(msg)
 		if err != nil {
@@ -68,6 +65,8 @@ func (a *LogstashAdapter) Stream(logstream chan *router.Message) {
 type LogstashMessage struct {
 	Time     int64  `json:"time"`
 	Message  string `json:"message"`
-	Hostname string `json:"hostname"`
-	Image    string `json:"image"`
+	Name     string `json:"docker.name"`
+	ID       string `json:"docker.id"`
+	Image    string `json:"docker.image"`
+	Hostname string `json:"docker.hostname"`
 }
