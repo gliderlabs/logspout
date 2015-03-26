@@ -3,7 +3,7 @@ package logstash
 import (
 	"encoding/json"
 	"errors"
-	"io"
+	"log"
 	"net"
 	"os"
 
@@ -42,7 +42,7 @@ func NewLogstashAdapter(route *router.Route) (router.LogAdapter, error) {
 	}, nil
 }
 
-func (adapter *LogstashAdapter) Stream(logstream chan *router.Message) {
+func (a *LogstashAdapter) Stream(logstream chan *router.Message) {
 	for m := range logstream {
 		msg := LogstashMessage{
 			Time:     m.Time.Unix(),
@@ -50,8 +50,18 @@ func (adapter *LogstashAdapter) Stream(logstream chan *router.Message) {
 			Hostname: hostname,
 			Image:    m.Container.Config.Image,
 		}
-		js, _ := json.Marshal(msg)
-		io.WriteString(adapter.conn, string(js))
+		js, err := json.Marshal(msg)
+		if err != nil {
+			log.Println("logstash:", err)
+			a.route.Close()
+			return
+		}
+		_, err = a.conn.Write(js)
+		if err != nil {
+			log.Println("logstash:", err)
+			a.route.Close()
+			return
+		}
 	}
 }
 
