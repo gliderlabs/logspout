@@ -14,7 +14,10 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
+var hostname string
+
 func init() {
+	hostname, _ := os.Hostname()
 	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
 }
 
@@ -76,18 +79,17 @@ type SyslogAdapter struct {
 }
 
 func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
+	defer a.route.Close()
 	for message := range logstream {
-		buf := new(bytes.Buffer)
-		err := a.tmpl.Execute(buf, &SyslogMessage{message, a})
+		m := &SyslogMessage{message, a.conn}
+		buf, err := m.Render(a.tmpl)
 		if err != nil {
 			log.Println("syslog:", err)
-			a.route.Close()
 			return
 		}
-		_, err = a.conn.Write(buf.Bytes())
+		_, err = a.conn.Write(buf)
 		if err != nil {
 			log.Println("syslog:", err)
-			a.route.Close()
 			return
 		}
 	}
@@ -95,7 +97,16 @@ func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 
 type SyslogMessage struct {
 	*router.Message
-	adapter *SyslogAdapter
+	conn net.Conn
+}
+
+func (m *SyslogMessage) Render(tmpl *template.Template) ([]byte, error) {
+	buf := new(bytes.Buffer)
+	err := tmpl.Execute(buf, m)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func (m *SyslogMessage) Priority() syslog.Priority {
@@ -110,12 +121,11 @@ func (m *SyslogMessage) Priority() syslog.Priority {
 }
 
 func (m *SyslogMessage) Hostname() string {
-	h, _ := os.Hostname()
-	return h
+	return hostname
 }
 
 func (m *SyslogMessage) LocalAddr() string {
-	return m.adapter.conn.LocalAddr().String()
+	return m.conn.LocalAddr().String()
 }
 
 func (m *SyslogMessage) Timestamp() string {
