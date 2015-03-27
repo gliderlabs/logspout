@@ -81,13 +81,13 @@ type SyslogAdapter struct {
 func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 	defer a.route.Close()
 	for message := range logstream {
-		m := &SyslogMessage{message, a.conn}
+		m := NewSyslogMessage(message, a.conn)
 		buf, err := m.Render(a.tmpl)
 		if err != nil {
 			log.Println("syslog:", err)
 			return
 		}
-		_, err = a.conn.Write(buf)
+		_, err = a.conn.Write(buf.Bytes())
 		if err != nil {
 			log.Println("syslog:", err)
 			return
@@ -100,13 +100,17 @@ type SyslogMessage struct {
 	conn net.Conn
 }
 
-func (m *SyslogMessage) Render(tmpl *template.Template) ([]byte, error) {
+func NewSyslogMessage(message *router.Message, conn net.Conn) *SyslogMessage {
+	return &SyslogMessage{message, conn}
+}
+
+func (m *SyslogMessage) Render(tmpl *template.Template) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	err := tmpl.Execute(buf, m)
 	if err != nil {
 		return nil, err
 	}
-	return buf.Bytes(), nil
+	return buf, nil
 }
 
 func (m *SyslogMessage) Priority() syslog.Priority {
