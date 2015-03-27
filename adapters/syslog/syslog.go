@@ -32,7 +32,7 @@ func getopt(name, dfault string) string {
 func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
 	if !found {
-		return nil, errors.New("unable to find adapter: " + route.Adapter)
+		return nil, errors.New("bad transport: " + route.Adapter)
 	}
 	conn, err := transport.Dial(route.Address, route.Options)
 	if err != nil {
@@ -53,7 +53,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	var tmplStr string
 	switch format {
 	case "rfc5424":
-		tmplStr = fmt.Sprintf("<%d>1 {{.Timestamp}} %s %s %d - [%s] %s\n",
+		tmplStr = fmt.Sprintf("<%s>1 {{.Timestamp}} %s %s %s - [%s] %s\n",
 			priority, hostname, tag, pid, structuredData, data)
 	case "rfc3164":
 		tmplStr = fmt.Sprintf("<%s>{{.Timestamp}} %s %s[%s]: %s\n",
@@ -79,9 +79,8 @@ type SyslogAdapter struct {
 }
 
 func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
-	defer a.route.Close()
 	for message := range logstream {
-		m := &SyslogMessage{message, a.conn}
+		m := &SyslogMessage{message}
 		buf, err := m.Render(a.tmpl)
 		if err != nil {
 			log.Println("syslog:", err)
@@ -97,7 +96,6 @@ func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 
 type SyslogMessage struct {
 	*router.Message
-	conn net.Conn
 }
 
 func (m *SyslogMessage) Render(tmpl *template.Template) ([]byte, error) {
@@ -122,10 +120,6 @@ func (m *SyslogMessage) Priority() syslog.Priority {
 
 func (m *SyslogMessage) Hostname() string {
 	return hostname
-}
-
-func (m *SyslogMessage) LocalAddr() string {
-	return m.conn.LocalAddr().String()
 }
 
 func (m *SyslogMessage) Timestamp() string {

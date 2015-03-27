@@ -153,6 +153,15 @@ func (ep *httpHandlerExt) All() map[string]HttpHandler {
 	return all
 }
 
+func (ep *httpHandlerExt) Names() []string {
+	var names []string
+	for k := range ep.all() {
+		names = append(names, k)
+	}
+	return names
+}
+
+
 // AdapterFactory
 
 var AdapterFactories = &adapterFactoryExt{
@@ -187,6 +196,15 @@ func (ep *adapterFactoryExt) All() map[string]AdapterFactory {
 	return all
 }
 
+func (ep *adapterFactoryExt) Names() []string {
+	var names []string
+	for k := range ep.all() {
+		names = append(names, k)
+	}
+	return names
+}
+
+
 // AdapterTransport
 
 var AdapterTransports = &adapterTransportExt{
@@ -220,4 +238,99 @@ func (ep *adapterTransportExt) All() map[string]AdapterTransport {
 	}
 	return all
 }
+
+func (ep *adapterTransportExt) Names() []string {
+	var names []string
+	for k := range ep.all() {
+		names = append(names, k)
+	}
+	return names
+}
+
+
+// Job
+
+var Jobs = &jobExt{
+	newExtensionPoint(new(Job)),
+}
+
+type jobExt struct {
+	*extensionPoint
+}
+
+func (ep *jobExt) Unregister(name string) bool {
+	return ep.unregister(name)
+}
+
+func (ep *jobExt) Register(component Job, name string) bool {
+	return ep.register(component, name)
+}
+
+func (ep *jobExt) Lookup(name string) (Job, bool) {
+	ext, ok := ep.lookup(name)
+	if !ok {
+		return nil, ok
+	}
+	return ext.(Job), ok
+}
+
+func (ep *jobExt) All() map[string]Job {
+	all := make(map[string]Job)
+	for k, v := range ep.all() {
+		all[k] = v.(Job)
+	}
+	return all
+}
+
+func (ep *jobExt) Names() []string {
+	var names []string
+	for k := range ep.all() {
+		names = append(names, k)
+	}
+	return names
+}
+
+
+// LogRouter
+
+var LogRouters = &logRouterExt{
+	newExtensionPoint(new(LogRouter)),
+}
+
+type logRouterExt struct {
+	*extensionPoint
+}
+
+func (ep *logRouterExt) Unregister(name string) bool {
+	return ep.unregister(name)
+}
+
+func (ep *logRouterExt) Register(component LogRouter, name string) bool {
+	return ep.register(component, name)
+}
+
+func (ep *logRouterExt) Lookup(name string) (LogRouter, bool) {
+	ext, ok := ep.lookup(name)
+	if !ok {
+		return nil, ok
+	}
+	return ext.(LogRouter), ok
+}
+
+func (ep *logRouterExt) All() map[string]LogRouter {
+	all := make(map[string]LogRouter)
+	for k, v := range ep.all() {
+		all[k] = v.(LogRouter)
+	}
+	return all
+}
+
+func (ep *logRouterExt) Names() []string {
+	var names []string
+	for k := range ep.all() {
+		names = append(names, k)
+	}
+	return names
+}
+
 

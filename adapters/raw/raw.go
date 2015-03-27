@@ -1,6 +1,7 @@
 package raw
 
 import (
+	"bytes"
 	"errors"
 	"log"
 	"net"
@@ -17,7 +18,7 @@ func init() {
 func NewRawAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
 	if !found {
-		return nil, errors.New("unable to find adapter: " + route.Adapter)
+		return nil, errors.New("bad transport: " + route.Adapter)
 	}
 	conn, err := transport.Dial(route.Address, route.Options)
 	if err != nil {
@@ -46,10 +47,16 @@ type RawAdapter struct {
 
 func (a *RawAdapter) Stream(logstream chan *router.Message) {
 	for message := range logstream {
-		err := a.tmpl.Execute(a.conn, message)
+		buf := new(bytes.Buffer)
+		err := a.tmpl.Execute(buf, message)
 		if err != nil {
 			log.Println("raw:", err)
-			a.route.Close()
+			return
+		}
+		//log.Println("debug:", buf.String())
+		_, err = a.conn.Write(buf.Bytes())
+		if err != nil {
+			log.Println("raw:", err)
 			return
 		}
 	}

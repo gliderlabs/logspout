@@ -15,7 +15,8 @@ func init() {
 	router.HttpHandlers.Register(RoutesAPI, "routes")
 }
 
-func RoutesAPI(routes *router.RouteManager, pump router.LogRouter) http.Handler {
+func RoutesAPI() http.Handler {
+	routes := router.Routes
 	r := mux.NewRouter()
 
 	r.HandleFunc("/routes/{id}", func(w http.ResponseWriter, req *http.Request) {
