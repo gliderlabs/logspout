@@ -74,6 +74,8 @@ func (a *KafkaAdapter) Stream(logstream chan *router.Message) {
 func buildConfig(options map[string]string) *sarama.Config {
 	config := sarama.NewConfig()
 	config.ClientID = "logspout"
+	config.Producer.Return.Errors = false
+	config.Producer.Return.Successes = false
 	config.Producer.Flush.Frequency = 1 * time.Second
 	config.Producer.RequiredAcks = sarama.WaitForLocal
 
