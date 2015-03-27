@@ -28,7 +28,7 @@ type KafkaAdapter struct {
 }
 
 func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
-	brokers, topic, err := parseKafkaAddress(route.Address)
+	brokers, topic, err := parseRouteAddress(route.Address)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (a *KafkaAdapter) formatMessage(message *router.Message) (*sarama.ProducerM
 	}, nil
 }
 
-func parseKafkaAddress(routeAddress string) ([]string, string, error) {
+func parseRouteAddress(routeAddress string) ([]string, string, error) {
 	if !strings.Contains(routeAddress, "/") {
 		return []string{}, "", errors.New("the route address didn't specify the Kafka topic")
 	}
