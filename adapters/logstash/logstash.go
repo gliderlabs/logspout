@@ -40,7 +40,6 @@ func NewLogstashAdapter(route *router.Route) (router.LogAdapter, error) {
 func (a *LogstashAdapter) Stream(logstream chan *router.Message) {
 	for m := range logstream {
 		msg := LogstashMessage{
-			Time:     m.Time.Unix(),
 			Message:  m.Data,
 			Name:     m.Container.Name,
 			ID:       m.Container.ID,
@@ -63,7 +62,6 @@ func (a *LogstashAdapter) Stream(logstream chan *router.Message) {
 }
 
 type LogstashMessage struct {
-	Time     int64  `json:"time"`
 	Message  string `json:"message"`
 	Name     string `json:"docker.name"`
 	ID       string `json:"docker.id"`
