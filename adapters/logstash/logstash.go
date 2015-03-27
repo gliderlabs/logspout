@@ -49,14 +49,12 @@ func (a *LogstashAdapter) Stream(logstream chan *router.Message) {
 		js, err := json.Marshal(msg)
 		if err != nil {
 			log.Println("logstash:", err)
-			a.route.Close()
-			return
+			continue
 		}
 		_, err = a.conn.Write(js)
 		if err != nil {
 			log.Println("logstash:", err)
-			a.route.Close()
-			return
+			continue
 		}
 	}
 }
