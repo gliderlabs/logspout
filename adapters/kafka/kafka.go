@@ -22,7 +22,6 @@ type KafkaAdapter struct {
 	route    *router.Route
 	brokers  []string
 	topic    string
-	config   *sarama.Config
 	producer sarama.AsyncProducer
 	tmpl     *template.Template
 }
@@ -41,8 +40,7 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 		}
 	}
 
-	config := buildConfig(route.Options)
-	producer, err := sarama.NewAsyncProducer(brokers, config)
+	producer, err := sarama.NewAsyncProducer(brokers, newConfig())
 	if err != nil {
 		return nil, fmt.Errorf("couldn't create Kafka producer: %v", err)
 	}
@@ -51,7 +49,6 @@ func NewKafkaAdapter(route *router.Route) (router.LogAdapter, error) {
 		route:    route,
 		brokers:  brokers,
 		topic:    topic,
-		config:   config,
 		producer: producer,
 		tmpl:     tmpl,
 	}, nil
@@ -71,7 +68,7 @@ func (a *KafkaAdapter) Stream(logstream chan *router.Message) {
 	}
 }
 
-func buildConfig(options map[string]string) *sarama.Config {
+func newConfig() *sarama.Config {
 	config := sarama.NewConfig()
 	config.ClientID = "logspout"
 	config.Producer.Return.Errors = false
@@ -79,7 +76,7 @@ func buildConfig(options map[string]string) *sarama.Config {
 	config.Producer.Flush.Frequency = 1 * time.Second
 	config.Producer.RequiredAcks = sarama.WaitForLocal
 
-	if opt := options["compression.codec"]; opt != "" {
+	if opt := os.Getenv("KAFKA_COMPRESSION_CODEC"); opt != "" {
 		switch opt {
 		case "gzip":
 			config.Producer.Compression = sarama.CompressionGZIP
