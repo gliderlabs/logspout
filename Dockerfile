@@ -4,6 +4,7 @@ VOLUME /mnt/routes
 EXPOSE 8000
 
 COPY . /go/src/github.com/gliderlabs/logspout
+ONBUILD COPY ./modules.go /go/src/github.com/gliderlabs/logspout/modules.go
 RUN apk-install go git mercurial \
 	&& cd /go/src/github.com/gliderlabs/logspout \
 	&& export GOPATH=/go \
