@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "github.com/gliderlabs/logspout/adapters/json"
 	_ "github.com/gliderlabs/logspout/adapters/raw"
 	_ "github.com/gliderlabs/logspout/adapters/syslog"
 	_ "github.com/gliderlabs/logspout/httpstream"
