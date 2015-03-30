@@ -5,10 +5,10 @@ dev:
 	@docker history $(NAME):dev &> /dev/null \
 		|| docker build -f Dockerfile.dev -t $(NAME):dev .
 	@docker run --rm \
-		-e DEBUG=1 \
-		-v /var/run/docker.sock:/tmp/docker.sock \
+		-e DEBUG=true \
+		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
-		-p 8000:8000 \
+		-p 8000:80 \
 		-e ROUTE_URIS=$(ROUTE) \
 		$(NAME):dev
 

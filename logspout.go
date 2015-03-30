@@ -3,28 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"strings"
-
-	"github.com/fsouza/go-dockerclient"
+	"text/tabwriter"
 
 	"github.com/gliderlabs/logspout/router"
 )
 
 var Version string
-
-func debug(v ...interface{}) {
-	if getopt("DEBUG", "") != "" {
-		log.Println(v...)
-	}
-}
-
-func assert(err error, context string) {
-	if err != nil {
-		log.Fatal(context+": ", err)
-	}
-}
 
 func getopt(name, dfault string) string {
 	value := os.Getenv(name)
@@ -40,45 +26,52 @@ func main() {
 		os.Exit(0)
 	}
 
-	port := getopt("PORT", "8000")
-	endpoint := getopt("DOCKER_HOST", "unix:///tmp/docker.sock")
-	routespath := getopt("ROUTESPATH", "/mnt/routes")
-
-	client, err := docker.NewClient(endpoint)
-	assert(err, "docker")
-	pump := router.NewLogsPump(client)
-	routes := router.NewRouteManager(pump)
-
-	var uris string
-	if os.Getenv("ROUTE_URIS") != "" {
-		uris = os.Getenv("ROUTE_URIS")
+	fmt.Printf("# logspout %s by gliderlabs\n", Version)
+	fmt.Printf("# adapters: %s\n", strings.Join(router.AdapterFactories.Names(), " "))
+	fmt.Printf("# options : ")
+	if getopt("DEBUG", "") != "" {
+		fmt.Printf("debug:%s ", getopt("DEBUG", ""))
 	}
-	if len(os.Args) > 1 {
-		uris = os.Args[1]
-	}
-	if uris != "" {
-		for _, uri := range strings.Split(uris, ",") {
-			err := routes.AddFromUri(uri)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			log.Println("routing all to " + uri)
+	fmt.Printf("persist:%s\n", getopt("ROUTESPATH", "/mnt/routes"))
+
+	var jobs []string
+	for _, job := range router.Jobs.All() {
+		err := job.Setup()
+		if err != nil {
+			fmt.Println("!!", err)
+			os.Exit(2)
+		}
+		if job.Name() != "" {
+			jobs = append(jobs, job.Name())
 		}
 	}
+	fmt.Printf("# jobs    : %s\n", strings.Join(jobs, " "))
 
-	if _, err := os.Stat(routespath); err == nil {
-		log.Println("loading and persisting routes in " + routespath)
-		assert(routes.Load(router.RouteFileStore(routespath)), "persistor")
+	routes, _ := router.Routes.GetAll()
+	if len(routes) > 0 {
+		fmt.Println("# routes  :")
+		w := new(tabwriter.Writer)
+		w.Init(os.Stdout, 0, 8, 0, '\t', 0)
+		fmt.Fprintln(w, "#   ADAPTER\tADDRESS\tCONTAINERS\tSOURCES\tOPTIONS")
+		for _, route := range routes {
+			fmt.Fprintf(w, "#   %s\t%s\t%s\t%s\t%s\n",
+				route.Adapter,
+				route.Address,
+				route.FilterID+route.FilterName,
+				strings.Join(route.FilterSources, ","),
+				route.Options)
+		}
+		w.Flush()
+	} else {
+		fmt.Println("# routes  : none")
 	}
 
-	for name, handler := range router.HttpHandlers.All() {
-		h := handler(routes, pump)
-		http.Handle("/"+name, h)
-		http.Handle("/"+name+"/", h)
+	for _, job := range router.Jobs.All() {
+		job := job
+		go func() {
+			log.Fatalf("%s ended: %s", job.Name(), job.Run())
+		}()
 	}
 
-	go pump.Pump()
-	log.Printf("logspout %s serving http on :%s", Version, port)
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	select {}
 }

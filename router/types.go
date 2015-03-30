@@ -1,4 +1,4 @@
-//go:generate go-extpoints . AdapterFactory HttpHandler AdapterTransport
+//go:generate go-extpoints . AdapterFactory HttpHandler AdapterTransport LogRouter Job
 package router
 
 import (
@@ -12,7 +12,7 @@ import (
 )
 
 // Extension type for adding HTTP endpoints
-type HttpHandler func(routes *RouteManager, router LogRouter) http.Handler
+type HttpHandler func() http.Handler
 
 // Extension type for adding new log adapters
 type AdapterFactory func(route *Route) (LogAdapter, error)
@@ -25,6 +25,12 @@ type AdapterTransport interface {
 // LogAdapters are streamed logs
 type LogAdapter interface {
 	Stream(logstream chan *Message)
+}
+
+type Job interface {
+	Run() error
+	Setup() error
+	Name() string
 }
 
 // LogRouters send logs to LogAdapters via Routes
@@ -58,6 +64,7 @@ type Route struct {
 	Adapter       string            `json:"adapter"`
 	Address       string            `json:"address"`
 	Options       map[string]string `json:"options,omitempty"`
+	adapter       LogAdapter
 	closer        chan bool
 	closerRcv     <-chan bool // used instead of closer when set
 }
