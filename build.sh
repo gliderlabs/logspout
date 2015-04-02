@@ -7,6 +7,9 @@ cd /go/src/github.com/gliderlabs/logspout
 export GOPATH=/go
 go get
 go build -ldflags "-X main.Version $1" -o /bin/logspout
-rm -rf /go
 apk del go git mercurial
+rm -rf /go
 rm -rf /var/cache/apk/*
+
+# backwards compatibility
+ln -s /tmp/docker.sock /var/run/docker.sock
