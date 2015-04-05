@@ -12,4 +12,4 @@ rm -rf /go
 rm -rf /var/cache/apk/*
 
 # backwards compatibility
-ln -s /tmp/docker.sock /var/run/docker.sock
+ln -fs /tmp/docker.sock /var/run/docker.sock
