@@ -29,6 +29,8 @@ The simplest way to use logspout is to just take all logs and ship to a remote s
 		gliderlabs/logspout \
 		syslog://logs.papertrailapp.com:55555
 
+logspout will gather logs from other containers that are started **without the `-t` option**. 
+
 To see what data is used for syslog messages, see the [syslog adapter](http://github.com/gliderlabs/logspout/blob/master/adapters) docs.
 
 #### Ignoring specific containers
