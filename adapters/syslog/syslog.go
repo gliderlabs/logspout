@@ -8,6 +8,7 @@ import (
 	"log/syslog"
 	"net"
 	"os"
+	"reflect"
 	"text/template"
 	"time"
 
@@ -89,7 +90,9 @@ func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 		_, err = a.conn.Write(buf)
 		if err != nil {
 			log.Println("syslog:", err)
-			return
+			if reflect.TypeOf(a.conn).String() != "*net.UDPConn" {
+				return
+			}
 		}
 	}
 }
