@@ -1,7 +1,7 @@
 # Custom Logspout Builds
 
 Forking logspout to change modules is unnecessary! Instead, you can create an
-empty Dockerfile based on logspout and include a new `modules.go` file for the
+empty Dockerfile based on `gliderlabs/logspout:master` and include a new `modules.go` file for the
 build context that will override the standard one.
 
 This directory is an example of doing this. It pairs logspout down to just the
