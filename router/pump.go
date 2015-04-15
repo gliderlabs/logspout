@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -80,8 +81,19 @@ func (p *LogsPump) Name() string {
 }
 
 func (p *LogsPump) Setup() error {
-	client, err := docker.NewClient(
-		getopt("DOCKER_HOST", "unix:///var/run/docker.sock"))
+	endpoint := getopt("DOCKER_HOST", "unix:///var/run/docker.sock")
+	var client *docker.Client
+	var err error
+	if os.Getenv("DOCKER_TLS_VERIFY") == "1" {
+		path := os.Getenv("DOCKER_CERT_PATH")
+		client, err = docker.NewTLSClient(endpoint,
+			filepath.Join(path, "cert.pem"),
+			filepath.Join(path, "key.pem"),
+			filepath.Join(path, "ca.pem"),
+		)
+	} else {
+		client, err = docker.NewClient(endpoint)
+	}
 	if err != nil {
 		return err
 	}
