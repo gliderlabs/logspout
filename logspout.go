@@ -39,7 +39,7 @@ func main() {
 		err := job.Setup()
 		if err != nil {
 			fmt.Println("!!", err)
-			os.Exit(2)
+			os.Exit(1)
 		}
 		if job.Name() != "" {
 			jobs = append(jobs, job.Name())
