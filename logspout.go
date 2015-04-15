@@ -68,9 +68,7 @@ func main() {
 
 	for _, job := range router.Jobs.All() {
 		job := job
-		go func() {
-			log.Fatalf("%s ended: %s", job.Name(), job.Run())
-		}()
+		go log.Fatalf("%s ended: %s", job.Name(), job.Run())
 	}
 
 	select {}
