@@ -39,7 +39,7 @@ func main() {
 		err := job.Setup()
 		if err != nil {
 			fmt.Println("!!", err)
-			os.Exit(2)
+			os.Exit(1)
 		}
 		if job.Name() != "" {
 			jobs = append(jobs, job.Name())
@@ -68,9 +68,7 @@ func main() {
 
 	for _, job := range router.Jobs.All() {
 		job := job
-		go func() {
-			log.Fatalf("%s ended: %s", job.Name(), job.Run())
-		}()
+		go log.Fatalf("%s ended: %s", job.Name(), job.Run())
 	}
 
 	select {}
