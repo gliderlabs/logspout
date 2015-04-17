@@ -170,10 +170,8 @@ func (a *HTTPAdapter) Stream(logstream chan *router.Message) {
 			}
 		case <-a.timer.C:
 
-			// Flush if there's anything in the buffer
-			if len(a.buffer) > 0 {
-				a.flushHttp("timeout")
-			}
+			// Timeout, flush
+			a.flushHttp("timeout")
 		}
 	}
 }
@@ -190,6 +188,11 @@ func (a *HTTPAdapter) flushHttp(reason string) {
 
 	// Reset the timer when we are done
 	defer a.timer.Reset(a.timeout)
+
+	// Return immediately if the buffer is empty
+	if len(a.buffer) < 1 {
+		return
+	}
 
 	// Capture the buffer and make a new one
 	a.bufferMutex.Lock()
