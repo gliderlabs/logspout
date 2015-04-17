@@ -83,6 +83,7 @@ func (rm *RouteManager) AddFromUri(uri string) error {
 	r := &Route{
 		Address: u.Host,
 		Adapter: u.Scheme,
+		Options: make(map[string]string),
 	}
 	if u.RawQuery != "" {
 		params, err := url.ParseQuery(u.RawQuery)
