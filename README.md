@@ -29,7 +29,7 @@ The simplest way to use logspout is to just take all logs and ship to a remote s
 		gliderlabs/logspout \
 		syslog://logs.papertrailapp.com:55555
 
-logspout will gather logs from other containers that are started **without the `-t` option**. 
+logspout will gather logs from other containers that are started **without the `-t` option**.
 
 To see what data is used for syslog messages, see the [syslog adapter](http://github.com/gliderlabs/logspout/blob/master/adapters) docs.
 
@@ -66,6 +66,21 @@ That example creates a new syslog route to [Papertrail](https://papertrailapp.co
 Routes are stored on disk, so by default routes are ephemeral. You can mount a volume to `/mnt/routes` to persist them.
 
 See [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesapi) for all options.
+
+#### Precache routes via environmental variable
+
+You can set the environmental variable for the container PRECACHE_ROUTES to be an array of routes. Each route will be persisted to disk and used on startup instead of relying on the persistence of an attached volume / mnt or updating via the logspout API.
+
+The routes need to contain an id. Ex:
+	[
+	    {
+	        "id": "3631c027fb1b",
+	        "filter_name": "mycontainer",
+	        "adapter": "syslog",
+	        "address": "192.168.1.111:514"
+	    }
+	]
+
 
 ## Modules
 
