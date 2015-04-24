@@ -190,9 +190,15 @@ func (rm *RouteManager) Setup() error {
 		}
 	}
 
+	preCacheRoutes := getopt("PRECACHE_ROUTES", "")
+
 	persistPath := getopt("ROUTESPATH", "/mnt/routes")
 	if _, err := os.Stat(persistPath); err == nil {
-		return rm.Load(RouteFileStore(persistPath))
+		persistor := RouteFileStore(persistPath)
+		if preCacheRoutes != "" {
+			persistor.PreCacheRoutes(preCacheRoutes)
+		}
+		return rm.Load(persistor)
 	}
 	return nil
 }
