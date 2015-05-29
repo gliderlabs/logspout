@@ -117,10 +117,14 @@ func websocketStreamer(w http.ResponseWriter, req *http.Request, logstream chan 
 func httpStreamer(w http.ResponseWriter, req *http.Request, logstream chan *router.Message, multi bool) {
 	var colors Colorizer
 	var usecolor, usejson bool
+	var backgroundcolor string
 	nameWidth := 16
 	if req.URL.Query().Get("colors") != "off" {
 		colors = make(Colorizer)
 		usecolor = true
+	}
+	if req.URL.Query().Get("background") == "black" {
+		backgroundcolor = "\x1b[40m"
 	}
 	if req.Header.Get("Accept") == "application/json" {
 		w.Header().Add("Content-Type", "application/json")
@@ -142,8 +146,8 @@ func httpStreamer(w http.ResponseWriter, req *http.Request, logstream chan *rout
 				}
 				if usecolor {
 					w.Write([]byte(fmt.Sprintf(
-						"%s%"+strconv.Itoa(nameWidth)+"s|%s\x1b[0m\n",
-						colors.Get(name), name, logline.Data,
+						"%s%s%"+strconv.Itoa(nameWidth)+"s|%s\x1b[0m\n",
+						backgroundcolor, colors.Get(name), name, logline.Data,
 					)))
 				} else {
 					w.Write([]byte(fmt.Sprintf(
