@@ -58,6 +58,18 @@ func (fs RouteFileStore) Remove(id string) bool {
 	return false
 }
 
+func (fs RouteFileStore) PreCacheRoutes(preCacheRoutes string) error {
+	routes := &[]Route{}
+	b := []byte(preCacheRoutes)
+	if err := json.Unmarshal(b, &routes); err != nil {
+		return err
+	}
+	for _, route := range *routes {
+		fs.Add(&route)
+	}
+	return nil
+}
+
 func marshal(obj interface{}) []byte {
 	bytes, err := json.MarshalIndent(obj, "", "  ")
 	if err != nil {
