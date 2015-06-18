@@ -61,7 +61,7 @@ func ignoreContainer(container *docker.Container) bool {
 		}
 	}
 
-	if value, ok := container.Config.Labels["com.gliderlabs.logspout.ignore"]; ok {
+	if value, ok := container.Config.Labels["logspout.ignore"]; ok {
 		if strings.ToLower(value) == "true" {
 			return true
 		}

@@ -39,9 +39,9 @@ You can tell logspout to ignore specific containers by setting an environment va
 
         $ docker run -d -e 'LOGSPOUT=ignore' image
 
-Alternatively, can use the Docker label 'com.gliderlabs.logspout.ignore=true' to ignore containers.
+Alternatively, can use the Docker label 'logspout.ignore=true' to ignore containers.
 
-        $ docker run -d -l 'com.gliderlabs.logspout.ignore=true' image
+        $ docker run -d -l 'logspout.ignore=true' image
 
 #### Inspect log streams using curl
 
