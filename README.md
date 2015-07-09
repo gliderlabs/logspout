@@ -89,6 +89,7 @@ The standard distribution of logspout comes with all modules defined in this rep
  * logspout-kafka...
  * logspout-redis...
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
+ * [logspout-gelf](https://github.com/micahhausler/logspout-gelf) for Graylog
 
 ## Contributing
 
