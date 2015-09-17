@@ -1,11 +1,20 @@
 #!/bin/sh
 set -e
 apk add --update go git mercurial
+
+mkdir -p /go/src
+
+export GOPATH=/go
+cd /go/src && wget http://www.golangtc.com/static/download/packages/code.google.com.p.go.net.tar.gz
+cd /go/src && tar zxvf code.google.com.p.go.net.tar.gz && rm code.google.com.p.go.net.tar.gz && go install code.google.com/p/go.net/websocket
+
 mkdir -p /go/src/github.com/gliderlabs
 cp -r /src /go/src/github.com/gliderlabs/logspout
 cd /go/src/github.com/gliderlabs/logspout
-export GOPATH=/go
-go get
+#go get
+go get github.com/fsouza/go-dockerclient
+go get github.com/gorilla/mux
+go get github.com/joeshaw/iso8601
 go build -ldflags "-X main.Version $1" -o /bin/logspout
 apk del go git mercurial
 rm -rf /go

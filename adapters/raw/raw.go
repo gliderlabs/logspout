@@ -10,7 +10,11 @@ import (
 	"text/template"
 
 	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/utils"
+	_ "github.com/joeshaw/iso8601"
 	"time"
+	_ "encoding/json"
+	"strings"
 )
 
 func init() {
@@ -53,7 +57,7 @@ type RawAdapter struct {
 }
 
 func (a *RawAdapter) Stream(logstream chan *router.Message) {
-	go connPing(a)
+	go connPing()
 	for message := range logstream {
 		buf := new(bytes.Buffer)
 		err := a.tmpl.Execute(buf, message)
@@ -64,7 +68,10 @@ func (a *RawAdapter) Stream(logstream chan *router.Message) {
 		//log.Println("debug:", buf.String())
 
 		if cn := utils.M1[message.Container.Name]; cn != "" {
-			logmsg := time.Now().Format("2006-01-02T01:47:28.936Z") + " " + utils.UUID + " " + cn + " " + buf.String()
+			//timestr, _ := json.Marshal(iso8601.Time(time.Now()))
+			t := time.Unix(time.Now().Unix(), 0)
+			timestr := t.Format("2006-01-02T15:04:05")
+			logmsg := strings.Replace(string(timestr), "\"", "", -1) + " " + utils.UUID + " " + cn + " " + buf.String()
 			_, err = connection.Write([]byte(logmsg))
 			if err != nil {
                         	//log.Println("raw:", err, reflect.TypeOf(a.conn).String())
@@ -82,12 +89,11 @@ func connPing() {
         for {
                 select {
                 case <-timer.C:
-			_, err := connection.Write([]byte("ping"))
+			_, err := connection.Write([]byte(""))
 			if err != nil {
 				raddr, err := net.ResolveTCPAddr("tcp", address)
         			if err == nil {
         				conn, err := net.DialTCP("tcp", nil, raddr)
-					log.Println("++++", address, err)
         				if err == nil {
 						connection = conn
         				}
