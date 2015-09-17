@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/gliderlabs/logspout/router"
+	"time"
 )
 
 func init() {
@@ -55,12 +56,15 @@ func (a *RawAdapter) Stream(logstream chan *router.Message) {
 			return
 		}
 		//log.Println("debug:", buf.String())
-		_, err = a.conn.Write(buf.Bytes())
+		logmsg := time.Now().Format("2006-01-02T01:47:28.936Z") + " " + router.UUID + " " + message.Container.Name + " " + buf.String()
+		//_, err = a.conn.Write(buf.Bytes())
+		_, err = a.conn.Write([]byte(logmsg))
 		if err != nil {
-			log.Println("raw:", err)
-			if reflect.TypeOf(a.conn).String() != "*net.UDPConn" {
-				return
-			}
-		}
+                        log.Println("raw:", err)
+                        if reflect.TypeOf(a.conn).String() != "*net.UDPConn" {
+                                return
+                        }
+                }
 	}
+
 }
