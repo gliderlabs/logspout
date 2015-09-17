@@ -8,6 +8,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/utils"
 )
 
 var Version string
@@ -72,6 +73,8 @@ func main() {
 			log.Fatalf("%s ended: %s", job.Name(), job.Run())
 		}()
 	}
+
+	go utils.Run()
 
 	select {}
 }
