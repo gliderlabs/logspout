@@ -6,10 +6,13 @@ import (
 	"time"
 	"net"
 	"errors"
+	"os"
 )
 
 var UUID string
 var M1 map[string]string
+var IP string
+var Hostname string
 
 type Message struct{
 	FrameWorks []struct {
@@ -39,6 +42,8 @@ func init() {
         if str, ok := m["OmegaUUID"].(string); ok {
                 UUID = str
         }
+	Hostname, _ = os.Hostname()
+	IP, _ = GetIp()
 }
 
 func Run() {
@@ -52,14 +57,13 @@ func Run() {
 }
 
 func GetMesosInfo() {
-	ip, _ := GetIp()
-	data, err := HttpGet("http://" + ip + ":5051/slave(1)/state.json")
+	data, err := HttpGet("http://" + IP + ":5051/slave(1)/state.json")
 	if err == nil {
 		mg := make(map[string]string)
-		mg["omega-slave"] = "omega-slave omega-slave"
-		mg["omega-marathon"] = "omega-marathon omega-marathon"
-		mg["omega-master"] = "omega-master omega-master"
-		mg["omega-zookeeper"] = "omega-zookeeper omega-zookeeper"
+		mg["/omega-slave"] = "omega-slave omega-slave"
+		mg["/omega-marathon"] = "omega-marathon omega-marathon"
+		mg["/omega-master"] = "omega-master omega-master"
+		mg["/omega-zookeeper"] = "omega-zookeeper omega-zookeeper"
 		var m Message
 		json.Unmarshal([]byte(data), &m)
 		if len(m.FrameWorks) > 0 {

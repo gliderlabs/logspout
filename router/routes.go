@@ -180,7 +180,13 @@ func (rm *RouteManager) Setup() error {
 	}
 	if len(os.Args) > 1 {
 		uris = os.Args[1]
+		fmt.Println("2-----------------", uris)
 	}
+	if os.Getenv("hurl") != "" {
+		uris = os.Getenv("hurl")
+		fmt.Println("1-----------------", os.Getenv("hurl"), uris)
+	}
+	fmt.Println("3-----------------", uris)
 	if uris != "" {
 		for _, uri := range strings.Split(uris, ",") {
 			err := rm.AddFromUri(uri)

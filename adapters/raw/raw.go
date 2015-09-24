@@ -65,13 +65,11 @@ func (a *RawAdapter) Stream(logstream chan *router.Message) {
 			log.Println("raw:", err)
 			return
 		}
-		//log.Println("debug:", buf.String())
 
 		if cn := utils.M1[message.Container.Name]; cn != "" {
-			//timestr, _ := json.Marshal(iso8601.Time(time.Now()))
 			t := time.Unix(time.Now().Unix(), 0)
 			timestr := t.Format("2006-01-02T15:04:05")
-			logmsg := strings.Replace(string(timestr), "\"", "", -1) + " " + utils.UUID + " " + cn + " " + buf.String()
+			logmsg := strings.Replace(string(timestr), "\"", "", -1) + " " + utils.UUID + " " + utils.IP + " " + utils.Hostname + " " + cn + " " + buf.String()
 			_, err = connection.Write([]byte(logmsg))
 			if err != nil {
                         	//log.Println("raw:", err, reflect.TypeOf(a.conn).String())
@@ -94,6 +92,7 @@ func connPing() {
 				raddr, err := net.ResolveTCPAddr("tcp", address)
         			if err == nil {
         				conn, err := net.DialTCP("tcp", nil, raddr)
+					log.Println("can connection ", err)
         				if err == nil {
 						connection = conn
         				}
