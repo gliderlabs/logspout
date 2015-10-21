@@ -9,12 +9,12 @@ import (
 	"reflect"
 	"text/template"
 
+	_ "encoding/json"
 	"github.com/gliderlabs/logspout/router"
 	"github.com/gliderlabs/logspout/utils"
 	_ "github.com/joeshaw/iso8601"
-	"time"
-	_ "encoding/json"
 	"strings"
+	"time"
 )
 
 func init() {
@@ -23,6 +23,7 @@ func init() {
 
 var address string
 var connection net.Conn
+var netType string
 
 func NewRawAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
@@ -30,6 +31,7 @@ func NewRawAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, errors.New("bad transport: " + route.Adapter)
 	}
 	address = route.Address
+	netType = strings.Replace(route.Adapter, "raw+", "", -1)
 	conn, err := transport.Dial(route.Address, route.Options)
 	connection = conn
 	if err != nil {
@@ -69,14 +71,22 @@ func (a *RawAdapter) Stream(logstream chan *router.Message) {
 		if cn := utils.M1[message.Container.Name]; cn != "" {
 			t := time.Unix(time.Now().Unix(), 0)
 			timestr := t.Format("2006-01-02T15:04:05")
-			logmsg := strings.Replace(string(timestr), "\"", "", -1) + " " + utils.UUID + " " + utils.IP + " " + utils.Hostname + " " + cn + " " + buf.String()
+			//logmsg := strings.Replace(string(timestr), "\"", "", -1) + " " + utils.UUID + " " + utils.IP + " " + utils.Hostname + " " + cn + " " + buf.String()
+			logmsg := strings.Replace(string(timestr), "\"", "", -1) + " " +
+				utils.UserId + " " +
+				utils.ClusterId + " " +
+				utils.UUID + " " +
+				utils.IP + " " +
+				utils.Hostname + " " +
+				cn + " " +
+				buf.String()
 			_, err = connection.Write([]byte(logmsg))
 			if err != nil {
-                        	//log.Println("raw:", err, reflect.TypeOf(a.conn).String())
-                        	if reflect.TypeOf(a.conn).String() != "*net.TCPConn" {
-                                	return
-                        	}
-                	}
+				log.Println("raw:", err, reflect.TypeOf(a.conn).String())
+				/*if reflect.TypeOf(a.conn).String() != "*net.TCPConn"{
+					return
+				}*/
+			}
 		}
 	}
 
@@ -84,20 +94,25 @@ func (a *RawAdapter) Stream(logstream chan *router.Message) {
 
 func connPing() {
 	timer := time.NewTicker(2 * time.Second)
-        for {
-                select {
-                case <-timer.C:
+	for {
+		select {
+		case <-timer.C:
 			_, err := connection.Write([]byte(""))
 			if err != nil {
-				raddr, err := net.ResolveTCPAddr("tcp", address)
-        			if err == nil {
-        				conn, err := net.DialTCP("tcp", nil, raddr)
-					log.Println("can connection ", err)
-        				if err == nil {
+				if netType == "tcp" {
+					conn, err := utils.ConnTCP(address)
+					log.Println("can connection tcp ", err)
+					if err == nil {
 						connection = conn
-        				}
+					}
+				} else if netType == "tls" {
+					conn, err := utils.ConnTLS(address)
+					log.Println("can connection tls ", err)
+					if err == nil {
+						connection = conn
+					}
 				}
 			}
-                }
-        }
+		}
+	}
 }
