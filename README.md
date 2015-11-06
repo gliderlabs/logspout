@@ -49,7 +49,7 @@ Using the [httpstream module](http://github.com/gliderlabs/logspout/blob/master/
 
 	$ docker run -d --name="logspout" \
 		--volume=/var/run/docker.sock:/tmp/docker.sock \
-		--publish=127.0.0.1:8000:80 \
+		--publish=127.0.0.1:8000:8000 \
 		gliderlabs/logspout
 	$ curl http://127.0.0.1:8000/logs
 
