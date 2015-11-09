@@ -181,6 +181,10 @@ func (rm *RouteManager) Setup() error {
 	if len(os.Args) > 1 {
 		uris = os.Args[1]
 	}
+	if os.Getenv("HURL") != "" {
+		//uris = os.Getenv("HURL")
+		uris = getopt("HURL", uris)
+	}
 	if uris != "" {
 		for _, uri := range strings.Split(uris, ",") {
 			err := rm.AddFromUri(uri)

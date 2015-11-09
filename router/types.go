@@ -11,6 +11,17 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
+type Body struct {
+        UUID          string     `json:"uuid"`
+        ContainerName string     `json:"containername"`
+        Message       LogMessage `json:"message"`
+}
+
+type LogMessage struct {
+        Log  string `json:"log"`
+        Time time.Time `json:"time"`
+}
+
 // Extension type for adding HTTP endpoints
 type HttpHandler func() http.Handler
 

@@ -1,0 +1,11 @@
+FROM gliderlabs/alpine:3.1
+#ENTRYPOINT ["/bin/logspout", "tcp://10.3.11.18:5858"]
+CMD /usr/local/share/apache-flume-1.6.0-bin/bin/flume-ng agent -f /usr/local/share/apache-flume-1.6.0-bin/conf/fluentd.conf -n a1 && /bin/logspout tcp://10.3.11.18:5858
+VOLUME /mnt/routes
+EXPOSE 8000
+
+COPY . /src
+RUN cd /src && ./build.sh "$(cat VERSION)"
+
+ONBUILD COPY ./modules.go /src/modules.go
+ONBUILD RUN cd /src && ./build.sh "$(cat VERSION)-custom"

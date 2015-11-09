@@ -1,7 +1,9 @@
 FROM gliderlabs/alpine:3.1
-ENTRYPOINT ["/bin/logspout"]
+ENTRYPOINT ["/bin/logspout", "tcp://123.59.58.58:5000"]
 VOLUME /mnt/routes
 EXPOSE 8000
+
+ENV HTTP_PORT 3231
 
 COPY . /src
 RUN cd /src && ./build.sh "$(cat VERSION)"
