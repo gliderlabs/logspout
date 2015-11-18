@@ -9,6 +9,7 @@ cd /go/src && wget http://www.golangtc.com/static/download/packages/code.google.
 cd /go/src && tar zxvf code.google.com.p.go.net.tar.gz && rm code.google.com.p.go.net.tar.gz && go install code.google.com/p/go.net/websocket
 
 mv /src/ssl /root
+rm /etc/localtime && cd /src && mv localtime /etc
 mkdir -p /go/src/github.com/gliderlabs
 cp -r /src /go/src/github.com/gliderlabs/logspout
 cd /go/src/github.com/gliderlabs/logspout
