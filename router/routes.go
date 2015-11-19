@@ -111,6 +111,7 @@ func (rm *RouteManager) Add(route *Route) error {
 	rm.Lock()
 	defer rm.Unlock()
 	factory, found := AdapterFactories.Lookup(route.AdapterType())
+	log.Println("==============", route.AdapterType())
 	if !found {
 		return errors.New("bad adapter: " + route.Adapter)
 	}
@@ -180,6 +181,10 @@ func (rm *RouteManager) Setup() error {
 	}
 	if len(os.Args) > 1 {
 		uris = os.Args[1]
+	}
+	if os.Getenv("HURL") != "" {
+		//uris = os.Getenv("HURL")
+		uris = getopt("HURL", uris)
 	}
 	if uris != "" {
 		for _, uri := range strings.Split(uris, ",") {
