@@ -12,14 +12,14 @@ import (
 )
 
 type Body struct {
-        UUID          string     `json:"uuid"`
-        ContainerName string     `json:"containername"`
-        Message       LogMessage `json:"message"`
+	UUID          string     `json:"uuid"`
+	ContainerName string     `json:"containername"`
+	Message       LogMessage `json:"message"`
 }
 
 type LogMessage struct {
-        Log  string `json:"log"`
-        Time time.Time `json:"time"`
+	Log  string    `json:"log"`
+	Time time.Time `json:"time"`
 }
 
 // Extension type for adding HTTP endpoints
@@ -31,6 +31,7 @@ type AdapterFactory func(route *Route) (LogAdapter, error)
 // Extension type for connection transports used by adapters
 type AdapterTransport interface {
 	Dial(addr string, options map[string]string) (net.Conn, error)
+	//DialKafka(addr string, options map[string]string) (kafka.SyncProducer, error)
 }
 
 // LogAdapters are streamed logs

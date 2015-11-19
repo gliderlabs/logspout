@@ -9,10 +9,8 @@ import (
 	"reflect"
 	"text/template"
 
-	_ "encoding/json"
 	"github.com/gliderlabs/logspout/router"
 	"github.com/gliderlabs/logspout/utils"
-	_ "github.com/joeshaw/iso8601"
 	"strings"
 	"time"
 )

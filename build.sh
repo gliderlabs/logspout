@@ -15,9 +15,9 @@ cp -r /src /go/src/github.com/gliderlabs/logspout
 cd /go/src/github.com/gliderlabs/logspout
 #go get
 #go get github.com/Dataman-cloud/logspout/utils
+go get github.com/Shopify/sarama
 go get github.com/fsouza/go-dockerclient
 go get github.com/gorilla/mux
-go get github.com/joeshaw/iso8601
 go build -ldflags "-X main.Version $1" -o /bin/logspout
 apk del go git mercurial
 rm -rf /go
