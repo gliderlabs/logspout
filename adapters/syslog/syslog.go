@@ -51,10 +51,16 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 	data := getopt("SYSLOG_DATA", "{{.Data}}")
 
+	if structuredData == "" {
+		structuredData = "-"
+	} else {
+		structuredData = fmt.Sprintf("[%s]", structuredData)
+	}
+
 	var tmplStr string
 	switch format {
 	case "rfc5424":
-		tmplStr = fmt.Sprintf("<%s>1 {{.Timestamp}} %s %s %s - [%s] %s\n",
+		tmplStr = fmt.Sprintf("<%s>1 {{.Timestamp}} %s %s %s - %s %s\n",
 			priority, hostname, tag, pid, structuredData, data)
 	case "rfc3164":
 		tmplStr = fmt.Sprintf("<%s>{{.Timestamp}} %s %s[%s]: %s\n",
