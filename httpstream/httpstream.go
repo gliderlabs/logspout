@@ -8,8 +8,8 @@ import (
 	"os"
 	"strconv"
 
-	"code.google.com/p/go.net/websocket"
 	"github.com/gorilla/mux"
+	"golang.org/x/net/websocket"
 
 	"github.com/gliderlabs/logspout/router"
 )
