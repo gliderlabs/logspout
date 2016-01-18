@@ -26,6 +26,7 @@ type RouteManager struct {
 	persistor RouteStore
 	routes    map[string]*Route
 	routing   bool
+	wg        sync.WaitGroup
 }
 
 func (rm *RouteManager) Load(persistor RouteStore) error {
@@ -162,11 +163,16 @@ func (rm *RouteManager) RoutingFrom(containerID string) bool {
 func (rm *RouteManager) Run() error {
 	rm.Lock()
 	for _, route := range rm.routes {
-		go rm.route(route)
+		rm.wg.Add(1)
+		go func(route *Route) {
+			rm.route(route)
+			rm.wg.Done()
+		}(route)
 	}
 	rm.routing = true
 	rm.Unlock()
-	select {}
+	rm.wg.Wait()
+	return nil
 }
 
 func (rm *RouteManager) Name() string {
