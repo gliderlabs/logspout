@@ -3,15 +3,13 @@ package httpstream
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gliderlabs/logspout/router"
+	"github.com/gorilla/mux"
+	"golang.org/x/net/websocket"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
-
-	"code.google.com/p/go.net/websocket"
-	"github.com/gorilla/mux"
-
-	"github.com/gliderlabs/logspout/router"
 )
 
 func init() {
