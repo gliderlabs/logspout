@@ -9,6 +9,8 @@ import (
 	"net"
 	"os"
 	"reflect"
+	"sync"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -74,15 +76,37 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 	return &SyslogAdapter{
 		route: route,
+		trnsp: transport,
 		conn:  conn,
 		tmpl:  tmpl,
 	}, nil
 }
 
 type SyslogAdapter struct {
+	mu    sync.Mutex
 	conn  net.Conn
+	trnsp router.AdapterTransport
 	route *router.Route
 	tmpl  *template.Template
+}
+
+func (a *SyslogAdapter) maybeReconnect(writeErr error) bool {
+	nErr, ok := writeErr.(*net.OpError)
+	if !ok || (!nErr.Temporary() && nErr.Err != syscall.EPIPE) {
+		return false
+	}
+	time.Sleep(500 * time.Millisecond)
+	conn, err := a.trnsp.Dial(a.route.Address, a.route.Options)
+	if err != nil {
+		log.Println("syslog:", err)
+		return false
+	}
+
+	a.mu.Lock()
+	a.conn.Close()
+	a.conn = conn
+	a.mu.Unlock()
+	return true
 }
 
 func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
@@ -97,7 +121,9 @@ func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 		if err != nil {
 			log.Println("syslog:", err)
 			if reflect.TypeOf(a.conn).String() != "*net.UDPConn" {
-				return
+				if ok := a.maybeReconnect(err); !ok {
+					return
+				}
 			}
 		}
 	}
