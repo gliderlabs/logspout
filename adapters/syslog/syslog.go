@@ -8,7 +8,6 @@ import (
 	"log/syslog"
 	"net"
 	"os"
-	"reflect"
 	"text/template"
 	"time"
 
@@ -73,16 +72,18 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 	return &SyslogAdapter{
-		route: route,
-		conn:  conn,
-		tmpl:  tmpl,
+		route:     route,
+		conn:      conn,
+		tmpl:      tmpl,
+		transport: transport,
 	}, nil
 }
 
 type SyslogAdapter struct {
-	conn  net.Conn
-	route *router.Route
-	tmpl  *template.Template
+	conn      net.Conn
+	route     *router.Route
+	tmpl      *template.Template
+	transport router.AdapterTransport
 }
 
 func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
@@ -96,10 +97,87 @@ func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 		_, err = a.conn.Write(buf)
 		if err != nil {
 			log.Println("syslog:", err)
-			if reflect.TypeOf(a.conn).String() != "*net.UDPConn" {
-				return
+			switch a.conn.(type) {
+			case *net.UDPConn:
+				continue
+			default:
+				err = a.retry(buf, err)
+				if err != nil {
+					log.Println("syslog:", err)
+					return
+				}
 			}
 		}
+	}
+}
+
+func (a *SyslogAdapter) retry(buf []byte, err error) error {
+	if opError, ok := err.(*net.OpError); ok {
+		if opError.Temporary() || opError.Timeout() {
+			retryErr := a.retryTemporary(buf)
+			if retryErr == nil {
+				return nil
+			}
+		}
+	}
+
+	return a.reconnect()
+}
+
+func (a *SyslogAdapter) retryTemporary(buf []byte) error {
+	log.Println("syslog: retrying tcp up to 11 times")
+	err := retryExp(func() error {
+		_, err := a.conn.Write(buf)
+		if err == nil {
+			log.Println("syslog: retry successful")
+			return nil
+		}
+
+		return err
+	}, 11)
+
+	if err != nil {
+		log.Println("syslog: retry failed")
+		return err
+	}
+
+	return nil
+}
+
+func (a *SyslogAdapter) reconnect() error {
+	log.Println("syslog: reconnecting up to 11 times")
+	err := retryExp(func() error {
+		conn, err := a.transport.Dial(a.route.Address, a.route.Options)
+		if err != nil {
+			return err
+		}
+
+		a.conn = conn
+		return nil
+	}, 11)
+
+	if err != nil {
+		log.Println("syslog: reconnect failed")
+		return err
+	}
+
+	return nil
+}
+
+func retryExp(fun func() error, tries uint) error {
+	try := uint(0)
+	for {
+		err := fun()
+		if err == nil {
+			return nil
+		}
+
+		try++
+		if try > tries {
+			return err
+		}
+
+		time.Sleep((1 << try) * 10 * time.Millisecond)
 	}
 }
 
