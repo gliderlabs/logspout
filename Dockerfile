@@ -1,7 +1,7 @@
 FROM gliderlabs/alpine:3.1
 ENTRYPOINT ["/bin/logspout"]
 VOLUME /mnt/routes
-EXPOSE 8000
+EXPOSE 80
 
 COPY . /src
 RUN cd /src && ./build.sh "$(cat VERSION)"
