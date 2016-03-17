@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+echo http://dl-4.alpinelinux.org/alpine/edge/community >> /etc/apk/repositories
 apk add --update go git mercurial
 mkdir -p /go/src/github.com/gliderlabs
 cp -r /src /go/src/github.com/gliderlabs/logspout
