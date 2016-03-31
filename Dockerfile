@@ -6,5 +6,5 @@ EXPOSE 80
 COPY . /src
 RUN cd /src && ./build.sh "$(cat VERSION)"
 
-ONBUILD COPY ./modules.go /src/modules.go
+ONBUILD COPY . /src/
 ONBUILD RUN cd /src && ./build.sh "$(cat VERSION)-custom"
