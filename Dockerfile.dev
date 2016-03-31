@@ -1,4 +1,4 @@
-FROM gliderlabs/alpine:3.1
+FROM gliderlabs/alpine:3.3
 VOLUME /mnt/routes
 EXPOSE 80
 

@@ -14,7 +14,7 @@ For now it only captures stdout and stderr, but a module to collect container sy
 
 ## Getting logspout
 
-Logspout is a very small Docker container (14MB virtual, based on [Alpine](https://github.com/gliderlabs/docker-alpine)). Pull the latest release from the index:
+Logspout is a very small Docker container (15.2MB virtual, based on [Alpine](https://github.com/gliderlabs/docker-alpine)). Pull the latest release from the index:
 
 	$ docker pull gliderlabs/logspout:latest
 
