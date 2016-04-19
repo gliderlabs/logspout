@@ -89,6 +89,15 @@ func (p *LogsPump) Setup() error {
 	return nil
 }
 
+func (p *LogsPump) rename(event *docker.APIEvents) {
+    p.mu.Lock()
+    defer p.mu.Unlock()
+    container, err := p.client.InspectContainer(event.ID)
+    assert(err, "pump")
+    pump, _ := p.pumps[normalID(event.ID)]
+    pump.container.Name = container.Name
+}
+
 func (p *LogsPump) Run() error {
 	containers, err := p.client.ListContainers(docker.ListContainersOptions{})
 	if err != nil {
@@ -110,6 +119,8 @@ func (p *LogsPump) Run() error {
 		switch event.Status {
 		case "start", "restart":
 			go p.pumpLogs(event, true)
+		case "rename":
+			go p.rename(event)
 		case "die":
 			go p.update(event)
 		}
