@@ -92,10 +92,9 @@ func (p *LogsPump) Setup() error {
 func (p *LogsPump) rename(event *docker.APIEvents) {
     p.mu.Lock()
     defer p.mu.Unlock()
-    debug("pump.rename() event.Actor.ID:", event.Actor.ID)
-    container, err := p.client.InspectContainer(event.Actor.ID)
+    container, err := p.client.InspectContainer(event.ID)
     assert(err, "pump")
-    pump, _ := p.pumps[normalID(event.Actor.ID)]
+    pump, _ := p.pumps[normalID(event.ID)]
     pump.container.Name = container.Name
 }
 
@@ -116,7 +115,7 @@ func (p *LogsPump) Run() error {
 		return err
 	}
 	for event := range events {
-		debug("pump.Run() event:", normalID(event.Actor.ID), event.Status)
+		debug("pump.Run() event:", normalID(event.ID), event.Status)
 		switch event.Status {
 		case "start", "restart":
 			go p.pumpLogs(event, true)
@@ -130,8 +129,6 @@ func (p *LogsPump) Run() error {
 }
 
 func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
-	debug("pump.pumpLogs() event.ID:", event.ID)
-	debug("pump.pumpLogs() event.Actor.ID:", event.Actor.ID)
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
 	assert(err, "pump")
@@ -180,8 +177,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
 func (p *LogsPump) update(event *docker.APIEvents) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	debug("pump.update() event.Actor.ID:", event.Actor.ID)
-	pump, pumping := p.pumps[normalID(event.Actor.ID)]
+	pump, pumping := p.pumps[normalID(event.ID)]
 	if pumping {
 		for r, _ := range p.routes {
 			select {
@@ -233,8 +229,7 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 					defer event.pump.remove(logstream)
 				}
 			case "die":
-				debug("pump.Route() event.Actor.ID:", event.Actor.ID)
-				if strings.HasPrefix(route.FilterID, event.Actor.ID) {
+				if strings.HasPrefix(route.FilterID, event.ID) {
 					// If the route is just about a single container,
 					// we can stop routing when it dies.
 					return
