@@ -30,4 +30,10 @@ ifneq ($(CIRCLE_BRANCH), release)
 	echo build-$$CIRCLE_BUILD_NUM > VERSION
 endif
 
-.PHONY: release
+clean:
+	rm -rf build/
+	docker rm $(shell docker ps -aq) || true
+	docker rmi $(NAME):dev $(NAME):$(VERSION) || true
+	docker rmi $(shell docker images -f 'dangling=true' -q) || true
+
+.PHONY: release clean
