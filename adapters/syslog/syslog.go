@@ -8,6 +8,7 @@ import (
 	"log/syslog"
 	"net"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -27,6 +28,15 @@ func getopt(name, dfault string) string {
 		value = dfault
 	}
 	return value
+}
+
+func tplGetEnvVar(env []string, key string) string {
+        for _, value := range env {
+                if strings.HasPrefix(value, fmt.Sprintf("%s%s", key, "="))  {
+                        return strings.Split(value, "=")[1]
+                }
+        }
+        return ""
 }
 
 func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
@@ -67,7 +77,10 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	default:
 		return nil, errors.New("unsupported syslog format: " + format)
 	}
-	tmpl, err := template.New("syslog").Parse(tmplStr)
+
+	funcMap := template.FuncMap{
+		"getEnvVar":   tplGetEnvVar}
+	tmpl, err := template.New("syslog").Funcs(funcMap).Parse(tmplStr)
 	if err != nil {
 		return nil, err
 	}
