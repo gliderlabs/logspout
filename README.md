@@ -91,6 +91,17 @@ The standard distribution of logspout comes with all modules defined in this rep
  * logspout-redis...
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
 
+### Loggly support
+
+Use logspout to stream your docker logs to Loggly via the [Loggly syslog endpoint](https://www.loggly.com/docs/streaming-syslog-without-using-files/).  
+```
+$ docker run --name logspout -d --volume=/var/run/docker.sock:/var/run/docker.sock \
+    -e SYSLOG_STRUCTURED_DATA="<Loggly API Key>@41058 tag=\"some tag name\"" \
+    gliderlabs/logspout \
+    syslog+tcp://logs-01.loggly.com:514
+```
+
+
 ## Contributing
 
 As usual, pull requests are welcome. You can also propose releases by opening a PR against the `release` branch from `master`. Please be sure to bump the version and update `CHANGELOG.md` and include your changelog text in the PR body.
