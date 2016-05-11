@@ -176,7 +176,7 @@ func (rm *RouteManager) Run() error {
 }
 
 func (rm *RouteManager) Name() string {
-	return ""
+	return "routes"
 }
 
 func (rm *RouteManager) Setup() error {
