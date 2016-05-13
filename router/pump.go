@@ -80,22 +80,18 @@ func (p *LogsPump) Name() string {
 }
 
 func (p *LogsPump) Setup() error {
-	client, err := docker.NewClient(
-		getopt("DOCKER_HOST", "unix:///var/run/docker.sock"))
-	if err != nil {
-		return err
-	}
-	p.client = client
-	return nil
+	var err error
+	p.client, err = docker.NewClientFromEnv()
+	return err
 }
 
 func (p *LogsPump) rename(event *docker.APIEvents) {
-    p.mu.Lock()
-    defer p.mu.Unlock()
-    container, err := p.client.InspectContainer(event.ID)
-    assert(err, "pump")
-    pump, _ := p.pumps[normalID(event.ID)]
-    pump.container.Name = container.Name
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	container, err := p.client.InspectContainer(event.ID)
+	assert(err, "pump")
+	pump, _ := p.pumps[normalID(event.ID)]
+	pump.container.Name = container.Name
 }
 
 func (p *LogsPump) Run() error {
@@ -179,7 +175,7 @@ func (p *LogsPump) update(event *docker.APIEvents) {
 	defer p.mu.Unlock()
 	pump, pumping := p.pumps[normalID(event.ID)]
 	if pumping {
-		for r, _ := range p.routes {
+		for r := range p.routes {
 			select {
 			case r <- &update{event, pump}:
 			case <-time.After(time.Second * 1):
