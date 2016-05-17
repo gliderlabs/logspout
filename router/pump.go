@@ -90,7 +90,11 @@ func (p *LogsPump) rename(event *docker.APIEvents) {
 	defer p.mu.Unlock()
 	container, err := p.client.InspectContainer(event.ID)
 	assert(err, "pump")
-	pump, _ := p.pumps[normalID(event.ID)]
+	pump, ok := p.pumps[normalID(event.ID)]
+	if !ok {
+		debug("pump.rename(): ignore: pump not found, state:", container.State.StateString())
+		return
+	}
 	pump.container.Name = container.Name
 }
 
