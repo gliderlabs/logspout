@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-## [3.1] - 2015-05-23
+## [v3.1] - 2016-05-23
 ### Fixed
 - Panic when renaming stopped container #183
 - won't start without route configuration #185
