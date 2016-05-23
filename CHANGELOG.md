@@ -3,6 +3,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased][unreleased]
 ### Fixed
+
+### Added
+
+### Removed
+
+### Changed
+
+## [3.1] - 2015-05-23
+### Fixed
 - Panic when renaming stopped container #183
 - won't start without route configuration #185
 - RouteManager.Name() didn't return name
@@ -84,6 +93,7 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.1...HEAD
+[v3.1]: https://github.com/gliderlabs/logspout/compare/v3...v3.1
 [v3]: https://github.com/gliderlabs/logspout/compare/v2...v3
 [v2]: https://github.com/gliderlabs/logspout/compare/v1...v2
