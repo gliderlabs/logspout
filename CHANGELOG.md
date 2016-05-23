@@ -10,6 +10,19 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.1] - 2016-05-23
+### Fixed
+- Panic when renaming stopped container #183
+- won't start without route configuration #185
+- RouteManager.Name() didn't return name
+### Added
+- update container name if we get a rename event. closes #144 (#180)
+
+### Removed
+
+### Changed
+- Now using Alpine Linux 3.3 and GO 1.5.3, removed the "edge" package repo for building the official Docker image (#174)
+- Fix exposed ports in Dockerfile and readme. Remove references to /tmp/docker.sock from readme
 
 ## [v3] - 2016-03-03
 ### Fixed
@@ -80,6 +93,7 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.1...HEAD
+[v3.1]: https://github.com/gliderlabs/logspout/compare/v3...v3.1
 [v3]: https://github.com/gliderlabs/logspout/compare/v2...v3
 [v2]: https://github.com/gliderlabs/logspout/compare/v1...v2
