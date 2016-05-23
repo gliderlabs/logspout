@@ -3,13 +3,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased][unreleased]
 ### Fixed
-
+- Panic when renaming stopped container #183
+- won't start without route configuration #185
+- RouteManager.Name() didn't return name
 ### Added
+- update container name if we get a rename event. closes #144 (#180)
 
 ### Removed
 
 ### Changed
-
+- Now using Alpine Linux 3.3 and GO 1.5.3, removed the "edge" package repo for building the official Docker image (#174)
+- Fix exposed ports in Dockerfile and readme. Remove references to /tmp/docker.sock from readme
 
 ## [v3] - 2016-03-03
 ### Fixed
