@@ -162,7 +162,6 @@ func (rm *RouteManager) RoutingFrom(containerID string) bool {
 
 func (rm *RouteManager) Run() error {
 	rm.Lock()
-	defer rm.Unlock()
 	for _, route := range rm.routes {
 		rm.wg.Add(1)
 		go func(route *Route) {
@@ -171,6 +170,7 @@ func (rm *RouteManager) Run() error {
 		}(route)
 	}
 	rm.routing = true
+	rm.Unlock()
 	rm.wg.Wait()
 	// Temp fix to allow logspout to run without routes defined.
 	if len(rm.routes) == 0 {
