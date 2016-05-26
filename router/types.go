@@ -73,6 +73,12 @@ func (r *Route) AdapterType() string {
 	return strings.Split(r.Adapter, "+")[0]
 }
 
+// AdapterTransport will return dfault unless Adapter specifys transport.
+//
+// 	func ExampleTransport_output() {
+// 		r.Adapter = "syslog+tcp"
+// 		r.AdapterTransport("udp") // Output: "tcp"
+// 	}
 func (r *Route) AdapterTransport(dfault string) string {
 	parts := strings.Split(r.Adapter, "+")
 	if len(parts) > 1 {

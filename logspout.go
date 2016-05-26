@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"text/tabwriter"
+
+	"github.com/mattaitchison/log"
 
 	"github.com/gliderlabs/logspout/router"
 )
@@ -38,8 +39,7 @@ func main() {
 	for _, job := range router.Jobs.All() {
 		err := job.Setup()
 		if err != nil {
-			fmt.Println("!!", err)
-			os.Exit(1)
+			log.Fatalln("setup:", err)
 		}
 		if job.Name() != "" {
 			jobs = append(jobs, job.Name())

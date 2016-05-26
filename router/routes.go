@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/mattaitchison/log"
 )
 
 var Routes *RouteManager
@@ -35,7 +36,10 @@ func (rm *RouteManager) Load(persistor RouteStore) error {
 		return err
 	}
 	for _, route := range routes {
-		rm.Add(route)
+		err := rm.Add(route)
+		if err != nil {
+			return err
+		}
 	}
 	rm.persistor = persistor
 	return nil
@@ -129,7 +133,7 @@ func (rm *RouteManager) Add(route *Route) error {
 	rm.routes[route.ID] = route
 	if rm.persistor != nil {
 		if err := rm.persistor.Add(route); err != nil {
-			log.Println("persistor:", err)
+			log.Debugf("persistor:", err)
 		}
 	}
 	if rm.routing {
@@ -171,6 +175,7 @@ func (rm *RouteManager) Run() error {
 		}(route)
 	}
 	rm.routing = true
+
 	rm.wg.Wait()
 	// Temp fix to allow logspout to run without routes defined.
 	if len(rm.routes) == 0 {
