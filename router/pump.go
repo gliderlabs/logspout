@@ -63,6 +63,10 @@ func ignoreContainer(container *docker.Container) bool {
 	return false
 }
 
+func hasJsonFile(container *docker.Container) bool {
+	return container.HostConfig.LogConfig.Type == "json-file"
+}
+
 type update struct {
 	*docker.APIEvents
 	pump *containerPump
@@ -154,15 +158,31 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
 	p.update(event)
 	debug("pump.pumpLogs():", id, "started")
 	go func() {
-		err := p.client.Logs(docker.LogsOptions{
-			Container:    id,
-			OutputStream: outwr,
-			ErrorStream:  errwr,
-			Stdout:       true,
-			Stderr:       true,
-			Follow:       true,
-			Tail:         tail,
-		})
+		var err error
+		// Log drivers other than 'json-file' will not support the /logs API
+		if hasJsonFile(container) {
+			debug("pump:", id, "using /logs")
+			err = p.client.Logs(docker.LogsOptions{
+				Container:    id,
+				OutputStream: outwr,
+				ErrorStream:  errwr,
+				Stdout:       true,
+				Stderr:       true,
+				Follow:       true,
+				Tail:         tail,
+			})
+		} else {
+			debug("pump:", id, "using /attach")
+			err = p.client.AttachToContainer(docker.AttachToContainerOptions{
+				Container:    id,
+				OutputStream: outwr,
+				ErrorStream:  errwr,
+				Stdout:       true,
+				Stderr:       true,
+				Logs:         false,
+				Stream:       true,
+			})
+		}
 		if err != nil {
 			debug("pump.pumpLogs():", id, "stopped:", err)
 		}
