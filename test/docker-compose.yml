@@ -9,13 +9,16 @@ services:
       - 514:514
       - 514:514/udp
   logspout:
-    image: gliderlabs/logspout:master
+    image: logspout:v3.2-dev
     command: 
       - syslog://syslog:514
+    environment:
+      - DEBUG=true
+      - LOGSPOUT=ignore
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - 80:80
+      - 8000:80
     depends_on:
       - crasher
   crasher:

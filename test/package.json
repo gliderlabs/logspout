@@ -1,5 +1,5 @@
 {
-  "name": "docker-syslog-testing",
+  "name": "187-repro-case",
   "version": "1.0.0",
   "description": "",
   "main": "crash.js",
