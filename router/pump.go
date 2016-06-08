@@ -147,9 +147,15 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
 	} else {
 		sinceTime = time.Now()
 	}
+
+	p.mu.Lock()
+	if _, exists := p.pumps[id]; exists {
+		p.mu.Unlock()
+		debug("pump.pumpLogs():", id, "pump exists")
+		return
+	}
 	outrd, outwr := io.Pipe()
 	errrd, errwr := io.Pipe()
-	p.mu.Lock()
 	p.pumps[id] = newContainerPump(container, outrd, errrd)
 	p.mu.Unlock()
 	p.update(event)
