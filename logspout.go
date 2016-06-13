@@ -32,6 +32,9 @@ func main() {
 	if getopt("DEBUG", "") != "" {
 		fmt.Printf("debug:%s ", getopt("DEBUG", ""))
 	}
+	if getopt("BACKLOG", "") != "" {
+		fmt.Printf("backlog:%s ", getopt("BACKLOG", ""))
+	}
 	fmt.Printf("persist:%s\n", getopt("ROUTESPATH", "/mnt/routes"))
 
 	var jobs []string
