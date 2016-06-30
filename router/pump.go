@@ -62,7 +62,7 @@ func ignoreContainer(container *docker.Container) bool {
 	}
 	excludeLabel := getopt("EXCLUDE_LABEL", "")
 	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		return strings.ToLower(value) == "true"
+		return len(excludeLabel) > 0 && strings.ToLower(value) == "true"
 	}
 	return false
 }
