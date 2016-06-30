@@ -43,6 +43,10 @@ You can tell logspout to ignore specific containers by setting an environment va
 
         $ docker run -d -e 'LOGSPOUT=ignore' image
 
+Or, by adding a label:
+
+        $ docker run -d --label logspout.exclude= image
+
 #### Inspect log streams using curl
 
 Using the [httpstream module](http://github.com/gliderlabs/logspout/blob/master/httpstream), you can connect with curl to see your local aggregated logs in realtime. You can do this without setting up a route URI.
