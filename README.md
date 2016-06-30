@@ -41,7 +41,15 @@ To see what data is used for syslog messages, see the [syslog adapter](http://gi
 
 You can tell logspout to ignore specific containers by setting an environment variable when starting your container, like so:-
 
-        $ docker run -d -e 'LOGSPOUT=ignore' image
+    $ docker run -d -e 'LOGSPOUT=ignore' image
+
+Or, by adding a label which you define by setting an environment variable when running logspout:
+
+    $ docker run --name="logspout" \
+        -e EXCLUDE_LABEL=logspout.exclude \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        gliderlabs/logspout
+    $ docker run -d --label logspout.exclude=true image
 
 #### Inspect log streams using curl
 
