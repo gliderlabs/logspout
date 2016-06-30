@@ -48,7 +48,7 @@ Or, by adding a label which you define by setting an environment variable when r
     $ docker run --name="logspout" \
         -e EXCLUDE_LABEL=logspout.exclude \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
-        gliderlabs/logspout \gliderlabs/logspout
+        gliderlabs/logspout
     $ docker run -d --label logspout.exclude=true image
 
 #### Inspect log streams using curl
