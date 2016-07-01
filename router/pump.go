@@ -76,6 +76,12 @@ func ignoreContainer(container *docker.Container) bool {
 	return false
 }
 
+func getInactivityTimeoutFromEnv() time.Duration {
+	inactivityTimeout, err := time.ParseDuration(getopt("INACTIVITY_TIMEOUT", "0"))
+        assert(err, "Couldn't parse env var INACTIVITY_TIMEOUT. See https://golang.org/pkg/time/#ParseDuration for valid format.")
+	return inactivityTimeout
+}
+
 type update struct {
 	*docker.APIEvents
 	pump *containerPump
@@ -112,6 +118,9 @@ func (p *LogsPump) rename(event *docker.APIEvents) {
 }
 
 func (p *LogsPump) Run() error {
+	inactivityTimeout := getInactivityTimeoutFromEnv()
+	debug("pump.Run(): using inactivity timeout: ", inactivityTimeout)
+
 	containers, err := p.client.ListContainers(docker.ListContainersOptions{})
 	if err != nil {
 		return err
@@ -120,7 +129,7 @@ func (p *LogsPump) Run() error {
 		p.pumpLogs(&docker.APIEvents{
 			ID:     normalID(listing.ID),
 			Status: "start",
-		}, false)
+		}, false, inactivityTimeout)
 	}
 	events := make(chan *docker.APIEvents)
 	err = p.client.AddEventListener(events)
@@ -131,7 +140,7 @@ func (p *LogsPump) Run() error {
 		debug("pump.Run() event:", normalID(event.ID), event.Status)
 		switch event.Status {
 		case "start", "restart":
-			go p.pumpLogs(event, true)
+			go p.pumpLogs(event, true, inactivityTimeout)
 		case "rename":
 			go p.rename(event)
 		case "die":
@@ -141,7 +150,7 @@ func (p *LogsPump) Run() error {
 	return errors.New("docker event stream closed")
 }
 
-func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
+func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTimeout time.Duration) {
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
 	assert(err, "pump")
@@ -188,6 +197,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
 				Follow:       true,
 				Tail:         "all",
 				Since:        sinceTime.Unix(),
+				InactivityTimeout: inactivityTimeout,
 			})
 			if err != nil {
 				debug("pump.pumpLogs():", id, "stopped with error:", err)
@@ -196,6 +206,9 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
 			}
 
 			sinceTime = time.Now()
+			if err == docker.ErrInactivityTimeout {
+				sinceTime = sinceTime.Add(- inactivityTimeout)
+			}
 
 			container, err := p.client.InspectContainer(id)
 			if err != nil {
