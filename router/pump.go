@@ -53,6 +53,15 @@ func normalID(id string) string {
 	return id
 }
 
+func logDriverSupported(container *docker.Container) bool {
+	switch container.HostConfig.LogConfig.Type {
+	case "json-file", "journald":
+		return true
+	default:
+		return false
+	}
+}
+
 func ignoreContainer(container *docker.Container) bool {
 	for _, kv := range container.Config.Env {
 		kvp := strings.SplitN(kv, "=", 2)
@@ -142,6 +151,10 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
 	}
 	if ignoreContainer(container) {
 		debug("pump.pumpLogs():", id, "ignored: environ ignore")
+		return
+	}
+	if !logDriverSupported(container) {
+		debug("pump.pumpLogs():", id, "ignored: log driver not supported")
 		return
 	}
 
