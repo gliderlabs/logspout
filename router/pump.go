@@ -153,6 +153,10 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents) {
 		debug("pump.pumpLogs():", id, "ignored: environ ignore")
 		return
 	}
+	if !logDriverSupported(container) {
+		debug("pump.pumpLogs():", id, "ignored: log driver not supported")
+		return
+	}
 
 	outrd, outwr := io.Pipe()
 	errrd, errwr := io.Pipe()
