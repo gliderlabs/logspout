@@ -78,7 +78,7 @@ func ignoreContainer(container *docker.Container) bool {
 
 func getInactivityTimeoutFromEnv() time.Duration {
 	inactivityTimeout, err := time.ParseDuration(getopt("INACTIVITY_TIMEOUT", "0"))
-        assert(err, "Couldn't parse env var INACTIVITY_TIMEOUT. See https://golang.org/pkg/time/#ParseDuration for valid format.")
+	assert(err, "Couldn't parse env var INACTIVITY_TIMEOUT. See https://golang.org/pkg/time/#ParseDuration for valid format.")
 	return inactivityTimeout
 }
 
@@ -189,14 +189,14 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 		for {
 			debug("pump.pumpLogs():", id, "started")
 			err := p.client.Logs(docker.LogsOptions{
-				Container:    id,
-				OutputStream: outwr,
-				ErrorStream:  errwr,
-				Stdout:       true,
-				Stderr:       true,
-				Follow:       true,
-				Tail:         "all",
-				Since:        sinceTime.Unix(),
+				Container:         id,
+				OutputStream:      outwr,
+				ErrorStream:       errwr,
+				Stdout:            true,
+				Stderr:            true,
+				Follow:            true,
+				Tail:              "all",
+				Since:             sinceTime.Unix(),
 				InactivityTimeout: inactivityTimeout,
 			})
 			if err != nil {
@@ -207,7 +207,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 
 			sinceTime = time.Now()
 			if err == docker.ErrInactivityTimeout {
-				sinceTime = sinceTime.Add(- inactivityTimeout)
+				sinceTime = sinceTime.Add(-inactivityTimeout)
 			}
 
 			container, err := p.client.InspectContainer(id)
