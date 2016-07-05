@@ -1,19 +1,19 @@
 package tls
 
 import (
-	"os"
-	"net"
-	"strings"
-	"io/ioutil"
 	"crypto/tls"
 	"crypto/x509"
+	"io/ioutil"
+	"net"
+	"os"
+	"strings"
 
 	"github.com/gliderlabs/logspout/adapters/raw"
 	"github.com/gliderlabs/logspout/router"
 )
 
 const (
-	CA_PATH = "/mnt/ca/"
+	CA_PATH   = "/mnt/ca/"
 	CERT_PATH = "/mnt/cert/"
 )
 
@@ -59,7 +59,7 @@ func getCAs(path string) *x509.CertPool {
 	if empty {
 		capool = nil
 	}
-	
+
 	return capool
 }
 
@@ -76,19 +76,19 @@ func getCertificates(path string) []tls.Certificate {
 		if dotindex < 0 {
 			continue
 		}
-		fext = fname[dotindex+1:len(fname)]
+		fext = fname[dotindex+1 : len(fname)]
 		fname = fname[0:dotindex]
 
 		if fext != "crt" && fext != "cert" {
 			continue
 		}
-		
+
 		keyfile := path + fname + ".key"
 		if _, err := os.Stat(keyfile); err != nil {
 			continue
 		}
 
-		cert, err := tls.LoadX509KeyPair(path + fname + "." + fext, keyfile)
+		cert, err := tls.LoadX509KeyPair(path+fname+"."+fext, keyfile)
 		if err != nil {
 			return certs
 		}
@@ -112,7 +112,7 @@ func (t *tlsTransport) Dial(addr string, options map[string]string) (net.Conn, e
 
 	config := tls.Config{Certificates: certs, RootCAs: capool}
 
-	conn, err := tls.Dial("tcp",  addr, &config)
+	conn, err := tls.Dial("tcp", addr, &config)
 
 	if err != nil {
 		return nil, err
