@@ -9,9 +9,6 @@ dependencies:
     - docker run --rm -it -v $PWD:/go/src/github.com/gliderlabs/logspout -w /go/src/github.com/gliderlabs/logspout treeder/glide install
     - make circleci
   override:
-    - glide --version
-    - glide install:
-        pwd: $GO_PROJECT
     - make build
   post:
     - cp build/* $CIRCLE_ARTIFACTS
