@@ -1,8 +1,8 @@
 hash: 1b25e45c33a1a8a0afd97c2b43e30882e6fcd7f0eb82a136896a0fdbc30adf62
-updated: 2016-06-01T21:22:44.977697151-07:00
+updated: 2016-07-08T17:33:18.562222083-04:00
 imports:
 - name: github.com/docker/docker
-  version: 287b0a6348d8f768db6ff840feedcb32a4c2d448
+  version: ad969f1aa782478725a7f338cf963fa82f484609
   subpackages:
   - opts
   - pkg/archive
@@ -15,29 +15,34 @@ imports:
   - pkg/promise
   - pkg/system
   - pkg/longpath
+- name: github.com/docker/engine-api
+  version: 98348ad6f9c89bb10f31ac32cd1b12cbadd292b6
+  subpackages:
+  - types/filters
+  - types/versions
 - name: github.com/docker/go-units
-  version: 09dda9d4b0d748c57c14048906d3d094a58ec0c9
+  version: f2d77a61e3c169b43402a0a1e84f06daf29b8190
 - name: github.com/fsouza/go-dockerclient
-  version: 9df1f25d542e79d7909ef321b5c13c5d34ea7f1d
+  version: 1a3d0cfd7814bbfe44ada7617654948c99891749
 - name: github.com/gorilla/context
   version: aed02d124ae4a0e94fea4541c8effd05bf0c8296
 - name: github.com/gorilla/mux
-  version: bd09be08ed4377796d312df0a45314e11b8f5dc1
+  version: 9fa818a44c2bf1396a17f9d5a3c0f6dd39d2ff8e
 - name: github.com/hashicorp/go-cleanhttp
   version: ad28ea4487f05916463e2423a55166280e8254b5
 - name: github.com/opencontainers/runc
-  version: 6c485e6902bb9dd77b8234042b8f00e20ef87a18
+  version: 9d7831e41d3ef428b67685eeb27f2b4a22a92391
   subpackages:
   - libcontainer/user
 - name: github.com/Sirupsen/logrus
   version: f3cfb454f4c209e6668c95216c4744b8fddb2356
 - name: golang.org/x/net
-  version: c4c3ea71919de159c9e246d7be66deb7f0a39a58
+  version: f841c39de738b1d0df95b5a7187744f0e03d8112
   subpackages:
   - websocket
   - context
 - name: golang.org/x/sys
-  version: 076b546753157f758b316e59bcb51e6807c04057
+  version: a408501be4d17ee978c04a618e7a1b22af058c0e
   subpackages:
   - unix
 devImports: []
