@@ -79,6 +79,10 @@ Routes are stored on disk, so by default routes are ephemeral. You can mount a v
 
 See [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesapi) for all options.
 
+#### Detecting timeouts in Docker log streams
+
+Logspout relies on the Docker API to retrieve container logs. A failure in the API may cause a log stream to hang. Logspout can detect and restart inactive Docker log streams. Use the environment variable `INACTIVITY_TIMEOUT` to enable this feature. E.g.: `INACTIVITY_TIMEOUT=1m` for a 1-minute threshold.
+
 ## Modules
 
 The standard distribution of logspout comes with all modules defined in this repository. You can remove or add new modules with custom builds of logspout. Just edit the `modules.go` file and do a `docker build`.
