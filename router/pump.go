@@ -329,7 +329,7 @@ func (cp *containerPump) send(msg *Message) {
 		select {
 		case logstream <- msg:
 		case <-time.After(time.Second * 1):
-			debug("pump.send(): send timeout, closing")
+			debug("pump.send(): send timeout, leaving open")
 			// normal call to remove() triggered by
 			// route.Closer() may not be able to grab
 			// lock under heavy load, so we delete here
