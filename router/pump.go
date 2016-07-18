@@ -333,7 +333,7 @@ func (cp *containerPump) send(msg *Message) {
 			// normal call to remove() triggered by
 			// route.Closer() may not be able to grab
 			// lock under heavy load, so we delete here
-			defer delete(cp.logstreams, logstream)
+			// defer delete(cp.logstreams, logstream)
 		}
 	}
 }
