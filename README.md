@@ -26,12 +26,12 @@ You can also download and load a specific version:
 
 #### Route all container output to remote syslog
 
-The simplest way to use logspout is to just take all logs and ship to a remote syslog. Just pass a syslog URI (or several comma separated URIs) as the command. Also, we always mount the Docker Unix socket with `-v` to `/var/run/docker.sock`:
+The simplest way to use logspout is to just take all logs and ship to a remote syslog. Just pass a syslog URI (or several comma separated URIs) as the command. Here we show use of the `tls` encrypted transport option in the URI. Also, we always mount the Docker Unix socket with `-v` to `/var/run/docker.sock`:
 
 	$ docker run --name="logspout" \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
-		syslog://logs.papertrailapp.com:55555
+		syslog+tls://logs.papertrailapp.com:55555
 
 logspout will gather logs from other containers that are started **without the `-t` option** and are configured with a logging driver that works with `docker logs` (`journald` and `json-file`).
 
