@@ -42,13 +42,13 @@ func TestLogsPumpName(t *testing.T) {
 
 func TestContainerRename(t *testing.T) {
 	jsonContainers := `{
-             "Id": "8dfafdbc3a40",
-			 "Name":"bar",
-             "Image": "base:latest",
-             "Command": "echo 1",
-             "Ports":[{"PrivatePort": 2222, "PublicPort": 3333, "Type": "tcp"}],
-             "Status": "Exit 0"
-     }`
+		"Id": "8dfafdbc3a40",
+		"Name":"bar",
+		"Image": "base:latest",
+		"Command": "echo 1",
+		"Ports":[{"PrivatePort": 2222, "PublicPort": 3333, "Type": "tcp"}],
+		"Status": "Exit 0"
+    }`
 
 	client := newTestClient(&FakeRoundTripper{message: jsonContainers, status: http.StatusOK})
 	p := &LogsPump{
