@@ -51,6 +51,36 @@ Or, by adding a label which you define by setting an environment variable when r
         gliderlabs/logspout
     $ docker run -d --label logspout.exclude=true image
 
+#### Including specific containers
+
+You can tell logspout to only include certain containers by setting filter parameters on the URI:
+
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.name=*_db
+		
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.id=3b6ba57db54a
+		
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.sources=stdout%2Cstderr
+
+Note that you must URL-encode parameter values such as the comma in `filter.sources`.
+
+#### Multiple logging destinations
+
+You can route to multiple destinations by comma-separating the URIs:
+
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.name=*_db,syslog+tls://logs.papertrailapp.com:55555?filter.name=*_app
+
 #### Inspect log streams using curl
 
 Using the [httpstream module](http://github.com/gliderlabs/logspout/blob/master/httpstream), you can connect with curl to see your local aggregated logs in realtime. You can do this without setting up a route URI.
