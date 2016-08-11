@@ -51,9 +51,19 @@ Or, by adding a label which you define by setting an environment variable when r
         gliderlabs/logspout
     $ docker run -d --label logspout.exclude=true image
 
-#### Including specific containers
+#### Including explicit containers
 
-You can tell logspout to only include certain containers by setting filter parameters on the URI:
+You can tell logspout to include explicit containers by adding, for each container, a label which you define by setting an environment variable when running logspout:
+
+    $ docker run --name="logspout" \
+        -e INCLUDE_LABEL=logspout.include \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        gliderlabs/logspout
+    $ docker run -d --label logspout.include=true image
+
+#### Routing specific containers
+
+You can tell logspout to only route certain containers by setting filter parameters on the URI:
 
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
