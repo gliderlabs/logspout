@@ -140,7 +140,6 @@ $ docker run --name logspout -d --volume=/var/run/docker.sock:/var/run/docker.so
     syslog+tcp://logs-01.loggly.com:514
 ```
 
-
 ## Contributing
 
 As usual, pull requests are welcome. You can also propose releases by opening a PR against the `release` branch from `master`. Please be sure to bump the version and update `CHANGELOG.md` and include your changelog text in the PR body.
