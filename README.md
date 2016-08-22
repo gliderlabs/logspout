@@ -26,14 +26,14 @@ You can also download and load a specific version:
 
 #### Route all container output to remote syslog
 
-The simplest way to use logspout is to just take all logs and ship to a remote syslog. Just pass a syslog URI (or several comma separated URIs) as the command. Also, we always mount the Docker Unix socket with `-v` to `/var/run/docker.sock`:
+The simplest way to use logspout is to just take all logs and ship to a remote syslog. Just pass a syslog URI (or several comma separated URIs) as the command. Here we show use of the `tls` encrypted transport option in the URI. Also, we always mount the Docker Unix socket with `-v` to `/var/run/docker.sock`:
 
 	$ docker run --name="logspout" \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
-		syslog://logs.papertrailapp.com:55555
+		syslog+tls://logs.papertrailapp.com:55555
 
-logspout will gather logs from other containers that are started **without the `-t` option**.
+logspout will gather logs from other containers that are started **without the `-t` option** and are configured with a logging driver that works with `docker logs` (`journald` and `json-file`).
 
 To see what data is used for syslog messages, see the [syslog adapter](http://github.com/gliderlabs/logspout/blob/master/adapters) docs.
 
@@ -41,19 +41,45 @@ To see what data is used for syslog messages, see the [syslog adapter](http://gi
 
 You can tell logspout to ignore specific containers by setting an environment variable when starting your container, like so:-
 
-	$ docker run -d -e 'LOGSPOUT=ignore' image
-    
-#### Suppressing backlog tail
-You can tell logspout to only display log entries since container "start" or "restart" event by setting a `BACKLOG=false` environment variable (equivalent to `docker logs --tail=0`):
+    $ docker run -d -e 'LOGSPOUT=ignore' image
 
-	$ docker run -d --name="logspout" \
-		-e 'BACKLOG=false' \
+Or, by adding a label which you define by setting an environment variable when running logspout:
+
+    $ docker run --name="logspout" \
+        -e EXCLUDE_LABEL=logspout.exclude \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        gliderlabs/logspout
+    $ docker run -d --label logspout.exclude=true image
+
+#### Including specific containers
+
+You can tell logspout to only include certain containers by setting filter parameters on the URI:
+
+	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
-		gliderlabs/logspout
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.name=*_db
+		
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.id=3b6ba57db54a
+		
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.sources=stdout%2Cstderr
 
-The default behaviour is to output all logs since creation of the container (equivalent to `docker logs --tail=all` or simply `docker logs`).
+Note that you must URL-encode parameter values such as the comma in `filter.sources`.
 
-> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thorougly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
+#### Multiple logging destinations
+
+You can route to multiple destinations by comma-separating the URIs:
+
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.name=*_db,syslog+tls://logs.papertrailapp.com:55555?filter.name=*_app
 
 #### Inspect log streams using curl
 
@@ -82,6 +108,18 @@ That example creates a new syslog route to [Papertrail](https://papertrailapp.co
 Routes are stored on disk, so by default routes are ephemeral. You can mount a volume to `/mnt/routes` to persist them.
 
 See [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesapi) for all options.
+
+#### Suppressing backlog tail
+You can tell logspout to only display log entries since container "start" or "restart" event by setting a `BACKLOG=false` environment variable (equivalent to `docker logs --tail=0`):
+
+	$ docker run -d --name="logspout" \
+		-e 'BACKLOG=false' \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout
+
+The default behaviour is to output all logs since creation of the container (equivalent to `docker logs --tail=all` or simply `docker logs`).
+
+> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thorougly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
 
 ## Modules
 
@@ -113,7 +151,6 @@ $ docker run --name logspout -d --volume=/var/run/docker.sock:/var/run/docker.so
     gliderlabs/logspout \
     syslog+tcp://logs-01.loggly.com:514
 ```
-
 
 ## Contributing
 

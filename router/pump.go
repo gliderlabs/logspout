@@ -60,12 +60,25 @@ func normalID(id string) string {
 	return id
 }
 
+func logDriverSupported(container *docker.Container) bool {
+	switch container.HostConfig.LogConfig.Type {
+	case "json-file", "journald":
+		return true
+	default:
+		return false
+	}
+}
+
 func ignoreContainer(container *docker.Container) bool {
 	for _, kv := range container.Config.Env {
 		kvp := strings.SplitN(kv, "=", 2)
 		if len(kvp) == 2 && kvp[0] == "LOGSPOUT" && strings.ToLower(kvp[1]) == "ignore" {
 			return true
 		}
+	}
+	excludeLabel := getopt("EXCLUDE_LABEL", "")
+	if value, ok := container.Config.Labels[excludeLabel]; ok {
+		return len(excludeLabel) > 0 && strings.ToLower(value) == "true"
 	}
 	return false
 }
@@ -147,37 +160,68 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
 		debug("pump.pumpLogs():", id, "ignored: environ ignore")
 		return
 	}
-	var tail string
+	if !logDriverSupported(container) {
+		debug("pump.pumpLogs():", id, "ignored: log driver not supported")
+		return
+	}
+
+	var sinceTime time.Time
 	if backlog {
-		tail = "all"
+		sinceTime = time.Unix(0, 0)
 	} else {
-		tail = "0"
+		sinceTime = time.Now()
+	}
+
+	p.mu.Lock()
+	if _, exists := p.pumps[id]; exists {
+		p.mu.Unlock()
+		debug("pump.pumpLogs():", id, "pump exists")
+		return
 	}
 	outrd, outwr := io.Pipe()
 	errrd, errwr := io.Pipe()
-	p.mu.Lock()
 	p.pumps[id] = newContainerPump(container, outrd, errrd)
 	p.mu.Unlock()
 	p.update(event)
-	debug("pump.pumpLogs():", id, "started")
 	go func() {
-		err := p.client.Logs(docker.LogsOptions{
-			Container:    id,
-			OutputStream: outwr,
-			ErrorStream:  errwr,
-			Stdout:       true,
-			Stderr:       true,
-			Follow:       true,
-			Tail:         tail,
-		})
-		if err != nil {
-			debug("pump.pumpLogs():", id, "stopped:", err)
+		for {
+			debug("pump.pumpLogs():", id, "started")
+			err := p.client.Logs(docker.LogsOptions{
+				Container:    id,
+				OutputStream: outwr,
+				ErrorStream:  errwr,
+				Stdout:       true,
+				Stderr:       true,
+				Follow:       true,
+				Tail:         "all",
+				Since:        sinceTime.Unix(),
+			})
+			if err != nil {
+				debug("pump.pumpLogs():", id, "stopped with error:", err)
+			} else {
+				debug("pump.pumpLogs():", id, "stopped")
+			}
+
+			sinceTime = time.Now()
+
+			container, err := p.client.InspectContainer(id)
+			if err != nil {
+				_, four04 := err.(*docker.NoSuchContainer)
+				if !four04 {
+					assert(err, "pump")
+				}
+			} else if container.State.Running {
+				continue
+			}
+
+			debug("pump.pumpLogs():", id, "dead")
+			outwr.Close()
+			errwr.Close()
+			p.mu.Lock()
+			delete(p.pumps, id)
+			p.mu.Unlock()
+			return
 		}
-		outwr.Close()
-		errwr.Close()
-		p.mu.Lock()
-		delete(p.pumps, id)
-		p.mu.Unlock()
 	}()
 }
 
