@@ -1,9 +1,11 @@
 NAME=logspout
 VERSION=$(shell cat VERSION)
 
-dev:
+build-dev:
 	@docker history $(NAME):dev &> /dev/null \
 		|| docker build -f Dockerfile.dev -t $(NAME):dev .
+
+dev: build-dev
 	@docker run --rm \
 		-e DEBUG=true \
 		-v /var/run/docker.sock:/var/run/docker.sock \
@@ -16,6 +18,12 @@ build:
 	mkdir -p build
 	docker build -t $(NAME):$(VERSION) .
 	docker save $(NAME):$(VERSION) | gzip -9 > build/$(NAME)_$(VERSION).tgz
+
+test: build-dev
+	docker run \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
+		$(NAME):dev go test -v ./router/...
 
 release:
 	rm -rf release && mkdir release

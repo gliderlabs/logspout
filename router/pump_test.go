@@ -1,11 +1,13 @@
 package router
 
 import (
+	"bytes"
+	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"testing"
 
 	docker "github.com/fsouza/go-dockerclient"
@@ -41,22 +43,17 @@ func TestLogsPumpName(t *testing.T) {
 }
 
 func TestContainerRename(t *testing.T) {
-	jsonContainers := `{
-		"Id": "8dfafdbc3a40",
-		"Name":"bar",
-		"Image": "base:latest",
-		"Command": "echo 1",
-		"Ports":[{"PrivatePort": 2222, "PublicPort": 3333, "Type": "tcp"}],
-		"Status": "Exit 0"
-    }`
-
-	client := newTestClient(&FakeRoundTripper{message: jsonContainers, status: http.StatusOK})
+	container := &docker.Container{
+		ID:   "8dfafdbc3a40",
+		Name: "bar",
+	}
+	client := newTestClient(&FakeRoundTripper{message: container, status: http.StatusOK})
 	p := &LogsPump{
 		client: &client,
 		pumps:  make(map[string]*containerPump),
 		routes: make(map[chan *update]struct{}),
 	}
-	container := &docker.Container{
+	container = &docker.Container{
 		ID:   "8dfafdbc3a40",
 		Name: "foo",
 	}
@@ -69,7 +66,6 @@ func TestContainerRename(t *testing.T) {
 	if name := p.pumps["8dfafdbc3a40"].container.Name; name != "bar" {
 		t.Errorf("containerPump should have name: 'bar' got name: %s", name)
 	}
-
 }
 
 func TestNewContainerPump(t *testing.T) {
@@ -90,7 +86,7 @@ func TestContainerPump(t *testing.T) {
 	logstream, route := make(chan *Message), &Route{}
 	go func() {
 		for msg := range logstream {
-			t.Log("message:", msg)
+			t.Logf("message: %+v", msg)
 		}
 	}()
 	pump.add(logstream, route)
@@ -119,15 +115,45 @@ func TestPumpSendTimeout(t *testing.T) {
 
 }
 
+func TestRoutingFrom(t *testing.T) {
+	container := &docker.Container{
+		ID: "8dfafdbc3a40",
+	}
+	p := &LogsPump{
+		pumps:  make(map[string]*containerPump),
+		routes: make(map[chan *update]struct{}),
+	}
+
+	if p.RoutingFrom(container.ID) != false {
+		t.Errorf("expected RoutingFrom to return 'false'")
+	}
+
+	p.pumps[container.ID] = nil
+	if p.RoutingFrom(container.ID) != true {
+		t.Errorf("expected RoutingFrom to return 'true'")
+	}
+	if p.RoutingFrom("") != false {
+		t.Errorf("expected RoutingFrom to return 'false'")
+	}
+	if p.RoutingFrom("foo") != false {
+		t.Errorf("expected RoutingFrom to return 'false'")
+	}
+}
+
 type FakeRoundTripper struct {
-	message  string
+	message  interface{}
 	status   int
 	header   map[string]string
 	requests []*http.Request
 }
 
 func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	body := strings.NewReader(rt.message)
+	b, err := json.Marshal(rt.message)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	body := bytes.NewReader(b)
 	rt.requests = append(rt.requests, r)
 	res := &http.Response{
 		StatusCode: rt.status,
