@@ -120,7 +120,7 @@ func (p *LogsPump) Run() error {
 		p.pumpLogs(&docker.APIEvents{
 			ID:     normalID(listing.ID),
 			Status: "start",
-		}, false)
+		})
 	}
 	events := make(chan *docker.APIEvents)
 	err = p.client.AddEventListener(events)
@@ -131,7 +131,7 @@ func (p *LogsPump) Run() error {
 		debug("pump.Run() event:", normalID(event.ID), event.Status)
 		switch event.Status {
 		case "start", "restart":
-			go p.pumpLogs(event, true)
+			go p.pumpLogs(event)
 		case "rename":
 			go p.rename(event)
 		case "die":
@@ -141,7 +141,7 @@ func (p *LogsPump) Run() error {
 	return errors.New("docker event stream closed")
 }
 
-func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
+func (p *LogsPump) pumpLogs(event *docker.APIEvents) {
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
 	assert(err, "pump")
@@ -158,62 +158,24 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool) {
 		return
 	}
 
-	var sinceTime time.Time
-	if backlog {
-		sinceTime = time.Unix(0, 0)
-	} else {
-		sinceTime = time.Now()
-	}
-
-	p.mu.Lock()
-	if _, exists := p.pumps[id]; exists {
-		p.mu.Unlock()
-		debug("pump.pumpLogs():", id, "pump exists")
-		return
-	}
 	outrd, outwr := io.Pipe()
 	errrd, errwr := io.Pipe()
 	p.pumps[id] = newContainerPump(container, outrd, errrd)
 	p.mu.Unlock()
 	p.update(event)
 	go func() {
-		for {
-			debug("pump.pumpLogs():", id, "started")
-			err := p.client.Logs(docker.LogsOptions{
-				Container:    id,
-				OutputStream: outwr,
-				ErrorStream:  errwr,
-				Stdout:       true,
-				Stderr:       true,
-				Follow:       true,
-				Tail:         "all",
-				Since:        sinceTime.Unix(),
-			})
-			if err != nil {
-				debug("pump.pumpLogs():", id, "stopped with error:", err)
-			} else {
-				debug("pump.pumpLogs():", id, "stopped")
-			}
-
-			sinceTime = time.Now()
-
-			container, err := p.client.InspectContainer(id)
-			if err != nil {
-				_, four04 := err.(*docker.NoSuchContainer)
-				if !four04 {
-					assert(err, "pump")
-				}
-			} else if container.State.Running {
-				continue
-			}
-
-			debug("pump.pumpLogs():", id, "dead")
-			outwr.Close()
-			errwr.Close()
-			p.mu.Lock()
-			delete(p.pumps, id)
-			p.mu.Unlock()
-			return
+		err := p.client.Logs(docker.LogsOptions{
+			Container:    id,
+			OutputStream: outwr,
+			ErrorStream:  errwr,
+			Stdout:       true,
+			Stderr:       true,
+			Follow:       true,
+			Tail:         "all",
+			Since:        event.Time,
+		})
+		if err != nil {
+			debug("pump.pumpLogs():", id, "stopped:", err)
 		}
 	}()
 }
