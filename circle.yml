@@ -12,7 +12,7 @@ dependencies:
 
 test:
   override:
-    - make test
+    - make build-dev test
 
 deployment:
   release:
