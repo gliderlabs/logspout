@@ -7,6 +7,8 @@ Instructions on how to build/test your own modules.
 1. Copy something like [raw.go](https://github.com/gliderlabs/logspout/blob/master/adapters/raw/raw.go) to get started.
 1. Add your module to modules.go
 
+> You'll need to add the `build.sh` from this repository to the directory from which you run `docker build` or you will get errors
+
 Now build and run logspout with your adapter, replace SYSLOG with your own syslog url. 
 
 ```sh
