@@ -109,6 +109,18 @@ Routes are stored on disk, so by default routes are ephemeral. You can mount a v
 
 See [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesapi) for all options.
 
+#### Suppressing backlog tail
+You can tell logspout to only display log entries since container "start" or "restart" event by setting a `BACKLOG=false` environment variable (equivalent to `docker logs --tail=0`):
+
+	$ docker run -d --name="logspout" \
+		-e 'BACKLOG=false' \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout
+
+The default behaviour is to output all logs since creation of the container (equivalent to `docker logs --tail=all` or simply `docker logs`).
+
+> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thorougly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
+
 ## Modules
 
 The standard distribution of logspout comes with all modules defined in this repository. You can remove or add new modules with custom builds of logspout. Just edit the `modules.go` file and do a `docker build`.
