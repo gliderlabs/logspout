@@ -86,7 +86,6 @@ You can route to multiple destinations by comma-separating the URIs:
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.name=*_db,syslog+tls://logs.papertrailapp.com:55555?filter.name=*_app
-	$ docker run -d -e 'LOGSPOUT=ignore' image
 
 #### Suppressing backlog tail
 You can tell logspout to only display log entries since container "start" or "restart" event by setting a `BACKLOG=false` environment variable (equivalent to `docker logs --tail=0`):
@@ -135,6 +134,7 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 #### Environment variables
 
 * `ALLOW_TTY` - include logs from containers started with `-t` or `--tty` (i.e. `Allocate a pseudo-TTY`)
+* `BACKLOG` - suppress container tail backlog
 * `DEBUG` - emit debug logs
 * `EXCLUDE_LABEL` - exclude logs with a given label
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
