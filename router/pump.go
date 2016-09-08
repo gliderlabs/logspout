@@ -137,7 +137,7 @@ func (p *LogsPump) Run() error {
 	for event := range events {
 		debug("pump.Run() event:", normalID(event.ID), event.Status)
 		switch event.Status {
-		case "start":
+		case "start", "restart":
 			go p.pumpLogs(event, backlog())
 		case "rename":
 			go p.rename(event)
@@ -271,7 +271,7 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 		select {
 		case event := <-updates:
 			switch event.Status {
-			case "start":
+			case "start", "restart":
 				if route.MatchContainer(
 					normalID(event.pump.container.ID),
 					normalName(event.pump.container.Name)) {
