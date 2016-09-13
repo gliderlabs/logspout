@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"strings"
@@ -48,11 +49,14 @@ func getCAs(path string) *x509.CertPool {
 		if !f.IsDir() {
 			cacert, err := ioutil.ReadFile(path + f.Name())
 			if err != nil {
-				// TODO: need to log something somewhere
+				log.Printf("Can't read CA certificate %v: %v", path+f.Name(), err)
 				continue
 			}
-			empty = false
-			capool.AppendCertsFromPEM(cacert)
+			ok := capool.AppendCertsFromPEM(cacert)
+			if !ok {
+				log.Printf("Bad CA certificate %v", path+f.Name())
+			}
+			empty = !ok && empty
 		}
 	}
 
