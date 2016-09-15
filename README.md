@@ -26,12 +26,12 @@ You can also download and load a specific version:
 
 #### Route all container output to remote syslog
 
-The simplest way to use logspout is to just take all logs and ship to a remote syslog. Just pass a syslog URI (or several comma separated URIs) as the command. Also, we always mount the Docker Unix socket with `-v` to `/var/run/docker.sock`:
+The simplest way to use logspout is to just take all logs and ship to a remote syslog. Just pass a syslog URI (or several comma separated URIs) as the command. Here we show use of the `tls` encrypted transport option in the URI. Also, we always mount the Docker Unix socket with `-v` to `/var/run/docker.sock`:
 
 	$ docker run --name="logspout" \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
-		syslog://logs.papertrailapp.com:55555
+		syslog+tls://logs.papertrailapp.com:55555
 
 logspout will gather logs from other containers that are started **without the `-t` option** and are configured with a logging driver that works with `docker logs` (`journald` and `json-file`).
 
@@ -50,6 +50,36 @@ Or, by adding a label which you define by setting an environment variable when r
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         gliderlabs/logspout
     $ docker run -d --label logspout.exclude=true image
+
+#### Including specific containers
+
+You can tell logspout to only include certain containers by setting filter parameters on the URI:
+
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.name=*_db
+		
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.id=3b6ba57db54a
+		
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.sources=stdout%2Cstderr
+
+Note that you must URL-encode parameter values such as the comma in `filter.sources`.
+
+#### Multiple logging destinations
+
+You can route to multiple destinations by comma-separating the URIs:
+
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.name=*_db,syslog+tls://logs.papertrailapp.com:55555?filter.name=*_app
 
 #### Inspect log streams using curl
 
@@ -109,7 +139,6 @@ $ docker run --name logspout -d --volume=/var/run/docker.sock:/var/run/docker.so
     gliderlabs/logspout \
     syslog+tcp://logs-01.loggly.com:514
 ```
-
 
 ## Contributing
 
