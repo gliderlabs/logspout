@@ -31,10 +31,10 @@ func getopt(name, dfault string) string {
 }
 
 func tplGetEnvVar(env []string, key string) string {
-        key_equals := fmt.Sprintf("%s%s", key, "=")
+        key_equals := key + "="
         for _, value := range env {
                 if strings.HasPrefix(value, key_equals)  {
-                        return strings.Split(value, "=")[1]
+                        return value[strings.Index(value, "=")+1:]
                 }
         }
         return ""
