@@ -34,7 +34,7 @@ func tplGetEnvVar(env []string, key string) string {
         key_equals := key + "="
         for _, value := range env {
                 if strings.HasPrefix(value, key_equals)  {
-                        return value[strings.Index(value, "=")+1:]
+                        return value[length(key_equals)+1:]
                 }
         }
         return ""
