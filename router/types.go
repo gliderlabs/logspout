@@ -120,7 +120,7 @@ func (r *Route) MatchContainer(id, name string, labels map[string]string) bool {
 		return false
 	}
 	for _,label := range r.FilterLabels {
-		labelParts := strings.Split(label, ":")
+		labelParts := strings.SplitN(label, ":", 2)
 		labelKey := labelParts[0]
 		labelValue := labelParts[1]
 		labelMatch, labelErr := path.Match(labelValue, labels[labelKey])
