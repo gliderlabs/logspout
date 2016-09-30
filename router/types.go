@@ -125,7 +125,7 @@ func (r *Route) MatchContainer(id, name string, labels map[string]string) bool {
 		labelValue := labelParts[1]
 		labelMatch, labelErr := path.Match(labelValue, labels[labelKey])
 		if labelErr != nil || (labelValue != "" && !labelMatch) {
-			fmt.Println("does not match label")
+			return false
 		}
 	}
 
