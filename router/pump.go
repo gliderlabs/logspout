@@ -246,7 +246,8 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 	for _, pump := range p.pumps {
 		if route.MatchContainer(
 			normalID(pump.container.ID),
-			normalName(pump.container.Name)) {
+			normalName(pump.container.Name),
+			pump.container.Config.Labels) {
 
 			pump.add(logstream, route)
 			defer pump.remove(logstream)
@@ -267,7 +268,8 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 			case "start", "restart":
 				if route.MatchContainer(
 					normalID(event.pump.container.ID),
-					normalName(event.pump.container.Name)) {
+					normalName(event.pump.container.Name),
+					event.pump.container.Config.Labels) {
 
 					event.pump.add(logstream, route)
 					defer event.pump.remove(logstream)

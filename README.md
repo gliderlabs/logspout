@@ -69,8 +69,14 @@ You can tell logspout to only include certain containers by setting filter param
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.sources=stdout%2Cstderr
+	
+	# Forward logs from containers with both label 'a' starting with 'x', and label 'b' ending in 'y'.
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.labels=a:x*%2Cb:*y
 
-Note that you must URL-encode parameter values such as the comma in `filter.sources`.
+Note that you must URL-encode parameter values such as the comma in `filter.sources` and `filter.labels`.
 
 #### Multiple logging destinations
 
