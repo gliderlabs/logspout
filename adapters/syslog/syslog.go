@@ -8,17 +8,27 @@ import (
 	"log/syslog"
 	"net"
 	"os"
+	"strconv"
 	"text/template"
 	"time"
 
 	"github.com/gliderlabs/logspout/router"
 )
 
+const defaultRetryCount = 10
+
 var hostname string
+var retryCount uint
 
 func init() {
 	hostname, _ = os.Hostname()
 	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
+
+	if count, err := strconv.Atoi(getopt("RETRY_COUNT", strconv.Itoa(defaultRetryCount))); err != nil {
+		retryCount = defaultRetryCount
+	} else {
+		retryCount = uint(count)
+	}
 }
 
 func getopt(name, dfault string) string {
@@ -126,7 +136,7 @@ func (a *SyslogAdapter) retry(buf []byte, err error) error {
 }
 
 func (a *SyslogAdapter) retryTemporary(buf []byte) error {
-	log.Println("syslog: retrying tcp up to 11 times")
+	log.Printf("syslog: retrying tcp up to %v times\n", retryCount)
 	err := retryExp(func() error {
 		_, err := a.conn.Write(buf)
 		if err == nil {
@@ -135,7 +145,7 @@ func (a *SyslogAdapter) retryTemporary(buf []byte) error {
 		}
 
 		return err
-	}, 11)
+	}, retryCount)
 
 	if err != nil {
 		log.Println("syslog: retry failed")
@@ -146,7 +156,7 @@ func (a *SyslogAdapter) retryTemporary(buf []byte) error {
 }
 
 func (a *SyslogAdapter) reconnect() error {
-	log.Println("syslog: reconnecting up to 11 times")
+	log.Printf("syslog: reconnecting up to %v times\n", retryCount)
 	err := retryExp(func() error {
 		conn, err := a.transport.Dial(a.route.Address, a.route.Options)
 		if err != nil {
@@ -155,7 +165,7 @@ func (a *SyslogAdapter) reconnect() error {
 
 		a.conn = conn
 		return nil
-	}, 11)
+	}, retryCount)
 
 	if err != nil {
 		log.Println("syslog: reconnect failed")
