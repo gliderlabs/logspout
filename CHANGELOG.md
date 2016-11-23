@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.3] - 2016-08-18
+### Fixed
+- added apk build-base package in build.sh to fix missing gcc install
+
 ## [v3.1] - 2016-05-23
 ### Fixed
 - Panic when renaming stopped container #183
