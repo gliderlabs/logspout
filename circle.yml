@@ -12,7 +12,7 @@ dependencies:
 
 test:
   pre:
-    - make build-dev
+    - make -d build-dev
   override:
     - make test
 

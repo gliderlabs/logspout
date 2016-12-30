@@ -2,7 +2,7 @@ NAME=logspout
 VERSION=$(shell cat VERSION)
 
 build-dev:
-	@docker history $(NAME):dev &> /dev/null \
+	docker history $(NAME):dev &> /dev/null \
 		|| docker build -f Dockerfile.dev -t $(NAME):dev .
 
 dev: build-dev
