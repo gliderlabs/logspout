@@ -11,8 +11,10 @@ dependencies:
     - cp build/* $CIRCLE_ARTIFACTS
 
 test:
+  pre:
+    - make build-dev
   override:
-    - make build-dev test
+    - make test
 
 deployment:
   release:
