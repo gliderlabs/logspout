@@ -12,7 +12,7 @@ dependencies:
 
 test:
   override:
-    - /bin/true
+    - make test
 
 deployment:
   release:
