@@ -98,6 +98,8 @@ func (rm *RouteManager) AddFromUri(uri string) error {
 				r.FilterID = value
 			case "filter.name":
 				r.FilterName = value
+			case "filter.labels":
+				r.FilterLabels = strings.Split(value, ",")
 			case "filter.sources":
 				r.FilterSources = strings.Split(value, ",")
 			default:

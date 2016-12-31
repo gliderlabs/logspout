@@ -15,12 +15,13 @@ Takes a JSON object like this:
 		"address": "logaggregator.service.consul",
 		"filter_name": "*_db",
 		"filter_sources": ["stdout"],
+		"filter_labels": ["com.example.foo:bar*"],
 		"options": {
 			"append_tag": ".db"
 		}
 	}
 
-The main fields are `adapter` and `address`. The field `options` is passed to the adapter. There are three filter fields: `filter_name`, `filter_sources`, and `filter_id`. These let you limit which containers or types of logs to route. Use `filter_id` to limit to a particular container by ID. Use `filter_name` to match against container names. These can include wildcards. Use `filter_sources` to limit to `stdout` or `stderr`, or soon `syslog`.
+The main fields are `adapter` and `address`. The field `options` is passed to the adapter. There are four filter fields: `filter_name`, `filter_sources`, `filter_id`, and `filter_labels`. These let you limit which containers or types of logs to route. Use `filter_id` to limit to a particular container by ID. Use `filter_name` to match against container names. These can include wildcards. Use `filter_sources` to limit to `stdout` or `stderr`, or soon `syslog`. Use `filter_labels` to limit containers to require specific labels. These can include wildcards.
 
 To route all logs of all types on all containers, don't specify any filter values.
 

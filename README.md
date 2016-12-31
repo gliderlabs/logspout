@@ -1,7 +1,7 @@
 # logspout
 
 [![CircleCI](https://img.shields.io/circleci/project/gliderlabs/logspout/release.svg)](https://circleci.com/gh/gliderlabs/logspout)
-[![Docker Hub](https://img.shields.io/badge/docker-ready-blue.svg)](https://registry.hub.docker.com/u/gliderlabs/logspout/)
+[![Docker pulls](https://img.shields.io/docker/pulls/gliderlabs/logspout.svg)](https://hub.docker.com/r/gliderlabs/logspout/)
 [![IRC Channel](https://img.shields.io/badge/irc-%23gliderlabs-blue.svg)](https://kiwiirc.com/client/irc.freenode.net/#gliderlabs)
 
 > Docker Hub automated builds for `gliderlabs/logspout:latest` and `progrium/logspout:latest` are now pointing to the `release` branch. For `master`, use `gliderlabs/logspout:master`. Individual versions are also available as saved images in [releases](https://github.com/gliderlabs/logspout/releases).
@@ -69,8 +69,14 @@ You can tell logspout to only include certain containers by setting filter param
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.sources=stdout%2Cstderr
+	
+	# Forward logs from containers with both label 'a' starting with 'x', and label 'b' ending in 'y'.
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		raw://192.168.10.10:5000?filter.labels=a:x*%2Cb:*y
 
-Note that you must URL-encode parameter values such as the comma in `filter.sources`.
+Note that you must URL-encode parameter values such as the comma in `filter.sources` and `filter.labels`.
 
 #### Multiple logging destinations
 
@@ -108,6 +114,10 @@ That example creates a new syslog route to [Papertrail](https://papertrailapp.co
 Routes are stored on disk, so by default routes are ephemeral. You can mount a volume to `/mnt/routes` to persist them.
 
 See [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesapi) for all options.
+
+#### Detecting timeouts in Docker log streams
+
+Logspout relies on the Docker API to retrieve container logs. A failure in the API may cause a log stream to hang. Logspout can detect and restart inactive Docker log streams. Use the environment variable `INACTIVITY_TIMEOUT` to enable this feature. E.g.: `INACTIVITY_TIMEOUT=1m` for a 1-minute threshold.
 
 ## Modules
 
