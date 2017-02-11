@@ -65,15 +65,11 @@ func logDriverSupported(container *docker.Container) bool {
 func ignoreContainer(container *docker.Container) bool {
 	for _, kv := range container.Config.Env {
 		kvp := strings.SplitN(kv, "=", 2)
-		if len(kvp) == 2 && kvp[0] == "LOGSPOUT" && strings.ToLower(kvp[1]) == "ignore" {
-			return true
+		if len(kvp) == 2 && kvp[0] == "FORWARD_LOG" && strings.ToLower(kvp[1]) == "true" {
+			return false
 		}
 	}
-	excludeLabel := getopt("EXCLUDE_LABEL", "")
-	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		return len(excludeLabel) > 0 && strings.ToLower(value) == "true"
-	}
-	return false
+	return true
 }
 
 func getInactivityTimeoutFromEnv() time.Duration {
