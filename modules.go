@@ -1,12 +1,12 @@
 package main
 
 import (
-	_ "github.com/gliderlabs/logspout/adapters/raw"
-	_ "github.com/gliderlabs/logspout/adapters/syslog"
-	_ "github.com/gliderlabs/logspout/httpstream"
-	_ "github.com/gliderlabs/logspout/routesapi"
-	_ "github.com/gliderlabs/logspout/transports/tcp"
-	_ "github.com/gliderlabs/logspout/transports/udp"
-	_ "github.com/gliderlabs/logspout/transports/tls"
-	_ "github.com/micahhausler/logspout-gelf"
+	_ "github.com/ruguoapp/logspout/adapters/gelf"
+	_ "github.com/ruguoapp/logspout/adapters/raw"
+	_ "github.com/ruguoapp/logspout/adapters/syslog"
+	_ "github.com/ruguoapp/logspout/httpstream"
+	_ "github.com/ruguoapp/logspout/routesapi"
+	_ "github.com/ruguoapp/logspout/transports/tcp"
+	_ "github.com/ruguoapp/logspout/transports/tls"
+	_ "github.com/ruguoapp/logspout/transports/udp"
 )
