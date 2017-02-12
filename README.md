@@ -46,6 +46,8 @@ This version will ignore logs by default. To enable:-
         --volume=/var/run/docker.sock:/var/run/docker.sock \
         ruguoapp/logspout
 
+Also, you need to disable tty.
+
 #### Including specific containers
 
 You can tell logspout to only include certain containers by setting filter parameters on the URI:
