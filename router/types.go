@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+	"github.com/ruguoapp/go-dockerclient"
 )
 
 // Extension type for adding HTTP endpoints
@@ -119,7 +119,7 @@ func (r *Route) MatchContainer(id, name string, labels map[string]string) bool {
 	if err != nil || (r.FilterName != "" && !match) {
 		return false
 	}
-	for _,label := range r.FilterLabels {
+	for _, label := range r.FilterLabels {
 		labelParts := strings.SplitN(label, ":", 2)
 		if len(labelParts) > 1 {
 			labelKey := labelParts[0]
