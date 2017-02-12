@@ -18,15 +18,15 @@ func init() {
 	router.AdapterFactories.Register(NewGelfAdapter, "gelf")
 }
 
-// GelfAdapter is an adapter that streams TCP JSON to Graylog
+// GelfAdapter is an adapter that streams UDP JSON to Graylog
 type GelfAdapter struct {
 	writer *gelf.Writer
 	route  *router.Route
 }
 
-// NewGelfAdapter creates a GelfAdapter with TCP as the default transport.
+// NewGelfAdapter creates a GelfAdapter with UDP as the default transport.
 func NewGelfAdapter(route *router.Route) (router.LogAdapter, error) {
-	_, found := router.AdapterTransports.Lookup(route.AdapterTransport("tcp"))
+	_, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
 	if !found {
 		return nil, errors.New("unable to find adapter: " + route.Adapter)
 	}
