@@ -11,7 +11,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/ruguoapp/logspout/router"
 )
 
 var hostname string

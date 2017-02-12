@@ -3,8 +3,8 @@ package httpstream
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gliderlabs/logspout/router"
 	"github.com/gorilla/mux"
+	"github.com/ruguoapp/logspout/router"
 	"golang.org/x/net/websocket"
 	"log"
 	"net/http"

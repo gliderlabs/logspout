@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/Graylog2/go-gelf/gelf"
-	"github.com/gliderlabs/logspout/router"
+	"github.com/ruguoapp/logspout/router"
 	"log"
 	"os"
 	"strings"
