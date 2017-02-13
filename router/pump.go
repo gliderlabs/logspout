@@ -125,6 +125,7 @@ func (p *LogsPump) Run() error {
 		p.pumpLogs(&docker.APIEvents{
 			ID:     normalID(listing.ID),
 			Status: "start",
+			Time:   time.Now(),
 		}, false, inactivityTimeout)
 	}
 	events := make(chan *docker.APIEvents)
@@ -167,7 +168,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	if backlog {
 		sinceTime = time.Unix(0, 0)
 	} else {
-		sinceTime = time.Now()
+		sinceTime = event.Time
 	}
 
 	p.mu.Lock()
