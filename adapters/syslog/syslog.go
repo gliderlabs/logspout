@@ -2,7 +2,6 @@ package syslog
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
