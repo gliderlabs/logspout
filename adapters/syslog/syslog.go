@@ -51,11 +51,10 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	data := getopt("SYSLOG_DATA", "{{.Data}}")
 
 	if structuredData == "" {
-		structuredData = "-"
+		structuredData = "{{.StructuredData}}"
 	} else {
 		structuredData = fmt.Sprintf("[%s]", structuredData)
 	}
-	log.Println("structured data:", structuredData)
 
 	var tmplStr string
 	switch format {
@@ -216,4 +215,8 @@ func (m *SyslogMessage) Timestamp() string {
 
 func (m *SyslogMessage) ContainerName() string {
 	return m.Message.Container.Name[1:]
+}
+
+func (m *SyslogMessage) StructuredData() string {
+	return fmt.Sprintf("[%s@ruguoapp a=\"b\"]", "jike")
 }
