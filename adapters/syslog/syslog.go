@@ -50,10 +50,10 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	if route.Options["structured_data"] != "" {
 		structuredData = route.Options["structured_data"]
 	}
-	data := getopt("SYSLOG_DATA", "{{.JsonData}}")
+	data := getopt("SYSLOG_DATA", "{{.Data}}")
 
 	if structuredData == "" {
-		structuredData = "-"
+		structuredData = "[rancher {{.StructuredData}}]"
 	} else {
 		structuredData = fmt.Sprintf("[%s]", structuredData)
 	}
@@ -219,18 +219,15 @@ func (m *SyslogMessage) ContainerName() string {
 	return m.Message.Container.Name[1:]
 }
 
-func (m *SyslogMessage) JsonData() string {
-	jsonBytes, _ := json.Marshal(map[string]string{
-		"message":               m.Message.Data,
-		"container_id":          m.Container.ID,
-		"container_name":        m.Container.Name[1:],
-		"image_id":              m.Container.Image,
-		"image_name":            m.Container.Config.Image,
-		"command":               strings.Join(m.Container.Config.Cmd[:], " "),
-		"created":               m.Container.Created,
-		"rancher_stack":         m.Container.Config.Labels["io.rancher.stack.name"],
-		"rancher_stack_service": m.Container.Config.Labels["io.rancher.stack_service.name"],
-		"rancher_container_ip":  m.Container.Config.Labels["io.rancher.container.ip"],
-	})
-	return string(jsonBytes[:])
+func (m *SyslogMessage) StructuredData() string {
+	return fmt.Sprintf(
+		"container_id=\"%s\" container_name=\"%s\" image_name=\"%s\" command=\"%s\" created=\"%s\" stack=\"%s\" stack_service=\"%s\" container_ip=\"%s\"",
+		m.Container.ID,
+		m.Container.Name[1:],
+		m.Container.Config.Image,
+		strings.Join(m.Container.Config.Cmd[:], " "),
+		m.Container.Created.String(),
+		m.Container.Config.Labels["io.rancher.stack.name"],
+		m.Container.Config.Labels["io.rancher.stack_service.name"],
+		m.Container.Config.Labels["io.rancher.container.ip"])
 }
