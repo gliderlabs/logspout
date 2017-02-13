@@ -86,12 +86,15 @@ func (m GelfMessage) getExtraFields() (json.RawMessage, error) {
 	log.Println("Data:", m.Data)
 
 	extra := map[string]interface{}{
-		"_container_id":   m.Container.ID,
-		"_container_name": m.Container.Name[1:], // might be better to use strings.TrimLeft() to remove the first /
-		"_image_id":       m.Container.Image,
-		"_image_name":     m.Container.Config.Image,
-		"_command":        strings.Join(m.Container.Config.Cmd[:], " "),
-		"_created":        m.Container.Created,
+		"_container_id":          m.Container.ID,
+		"_container_name":        m.Container.Name[1:], // might be better to use strings.TrimLeft() to remove the first /
+		"_image_id":              m.Container.Image,
+		"_image_name":            m.Container.Config.Image,
+		"_command":               strings.Join(m.Container.Config.Cmd[:], " "),
+		"_created":               m.Container.Created,
+		"_rancher_stack":         m.Container.Config.Labels["io.rancher.stack.name"],
+		"_rancher_stack_service": m.Container.Config.Labels["io.rancher.stack_service.name"],
+		"_rancher_container_ip":  m.Container.Config.Labels["io.rancher.container.ip"],
 	}
 	for name, label := range m.Container.Config.Labels {
 		if strings.ToLower(name[0:5]) == "gelf_" {
