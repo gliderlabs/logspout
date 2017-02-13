@@ -9,6 +9,7 @@ import (
 	"log/syslog"
 	"net"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -219,5 +220,17 @@ func (m *SyslogMessage) ContainerName() string {
 }
 
 func (m *SyslogMessage) JsonData() string {
-	return string(json.Marshal(map[string]string{"message": m.Message.Data})[:])
+	jsonBytes, _ := json.Marshal(map[string]string{
+		"message":               m.Message.Data,
+		"container_id":          m.Container.ID,
+		"container_name":        m.Container.Name[1:],
+		"image_id":              m.Container.Image,
+		"image_name":            m.Container.Config.Image,
+		"command":               strings.Join(m.Container.Config.Cmd[:], " "),
+		"created":               m.Container.Created,
+		"rancher_stack":         m.Container.Config.Labels["io.rancher.stack.name"],
+		"rancher_stack_service": m.Container.Config.Labels["io.rancher.stack_service.name"],
+		"rancher_container_ip":  m.Container.Config.Labels["io.rancher.container.ip"],
+	})
+	return string(jsonBytes[:])
 }
