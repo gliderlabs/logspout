@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -48,10 +49,10 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	if route.Options["structured_data"] != "" {
 		structuredData = route.Options["structured_data"]
 	}
-	data := getopt("SYSLOG_DATA", "{{.Data}}")
+	data := getopt("SYSLOG_DATA", "{{.JsonData}}")
 
 	if structuredData == "" {
-		structuredData = "{{.StructuredData}}"
+		structuredData = "-"
 	} else {
 		structuredData = fmt.Sprintf("[%s]", structuredData)
 	}
@@ -217,6 +218,6 @@ func (m *SyslogMessage) ContainerName() string {
 	return m.Message.Container.Name[1:]
 }
 
-func (m *SyslogMessage) StructuredData() string {
-	return fmt.Sprintf("[%s@ruguoapp a=\"b\"]", "jike")
+func (m *SyslogMessage) JsonData() string {
+	return string(json.Marshal(map[string]string{"message": m.Message.Data})[:])
 }
