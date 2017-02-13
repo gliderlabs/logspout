@@ -8,10 +8,11 @@ import (
 	"log/syslog"
 	"net"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/ruguoapp/logspout/router"
 )
 
 var hostname string
@@ -52,7 +53,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	timestamp := getopt("SYSLOG_TIMESTAMP", "{{.Timestamp}}")
 
 	if structuredData == "" {
-		structuredData = "-"
+		structuredData = "[rancher {{.StructuredData}}]"
 	} else {
 		structuredData = fmt.Sprintf("[%s]", structuredData)
 	}
@@ -216,4 +217,17 @@ func (m *SyslogMessage) Timestamp() string {
 
 func (m *SyslogMessage) ContainerName() string {
 	return m.Message.Container.Name[1:]
+}
+
+func (m *SyslogMessage) StructuredData() string {
+	return fmt.Sprintf(
+		"container_id=\"%s\" container_name=\"%s\" image_name=\"%s\" command=\"%s\" created=\"%s\" stack=\"%s\" stack_service=\"%s\" container_ip=\"%s\"",
+		m.Container.ID,
+		m.Container.Name[1:],
+		m.Container.Config.Image,
+		strings.Join(m.Container.Config.Cmd[:], " "),
+		m.Container.Created.String(),
+		m.Container.Config.Labels["io.rancher.stack.name"],
+		m.Container.Config.Labels["io.rancher.stack_service.name"],
+		m.Container.Config.Labels["io.rancher.container.ip"])
 }

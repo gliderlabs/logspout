@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 apk add --update go git mercurial build-base ca-certificates
-mkdir -p /go/src/github.com/gliderlabs
-cp -r /src /go/src/github.com/gliderlabs/logspout
-cd /go/src/github.com/gliderlabs/logspout
+mkdir -p /go/src/github.com/ruguoapp
+cp -r /src /go/src/github.com/ruguoapp/logspout
+cd /go/src/github.com/ruguoapp/logspout
 export GOPATH=/go
 go get
 go build -ldflags "-X main.Version=$1" -o /bin/logspout

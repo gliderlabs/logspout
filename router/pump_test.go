@@ -10,7 +10,7 @@ import (
 	"os"
 	"testing"
 
-	docker "github.com/fsouza/go-dockerclient"
+	docker "github.com/ruguoapp/go-dockerclient"
 )
 
 func TestIgnoreContainer(t *testing.T) {

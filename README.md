@@ -35,21 +35,18 @@ The simplest way to use logspout is to just take all logs and ship to a remote s
 
 logspout will gather logs from other containers that are started **without the `-t` option** and are configured with a logging driver that works with `docker logs` (`journald` and `json-file`).
 
-To see what data is used for syslog messages, see the [syslog adapter](http://github.com/gliderlabs/logspout/blob/master/adapters) docs.
+To see what data is used for syslog messages, see the [syslog adapter](http://github.com/ruguoapp/logspout/blob/master/adapters) docs.
 
-#### Ignoring specific containers
+#### Including containers by ENV
 
-You can tell logspout to ignore specific containers by setting an environment variable when starting your container, like so:-
-
-    $ docker run -d -e 'LOGSPOUT=ignore' image
-
-Or, by adding a label which you define by setting an environment variable when running logspout:
+This version will ignore logs by default. To enable:-
 
     $ docker run --name="logspout" \
-        -e EXCLUDE_LABEL=logspout.exclude \
+        -e FORWARD_LOG=true \
         --volume=/var/run/docker.sock:/var/run/docker.sock \
-        gliderlabs/logspout
-    $ docker run -d --label logspout.exclude=true image
+        ruguoapp/logspout
+
+Also, you need to disable tty.
 
 #### Including specific containers
 

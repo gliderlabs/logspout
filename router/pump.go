@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+	"github.com/ruguoapp/go-dockerclient"
 )
 
 func init() {
@@ -65,15 +65,11 @@ func logDriverSupported(container *docker.Container) bool {
 func ignoreContainer(container *docker.Container) bool {
 	for _, kv := range container.Config.Env {
 		kvp := strings.SplitN(kv, "=", 2)
-		if len(kvp) == 2 && kvp[0] == "LOGSPOUT" && strings.ToLower(kvp[1]) == "ignore" {
-			return true
+		if len(kvp) == 2 && kvp[0] == "FORWARD_LOG" && strings.ToLower(kvp[1]) == "true" {
+			return false
 		}
 	}
-	excludeLabel := getopt("EXCLUDE_LABEL", "")
-	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		return len(excludeLabel) > 0 && strings.ToLower(value) == "true"
-	}
-	return false
+	return true
 }
 
 func getInactivityTimeoutFromEnv() time.Duration {
@@ -129,6 +125,7 @@ func (p *LogsPump) Run() error {
 		p.pumpLogs(&docker.APIEvents{
 			ID:     normalID(listing.ID),
 			Status: "start",
+			Time:   time.Now().Unix(),
 		}, false, inactivityTimeout)
 	}
 	events := make(chan *docker.APIEvents)
@@ -137,10 +134,10 @@ func (p *LogsPump) Run() error {
 		return err
 	}
 	for event := range events {
-		debug("pump.Run() event:", normalID(event.ID), event.Status)
+		debug("pump.Run() event:", normalID(event.ID), event.Status, event.Time)
 		switch event.Status {
 		case "start", "restart":
-			go p.pumpLogs(event, true, inactivityTimeout)
+			go p.pumpLogs(event, false, inactivityTimeout)
 		case "rename":
 			go p.rename(event)
 		case "die":
@@ -171,7 +168,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	if backlog {
 		sinceTime = time.Unix(0, 0)
 	} else {
-		sinceTime = time.Now()
+		sinceTime = time.Unix(event.Time, 0)
 	}
 
 	p.mu.Lock()
