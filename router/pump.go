@@ -125,7 +125,7 @@ func (p *LogsPump) Run() error {
 		p.pumpLogs(&docker.APIEvents{
 			ID:     normalID(listing.ID),
 			Status: "start",
-			Time:   time.Now(),
+			Time:   time.Now().Unix(),
 		}, false, inactivityTimeout)
 	}
 	events := make(chan *docker.APIEvents)
@@ -134,7 +134,7 @@ func (p *LogsPump) Run() error {
 		return err
 	}
 	for event := range events {
-		debug("pump.Run() event:", normalID(event.ID), event.Status)
+		debug("pump.Run() event:", normalID(event.ID), event.Status, event.Time)
 		switch event.Status {
 		case "start", "restart":
 			go p.pumpLogs(event, false, inactivityTimeout)
@@ -168,7 +168,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	if backlog {
 		sinceTime = time.Unix(0, 0)
 	} else {
-		sinceTime = event.Time
+		sinceTime = time.Unix(event.Time, 0)
 	}
 
 	p.mu.Lock()
