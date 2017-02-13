@@ -55,6 +55,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	} else {
 		structuredData = fmt.Sprintf("[%s]", structuredData)
 	}
+	log.Println("structured data:", structuredData)
 
 	var tmplStr string
 	switch format {
