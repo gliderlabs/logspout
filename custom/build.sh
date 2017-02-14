@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -ex
 echo "http://alpine.gliderlabs.com/alpine/v3.5/community" \
     >> /etc/apk/repositories
 apk add --update 'go>1.7' git mercurial build-base ca-certificates
