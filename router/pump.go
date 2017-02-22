@@ -139,8 +139,10 @@ func (p *LogsPump) Run() error {
 	for event := range events {
 		debug("pump.Run() event:", normalID(event.ID), event.Status)
 		switch event.Status {
-		case "start", "restart":
+		case "start":
 			go p.pumpLogs(event, true, inactivityTimeout)
+		case "restart":
+			go p.pumpLogs(event, false, inactivityTimeout)
 		case "rename":
 			go p.rename(event)
 		case "die":
@@ -307,6 +309,17 @@ type containerPump struct {
 }
 
 func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *containerPump {
+	stack := ""
+	service := ""
+
+	if container.Config.Labels != nil {
+		if stackService, ok := container.Config.Labels ["io.rancher.stack_service.name"]; ok {
+			splitStackService := strings.Split(stackService, "/")
+			stack = splitStackService[0]
+			service = splitStackService[1]
+		}
+	}
+
 	cp := &containerPump{
 		container:  container,
 		logstreams: make(map[chan *Message]*Route),
@@ -326,6 +339,8 @@ func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *co
 				Container: container,
 				Time:      time.Now(),
 				Source:    source,
+				Service:   service,
+				Stack:	   stack,
 			})
 		}
 	}
