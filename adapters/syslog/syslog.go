@@ -15,9 +15,11 @@ import (
 )
 
 var hostname string
+var facility syslog.Priority
 
 func init() {
 	hostname, _ = os.Hostname()
+	facility = get_facility()
 	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
 }
 
@@ -27,6 +29,52 @@ func getopt(name, dfault string) string {
 		value = dfault
 	}
 	return value
+}
+
+func get_facility() syslog.Priority {
+	switch getopt("SYSLOG_FACILITY", "user") {
+	case "kern":
+		return syslog.LOG_KERN
+	case "user":
+		return syslog.LOG_USER
+	case "mail":
+		return syslog.LOG_MAIL
+	case "daemon":
+		return syslog.LOG_DAEMON
+	case "auth":
+		return syslog.LOG_AUTH
+	case "syslog":
+		return syslog.LOG_SYSLOG
+	case "lpr":
+		return syslog.LOG_LPR
+	case "news":
+		return syslog.LOG_NEWS
+	case "uucp":
+		return syslog.LOG_UUCP
+	case "cron":
+		return syslog.LOG_CRON
+	case "authpriv":
+		return syslog.LOG_AUTHPRIV
+	case "ftp":
+		return syslog.LOG_FTP
+	case "local0":
+		return syslog.LOG_LOCAL0
+	case "local1":
+		return syslog.LOG_LOCAL1
+	case "local2":
+		return syslog.LOG_LOCAL2
+	case "local3":
+		return syslog.LOG_LOCAL3
+	case "local4":
+		return syslog.LOG_LOCAL4
+	case "local5":
+		return syslog.LOG_LOCAL5
+	case "local6":
+		return syslog.LOG_LOCAL6
+	case "local7":
+		return syslog.LOG_LOCAL7
+	}
+	return syslog.LOG_USER
 }
 
 func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
@@ -198,11 +246,11 @@ func (m *SyslogMessage) Render(tmpl *template.Template) ([]byte, error) {
 func (m *SyslogMessage) Priority() syslog.Priority {
 	switch m.Message.Source {
 	case "stdout":
-		return syslog.LOG_USER | syslog.LOG_INFO
+		return facility | syslog.LOG_INFO
 	case "stderr":
-		return syslog.LOG_USER | syslog.LOG_ERR
+		return facility | syslog.LOG_ERR
 	default:
-		return syslog.LOG_DAEMON | syslog.LOG_INFO
+		return facility | syslog.LOG_INFO
 	}
 }
 
