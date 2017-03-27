@@ -1,5 +1,9 @@
 NAME=logspout
 VERSION=$(shell cat VERSION)
+ifeq ($(shell uname), Darwin)
+	XARGS_ARG="-L1"
+endif
+GOLINT := go list ./... | egrep -v '/custom/' | xargs $(XARGS_ARG) golint | egrep -v 'extpoints.go|types.go'
 
 build-dev:
 	docker build -f Dockerfile.dev -t $(NAME):dev .
@@ -17,6 +21,16 @@ build:
 	mkdir -p build
 	docker build -t $(NAME):$(VERSION) .
 	docker save $(NAME):$(VERSION) | gzip -9 > build/$(NAME)_$(VERSION).tgz
+
+lint-direct:
+	go install \
+		&& ls -d */ | egrep -v '/custom/' | xargs $(XARGS_ARG) go tool vet -v
+	@if [ -n "$(shell $(GOLINT))" ]; then $(GOLINT) && exit 1; fi
+
+lint: build-dev
+	docker run \
+		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
+		$(NAME):dev make -e lint-direct
 
 test: build-dev
 	docker run \

@@ -11,6 +11,8 @@ dependencies:
     - cp build/* $CIRCLE_ARTIFACTS
 
 test:
+  pre:
+    - make lint
   override:
     - make test
 
