@@ -49,6 +49,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		structuredData = route.Options["structured_data"]
 	}
 	data := getopt("SYSLOG_DATA", "{{.Data}}")
+	timestamp := getopt("SYSLOG_TIMESTAMP", "{{.Timestamp}}")
 
 	if structuredData == "" {
 		structuredData = "-"
@@ -59,11 +60,11 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	var tmplStr string
 	switch format {
 	case "rfc5424":
-		tmplStr = fmt.Sprintf("<%s>1 {{.Timestamp}} %s %s %s - %s %s\n",
-			priority, hostname, tag, pid, structuredData, data)
+		tmplStr = fmt.Sprintf("<%s>1 %s %s %s %s - %s %s\n",
+			priority, timestamp, hostname, tag, pid, structuredData, data)
 	case "rfc3164":
-		tmplStr = fmt.Sprintf("<%s>{{.Timestamp}} %s %s[%s]: %s\n",
-			priority, hostname, tag, pid, data)
+		tmplStr = fmt.Sprintf("<%s>%s %s %s[%s]: %s\n",
+			priority, timestamp, hostname, tag, pid, data)
 	default:
 		return nil, errors.New("unsupported syslog format: " + format)
 	}

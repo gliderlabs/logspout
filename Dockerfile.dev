@@ -1,9 +1,9 @@
-FROM gliderlabs/alpine:3.4
+FROM alpine:3.5
 VOLUME /mnt/routes
 EXPOSE 80
 
 ENV GOPATH /go
-RUN apk-install go build-base git mercurial ca-certificates
+RUN apk --no-cache add go build-base git mercurial ca-certificates
 COPY . /go/src/github.com/gliderlabs/logspout
 WORKDIR /go/src/github.com/gliderlabs/logspout
 RUN go get
