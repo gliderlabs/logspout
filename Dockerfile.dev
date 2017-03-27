@@ -3,12 +3,9 @@ VOLUME /mnt/routes
 EXPOSE 80
 
 ENV GOPATH /go
-ENV PATH /go/bin:$PATH
-
 RUN apk --no-cache add go build-base git mercurial ca-certificates
 COPY . /go/src/github.com/gliderlabs/logspout
 WORKDIR /go/src/github.com/gliderlabs/logspout
-RUN go get github.com/golang/lint/golint
 RUN go get
 CMD go get \
 	&& go build -ldflags "-X main.Version=dev" -o /bin/logspout \

@@ -22,15 +22,12 @@ build:
 	docker build -t $(NAME):$(VERSION) .
 	docker save $(NAME):$(VERSION) | gzip -9 > build/$(NAME)_$(VERSION).tgz
 
-lint-direct:
-	go install \
+lint:
+	test -x $(GOPATH)/bin/golint || go get github.com/golang/lint/golint
+	go get \
+		&& go install \
 		&& ls -d */ | egrep -v '/custom/' | xargs $(XARGS_ARG) go tool vet -v
 	@if [ -n "$(shell $(GOLINT))" ]; then $(GOLINT) && exit 1; fi
-
-lint: build-dev
-	docker run \
-		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
-		$(NAME):dev make -e lint-direct
 
 test: build-dev
 	docker run \

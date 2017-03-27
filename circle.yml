@@ -12,6 +12,9 @@ dependencies:
 
 test:
   pre:
+    - mkdir -p ~/.go_workspace/src/github.com/gliderlabs
+    - mv ~/logspout ~/.go_workspace/src/github.com/gliderlabs/
+    - ln -s ~/.go_workspace/src/github.com/gliderlabs/logspout ~/
     - make lint
   override:
     - make test
