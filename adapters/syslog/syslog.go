@@ -95,6 +95,7 @@ func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 			log.Println("syslog:", err)
 			return
 		}
+		a.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 		_, err = a.conn.Write(buf)
 		if err != nil {
 			log.Println("syslog:", err)
@@ -109,6 +110,7 @@ func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 				}
 			}
 		}
+		a.conn.SetWriteDeadline(time.Time{})
 	}
 }
 
@@ -146,23 +148,24 @@ func (a *SyslogAdapter) retryTemporary(buf []byte) error {
 }
 
 func (a *SyslogAdapter) reconnect() error {
-	log.Println("syslog: reconnecting up to 11 times")
-	err := retryExp(func() error {
+	a.conn.Close()
+	log.Println("syslog: reconnecting every 2s")
+	i := 0
+	for {
 		conn, err := a.transport.Dial(a.route.Address, a.route.Options)
-		if err != nil {
-			return err
+		if err == nil {
+			log.Println("syslog: connection restored")
+			a.conn = conn
+			return nil
 		}
 
-		a.conn = conn
-		return nil
-	}, 11)
-
-	if err != nil {
-		log.Println("syslog: reconnect failed")
-		return err
+		i++
+		if i == 150 {
+			log.Println("syslog: no luck to reconnect for the past 5m")
+			i = 0
+		}
+		time.Sleep(2 * time.Second)
 	}
-
-	return nil
 }
 
 func retryExp(fun func() error, tries uint) error {

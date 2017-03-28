@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"net"
+	"time"
 
 	"github.com/gliderlabs/logspout/adapters/raw"
 	"github.com/gliderlabs/logspout/router"
@@ -21,11 +22,7 @@ func rawTCPAdapter(route *router.Route) (router.LogAdapter, error) {
 type tcpTransport int
 
 func (_ *tcpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
-	raddr, err := net.ResolveTCPAddr("tcp", addr)
-	if err != nil {
-		return nil, err
-	}
-	conn, err := net.DialTCP("tcp", nil, raddr)
+	conn, err := net.DialTimeout("tcp", addr, 10*time.Second)
 	if err != nil {
 		return nil, err
 	}
