@@ -20,7 +20,7 @@ func rawTCPAdapter(route *router.Route) (router.LogAdapter, error) {
 
 type tcpTransport int
 
-func (_ *tcpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
+func (t *tcpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
 	raddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		return nil, err

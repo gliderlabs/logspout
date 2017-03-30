@@ -3,13 +3,14 @@ package httpstream
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gliderlabs/logspout/router"
-	"github.com/gorilla/mux"
-	"golang.org/x/net/websocket"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/gliderlabs/logspout/router"
+	"github.com/gorilla/mux"
+	"golang.org/x/net/websocket"
 )
 
 func init() {
@@ -22,6 +23,7 @@ func debug(v ...interface{}) {
 	}
 }
 
+// LogStreamer returns a http.Handler that can stream logs
 func LogStreamer() http.Handler {
 	logs := mux.NewRouter()
 	logsHandler := func(w http.ResponseWriter, req *http.Request) {
@@ -69,9 +71,10 @@ func LogStreamer() http.Handler {
 	return logs
 }
 
+// Colorizer adds some color to the log stream
 type Colorizer map[string]int
 
-// returns up to 14 color escape codes (then repeats) for each unique key
+// Get returns up to 14 color escape codes (then repeats) for each unique key
 func (c Colorizer) Get(key string) string {
 	i, exists := c[key]
 	if !exists {

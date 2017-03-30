@@ -87,6 +87,7 @@ type update struct {
 	pump *containerPump
 }
 
+// LogsPump is responsible for "pumping" logs to their configured destinations
 type LogsPump struct {
 	mu     sync.Mutex
 	pumps  map[string]*containerPump
@@ -94,10 +95,12 @@ type LogsPump struct {
 	client *docker.Client
 }
 
+// Name returns the name of the pump
 func (p *LogsPump) Name() string {
 	return "pump"
 }
 
+// Setup configures the pump
 func (p *LogsPump) Setup() error {
 	var err error
 	p.client, err = docker.NewClientFromEnv()
@@ -117,6 +120,7 @@ func (p *LogsPump) rename(event *docker.APIEvents) {
 	pump.container.Name = container.Name
 }
 
+// Run executes the pump
 func (p *LogsPump) Run() error {
 	inactivityTimeout := getInactivityTimeoutFromEnv()
 	debug("pump.Run(): using inactivity timeout: ", inactivityTimeout)
@@ -247,6 +251,7 @@ func (p *LogsPump) update(event *docker.APIEvents) {
 	}
 }
 
+// RoutingFrom returns whether a container id is routing from this pump
 func (p *LogsPump) RoutingFrom(id string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -254,6 +259,7 @@ func (p *LogsPump) RoutingFrom(id string) bool {
 	return monitoring
 }
 
+// Route takes a logstream and routes it according to the supplied Route
 func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 	p.mu.Lock()
 	for _, pump := range p.pumps {
