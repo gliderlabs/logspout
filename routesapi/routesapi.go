@@ -14,6 +14,7 @@ func init() {
 	router.HttpHandlers.Register(RoutesAPI, "routes")
 }
 
+// RoutesAPI returns a handler for the routes API
 func RoutesAPI() http.Handler {
 	routes := router.Routes
 	r := mux.NewRouter()

@@ -10,6 +10,7 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
+// Version is the running version of logspout
 var Version string
 
 func getopt(name, dfault string) string {
