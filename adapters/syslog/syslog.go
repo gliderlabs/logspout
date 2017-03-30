@@ -8,6 +8,7 @@ import (
 	"log/syslog"
 	"net"
 	"os"
+	"strings"
 	"text/template"
 	"time"
 
@@ -225,4 +226,14 @@ func (m *Message) Timestamp() string {
 // ContainerName returns the message's container name
 func (m *Message) ContainerName() string {
 	return m.Message.Container.Name[1:]
+}
+
+func (m *SyslogMessage) Env(key string) string {
+	envValues := m.Message.Container.Config.Env
+	for _, env := range envValues {
+		if strings.HasPrefix(env, key+"=") {
+			return env[len(key)+1:]
+		}
+	}
+	return ""
 }
