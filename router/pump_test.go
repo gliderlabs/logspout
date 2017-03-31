@@ -74,7 +74,7 @@ func TestPumpIgnoreContainer(t *testing.T) {
 	}
 }
 
-func TestPumpIgnoreContainerTTY(t *testing.T) {
+func TestPumpIgnoreContainerAllowTTYDefault(t *testing.T) {
 	containers := []struct {
 		in  *docker.Config
 		out bool
@@ -88,11 +88,14 @@ func TestPumpIgnoreContainerTTY(t *testing.T) {
 			t.Errorf("expected %v got %v", conf.out, actual)
 		}
 	}
+}
 
+func TestPumpIgnoreContainerAllowTTYTrue(t *testing.T) {
 	os.Setenv("ALLOW_TTY", "true")
 	defer os.Unsetenv("ALLOW_TTY")
 
-	containers = []struct {
+	setAllowTTY()
+	containers := []struct {
 		in  *docker.Config
 		out bool
 	}{

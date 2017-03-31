@@ -13,11 +13,14 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
+var allowTTY bool
+
 func init() {
 	pump := &LogsPump{
 		pumps:  make(map[string]*containerPump),
 		routes: make(map[chan *update]struct{}),
 	}
+	setAllowTTY()
 	LogRouters.Register(pump, "pump")
 	Jobs.Register(pump, "pump")
 }
@@ -41,6 +44,13 @@ func backlog() bool {
 		return false
 	}
 	return true
+}
+
+func setAllowTTY() {
+	if t := getopt("ALLOW_TTY", ""); t == "true" {
+		allowTTY = true
+	}
+	debug("setting allowTTY to:", allowTTY)
 }
 
 func assert(err error, context string) {
@@ -84,10 +94,8 @@ func ignoreContainer(container *docker.Container) bool {
 }
 
 func ignoreContainerTTY(container *docker.Container) bool {
-	if container.Config.Tty {
-		if allowTty := getopt("ALLOW_TTY", ""); allowTty != "true" {
-			return true
-		}
+	if container.Config.Tty && !allowTTY {
+		return true
 	}
 	return false
 }

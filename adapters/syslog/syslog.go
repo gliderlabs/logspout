@@ -17,18 +17,24 @@ import (
 
 const defaultRetryCount = 10
 
-var hostname string
-var retryCount uint
+var (
+	hostname   string
+	retryCount uint
+)
 
 func init() {
 	hostname, _ = os.Hostname()
 	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
+	setRetryCount()
+}
 
+func setRetryCount() {
 	if count, err := strconv.Atoi(getopt("RETRY_COUNT", strconv.Itoa(defaultRetryCount))); err != nil {
-		retryCount = defaultRetryCount
+		retryCount = uint(defaultRetryCount)
 	} else {
 		retryCount = uint(count)
 	}
+	debug("setting retryCount to:", retryCount)
 }
 
 func getopt(name, dfault string) string {
@@ -37,6 +43,12 @@ func getopt(name, dfault string) string {
 		value = dfault
 	}
 	return value
+}
+
+func debug(v ...interface{}) {
+	if os.Getenv("DEBUG") != "" {
+		log.Println(v...)
+	}
 }
 
 // NewSyslogAdapter returnas a configured syslog.Adapter
