@@ -6,6 +6,7 @@ machine:
 
 dependencies:
   pre:
+    - go get github.com/golang/lint/golint
     - docker run --rm -it -v $PWD:/go/src/github.com/gliderlabs/logspout -w /go/src/github.com/gliderlabs/logspout treeder/glide install
     - make circleci
   override:

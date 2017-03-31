@@ -3,7 +3,7 @@ VERSION=$(shell cat VERSION)
 ifeq ($(shell uname), Darwin)
 	XARGS_ARG="-L1"
 endif
-GOLINT := go list ./... | egrep -v '/custom/' | xargs $(XARGS_ARG) golint | egrep -v 'extpoints.go|types.go'
+GOLINT := go list ./... | egrep -v '/custom/|/vendor/' | xargs $(XARGS_ARG) golint | egrep -v 'extpoints.go|types.go'
 
 build-dev:
 	docker build -f Dockerfile.dev -t $(NAME):dev .
@@ -26,8 +26,8 @@ lint:
 	test -x $(GOPATH)/bin/golint || go get github.com/golang/lint/golint
 	go get \
 		&& go install \
-		&& ls -d */ | egrep -v '/custom/' | xargs $(XARGS_ARG) go tool vet -v
-	@if [ -n "$(shell $(GOLINT))" ]; then $(GOLINT) && exit 1; fi
+		&& ls -d */ | egrep -v 'custom/|vendor/' | xargs $(XARGS_ARG) go tool vet -v
+	@if [ -n "$(shell $(GOLINT) | cut -d ':' -f 1)" ]; then $(GOLINT) && exit 1 ; fi
 
 test: build-dev
 	docker run \
