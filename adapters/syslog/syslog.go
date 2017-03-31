@@ -55,7 +55,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	hostname := getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
 	pid := getopt("SYSLOG_PID", "{{.Container.State.Pid}}")
 	tag := getopt("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
-	structuredData := getopt("SYSLOG_STRUCTURED_DATA", "")
+	structuredData := getopt("SYSLOG_STRUCTURED_DATA", "{{.StructuredData}}")
 	if route.Options["structured_data"] != "" {
 		structuredData = route.Options["structured_data"]
 	}
@@ -235,4 +235,8 @@ func (m *Message) Timestamp() string {
 // ContainerName returns the message's container name
 func (m *Message) ContainerName() string {
 	return m.Message.Container.Name[1:]
+}
+
+func (m *SyslogMessage) StructuredData() string {
+	return fmt.Sprintf("uphold@1 stack=\"%s\" service=\"%s\"", m.Message.Stack, m.Message.Service)
 }

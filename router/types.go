@@ -51,8 +51,10 @@ type RouteStore interface {
 // Message is a log messages
 type Message struct {
 	Container *docker.Container
-	Source    string
 	Data      string
+	Service   string
+	Source    string
+	Stack	  string
 	Time      time.Time
 }
 
