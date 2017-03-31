@@ -59,17 +59,17 @@ You can tell logspout to only include certain containers by setting filter param
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.name=*_db
-		
+
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.id=3b6ba57db54a
-		
+
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.sources=stdout%2Cstderr
-	
+
 	# Forward logs from containers with both label 'a' starting with 'x', and label 'b' ending in 'y'.
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
@@ -156,10 +156,11 @@ The standard distribution of logspout comes with all modules defined in this rep
  * logspout-redis...
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
  * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)
+ * [logspout-gelf](https://github.com/micahhausler/logspout-gelf) for Graylog
 
 ### Loggly support
 
-Use logspout to stream your docker logs to Loggly via the [Loggly syslog endpoint](https://www.loggly.com/docs/streaming-syslog-without-using-files/).  
+Use logspout to stream your docker logs to Loggly via the [Loggly syslog endpoint](https://www.loggly.com/docs/streaming-syslog-without-using-files/).
 ```
 $ docker run --name logspout -d --volume=/var/run/docker.sock:/var/run/docker.sock \
     -e SYSLOG_STRUCTURED_DATA="<Loggly API Key>@41058 tag=\"some tag name\"" \
