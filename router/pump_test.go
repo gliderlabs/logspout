@@ -13,7 +13,46 @@ import (
 	docker "github.com/fsouza/go-dockerclient"
 )
 
-func TestIgnoreContainer(t *testing.T) {
+type FakeRoundTripper struct {
+	message  interface{}
+	status   int
+	header   map[string]string
+	requests []*http.Request
+}
+
+func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	b, err := json.Marshal(rt.message)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	body := bytes.NewReader(b)
+	rt.requests = append(rt.requests, r)
+	res := &http.Response{
+		StatusCode: rt.status,
+		Body:       ioutil.NopCloser(body),
+		Header:     make(http.Header),
+	}
+	for k, v := range rt.header {
+		res.Header.Set(k, v)
+	}
+	return res, nil
+}
+
+func (rt *FakeRoundTripper) Reset() {
+	rt.requests = nil
+}
+
+func newTestClient(rt *FakeRoundTripper) docker.Client {
+	endpoint := "http://localhost:4243"
+	client, _ := docker.NewClient(endpoint)
+	client.HTTPClient = &http.Client{Transport: rt}
+	client.Dialer = &net.Dialer{}
+	client.SkipServerVersionCheck = true
+	return *client
+}
+
+func TestPumpIgnoreContainer(t *testing.T) {
 	os.Setenv("EXCLUDE_LABEL", "exclude")
 	defer os.Unsetenv("EXCLUDE_LABEL")
 	containers := []struct {
@@ -35,14 +74,14 @@ func TestIgnoreContainer(t *testing.T) {
 	}
 }
 
-func TestLogsPumpName(t *testing.T) {
+func TestPumpLogsPumpName(t *testing.T) {
 	p := &LogsPump{}
 	if name := p.Name(); name != "pump" {
 		t.Error("name should be 'pump' got:", name)
 	}
 }
 
-func TestContainerRename(t *testing.T) {
+func TestPumpContainerRename(t *testing.T) {
 	container := &docker.Container{
 		ID:   "8dfafdbc3a40",
 		Name: "bar",
@@ -68,7 +107,7 @@ func TestContainerRename(t *testing.T) {
 	}
 }
 
-func TestNewContainerPump(t *testing.T) {
+func TestPumpNewContainerPump(t *testing.T) {
 	container := &docker.Container{
 		ID: "8dfafdbc3a40",
 	}
@@ -78,7 +117,8 @@ func TestNewContainerPump(t *testing.T) {
 		return
 	}
 }
-func TestContainerPump(t *testing.T) {
+
+func TestPumpContainerPump(t *testing.T) {
 	container := &docker.Container{
 		ID: "8dfafdbc3a40",
 	}
@@ -112,10 +152,9 @@ func TestPumpSendTimeout(t *testing.T) {
 	if pump.logstreams[ch] != nil {
 		t.Error("expected logstream to be removed after timeout")
 	}
-
 }
 
-func TestRoutingFrom(t *testing.T) {
+func TestPumpRoutingFrom(t *testing.T) {
 	container := &docker.Container{
 		ID: "8dfafdbc3a40",
 	}
@@ -138,42 +177,4 @@ func TestRoutingFrom(t *testing.T) {
 	if p.RoutingFrom("foo") != false {
 		t.Errorf("expected RoutingFrom to return 'false'")
 	}
-}
-
-type FakeRoundTripper struct {
-	message  interface{}
-	status   int
-	header   map[string]string
-	requests []*http.Request
-}
-
-func (rt *FakeRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	b, err := json.Marshal(rt.message)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	body := bytes.NewReader(b)
-	rt.requests = append(rt.requests, r)
-	res := &http.Response{
-		StatusCode: rt.status,
-		Body:       ioutil.NopCloser(body),
-		Header:     make(http.Header),
-	}
-	for k, v := range rt.header {
-		res.Header.Set(k, v)
-	}
-	return res, nil
-}
-func (rt *FakeRoundTripper) Reset() {
-	rt.requests = nil
-}
-
-func newTestClient(rt *FakeRoundTripper) docker.Client {
-	endpoint := "http://localhost:4243"
-	client, _ := docker.NewClient(endpoint)
-	client.HTTPClient = &http.Client{Transport: rt}
-	client.Dialer = &net.Dialer{}
-	client.SkipServerVersionCheck = true
-	return *client
 }
