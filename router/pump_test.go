@@ -74,6 +74,38 @@ func TestPumpIgnoreContainer(t *testing.T) {
 	}
 }
 
+func TestPumpIgnoreContainerTTY(t *testing.T) {
+	containers := []struct {
+		in  *docker.Config
+		out bool
+	}{
+		{&docker.Config{Tty: true}, true},
+		{&docker.Config{Tty: false}, false},
+	}
+
+	for _, conf := range containers {
+		if actual := ignoreContainerTTY(&docker.Container{Config: conf.in}); actual != conf.out {
+			t.Errorf("expected %v got %v", conf.out, actual)
+		}
+	}
+
+	os.Setenv("ALLOW_TTY", "true")
+	defer os.Unsetenv("ALLOW_TTY")
+
+	containers = []struct {
+		in  *docker.Config
+		out bool
+	}{
+		{&docker.Config{Tty: true}, false},
+		{&docker.Config{Tty: false}, false},
+	}
+	for _, conf := range containers {
+		if actual := ignoreContainerTTY(&docker.Container{Config: conf.in}); actual != conf.out {
+			t.Errorf("expected %v got %v", conf.out, actual)
+		}
+	}
+}
+
 func TestPumpLogsPumpName(t *testing.T) {
 	p := &LogsPump{}
 	if name := p.Name(); name != "pump" {
@@ -100,7 +132,6 @@ func TestPumpContainerRename(t *testing.T) {
 	if name := p.pumps["8dfafdbc3a40"].container.Name; name != "foo" {
 		t.Errorf("containerPump should have name: 'foo' got name: '%s'", name)
 	}
-
 	p.rename(&docker.APIEvents{ID: "8dfafdbc3a40"})
 	if name := p.pumps["8dfafdbc3a40"].container.Name; name != "bar" {
 		t.Errorf("containerPump should have name: 'bar' got name: %s", name)

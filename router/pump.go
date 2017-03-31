@@ -83,6 +83,15 @@ func ignoreContainer(container *docker.Container) bool {
 	return false
 }
 
+func ignoreContainerTTY(container *docker.Container) bool {
+	if container.Config.Tty {
+		if allowTty := getopt("ALLOW_TTY", ""); allowTty != "true" {
+			return true
+		}
+	}
+	return false
+}
+
 func getInactivityTimeoutFromEnv() time.Duration {
 	inactivityTimeout, err := time.ParseDuration(getopt("INACTIVITY_TIMEOUT", "0"))
 	assert(err, "Couldn't parse env var INACTIVITY_TIMEOUT. See https://golang.org/pkg/time/#ParseDuration for valid format.")
@@ -165,11 +174,9 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
 	assert(err, "pump")
-	if container.Config.Tty {
-		if allowTty := getopt("ALLOW_TTY", ""); allowTty != "true" {
-			debug("pump.pumpLogs():", id, "ignored: tty enabled")
-			return
-		}
+	if ignoreContainerTTY(container) {
+		debug("pump.pumpLogs():", id, "ignored: tty enabled")
+		return
 	}
 	if ignoreContainer(container) {
 		debug("pump.pumpLogs():", id, "ignored: environ ignore")
