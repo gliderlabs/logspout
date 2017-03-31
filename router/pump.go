@@ -36,6 +36,13 @@ func debug(v ...interface{}) {
 	}
 }
 
+func backlog() bool {
+	if os.Getenv("BACKLOG") == "false" {
+		return false
+	}
+	return true
+}
+
 func assert(err error, context string) {
 	if err != nil {
 		log.Fatal(context+": ", err)
@@ -144,7 +151,7 @@ func (p *LogsPump) Run() error {
 		debug("pump.Run() event:", normalID(event.ID), event.Status)
 		switch event.Status {
 		case "start", "restart":
-			go p.pumpLogs(event, true, inactivityTimeout)
+			go p.pumpLogs(event, backlog(), inactivityTimeout)
 		case "rename":
 			go p.rename(event)
 		case "die":

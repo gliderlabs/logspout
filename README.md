@@ -87,6 +87,18 @@ You can route to multiple destinations by comma-separating the URIs:
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.name=*_db,syslog+tls://logs.papertrailapp.com:55555?filter.name=*_app
 
+#### Suppressing backlog tail
+You can tell logspout to only display log entries since container "start" or "restart" event by setting a `BACKLOG=false` environment variable (equivalent to `docker logs --tail=0`):
+
+	$ docker run -d --name="logspout" \
+		-e 'BACKLOG=false' \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout
+
+The default behaviour is to output all logs since creation of the container (equivalent to `docker logs --tail=all` or simply `docker logs`).
+
+> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thorougly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
+
 #### Inspect log streams using curl
 
 Using the [httpstream module](http://github.com/gliderlabs/logspout/blob/master/httpstream), you can connect with curl to see your local aggregated logs in realtime. You can do this without setting up a route URI.
@@ -122,6 +134,7 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 #### Environment variables
 
 * `ALLOW_TTY` - include logs from containers started with `-t` or `--tty` (i.e. `Allocate a pseudo-TTY`)
+* `BACKLOG` - suppress container tail backlog
 * `DEBUG` - emit debug logs
 * `EXCLUDE_LABEL` - exclude logs with a given label
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
