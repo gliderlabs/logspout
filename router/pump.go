@@ -13,11 +13,14 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
+var allowTTY bool
+
 func init() {
 	pump := &LogsPump{
 		pumps:  make(map[string]*containerPump),
 		routes: make(map[chan *update]struct{}),
 	}
+	setAllowTTY()
 	LogRouters.Register(pump, "pump")
 	Jobs.Register(pump, "pump")
 }
@@ -41,6 +44,13 @@ func backlog() bool {
 		return false
 	}
 	return true
+}
+
+func setAllowTTY() {
+	if t := getopt("ALLOW_TTY", ""); t == "true" {
+		allowTTY = true
+	}
+	debug("setting allowTTY to:", allowTTY)
 }
 
 func assert(err error, context string) {
@@ -79,6 +89,13 @@ func ignoreContainer(container *docker.Container) bool {
 	excludeLabel := getopt("EXCLUDE_LABEL", "")
 	if value, ok := container.Config.Labels[excludeLabel]; ok {
 		return len(excludeLabel) > 0 && strings.ToLower(value) == "true"
+	}
+	return false
+}
+
+func ignoreContainerTTY(container *docker.Container) bool {
+	if container.Config.Tty && !allowTTY {
+		return true
 	}
 	return false
 }
@@ -165,11 +182,9 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
 	assert(err, "pump")
-	if container.Config.Tty {
-		if allowTty := getopt("ALLOW_TTY", ""); allowTty != "true" {
-			debug("pump.pumpLogs():", id, "ignored: tty enabled")
-			return
-		}
+	if ignoreContainerTTY(container) {
+		debug("pump.pumpLogs():", id, "ignored: tty enabled")
+		return
 	}
 	if ignoreContainer(container) {
 		debug("pump.pumpLogs():", id, "ignored: environ ignore")

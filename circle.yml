@@ -21,7 +21,7 @@ test:
     - ln -s ~/.go_workspace/src/github.com/gliderlabs/logspout ~/
     - make lint
   override:
-    - make test
+    - DEBUG=true make -e test
 
 deployment:
   release:
