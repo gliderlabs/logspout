@@ -6,6 +6,8 @@ ifeq ($(shell uname), Darwin)
 	XARGS_ARG="-L1"
 endif
 GOLINT := go list ./... | egrep -v '/custom/|/vendor/' | xargs $(XARGS_ARG) golint | egrep -v 'extpoints.go|types.go'
+# max image size of 40MB
+MAX_IMAGE_SIZE := 40000000
 
 build-dev:
 	docker build -f Dockerfile.dev -t $(NAME):dev .
@@ -36,6 +38,12 @@ test: build-dev
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
 		$(NAME):dev go test -v ./router/...
+
+test-image-size:
+	@if [ $(shell docker inspect -f '{{ .Size }}' $(NAME):$(VERSION)) -gt $(MAX_IMAGE_SIZE) ]; then \
+		echo ERROR: image size greater than $(MAX_IMAGE_SIZE); \
+		exit 2; \
+	fi
 
 test-build-custom:
 	docker tag $(NAME):$(VERSION) gliderlabs/$(NAME):master

@@ -1,5 +1,6 @@
 machine:
   environment:
+    DEBUG: true
     GO_PROJECT: ../go/src/github.com/gliderlabs/$CIRCLE_PROJECT_REPONAME
   services:
     - docker
@@ -20,8 +21,9 @@ test:
     - ln -s ~/.go_workspace/src/github.com/gliderlabs/logspout ~/
     - make lint
   override:
-    - DEBUG=true make -e test
-    - DEBUG=true make -e test-build-custom
+    - make -e test
+    - make -e test-image-size
+    - make -e test-build-custom
 
 deployment:
   release:
