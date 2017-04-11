@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -139,7 +140,7 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 
 func (a *Adapter) retry(buf []byte, err error) error {
 	if opError, ok := err.(*net.OpError); ok {
-		if opError.Temporary() || opError.Timeout() {
+		if (opError.Temporary() && opError.Err != syscall.ECONNRESET) || opError.Timeout() {
 			retryErr := a.retryTemporary(buf)
 			if retryErr == nil {
 				return nil
