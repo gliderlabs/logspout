@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"syscall"
 	"text/template"
 	"time"
 
@@ -18,12 +19,14 @@ import (
 const defaultRetryCount = 10
 
 var (
-	hostname   string
-	retryCount uint
+	hostname         string
+	retryCount       uint
+	econnResetErrStr string
 )
 
 func init() {
 	hostname, _ = os.Hostname()
+	econnResetErrStr = fmt.Sprintf("write: %s", syscall.ECONNRESET.Error())
 	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
 	setRetryCount()
 }
@@ -137,8 +140,9 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 
 func (a *Adapter) retry(buf []byte, err error) error {
 	if opError, ok := err.(*net.OpError); ok {
-		if opError.Temporary() || opError.Timeout() {
-			if retryErr := a.retryTemporary(buf); retryErr == nil {
+		if (opError.Temporary() && opError.Err.Error() != econnResetErrStr) || opError.Timeout() {
+			retryErr := a.retryTemporary(buf)
+			if retryErr == nil {
 				return nil
 			}
 		}
