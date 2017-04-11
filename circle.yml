@@ -21,6 +21,7 @@ test:
     - make lint
   override:
     - DEBUG=true make -e test
+    - DEBUG=true make -e test-build-custom
 
 deployment:
   release:

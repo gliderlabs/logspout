@@ -37,6 +37,14 @@ test: build-dev
 		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
 		$(NAME):dev go test -v ./router/...
 
+test-build-custom:
+	docker tag $(NAME):$(VERSION) gliderlabs/$(NAME):master
+	cd custom && docker build -t $(NAME):custom .
+	docker run --name $(NAME)-custom $(NAME):custom || true
+	docker logs $(NAME)-custom | grep -q logstash
+	docker rmi gliderlabs/$(NAME):master || true
+	docker rm $(NAME)-custom || true
+
 release:
 	rm -rf release && mkdir release
 	go get github.com/progrium/gh-release/...
