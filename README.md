@@ -152,7 +152,7 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 
 ## Modules
 
-The standard distribution of logspout comes with all modules defined in this repository. You can remove or add new modules with custom builds of logspout. Just edit the `modules.go` file and do a `docker build`.
+The standard distribution of logspout comes with all modules defined in this repository. You can remove or add new modules with custom builds of logspout. In the `custom` dir, edit the `modules.go` file and do a `docker build`.
 
 ### Builtin modules
 
