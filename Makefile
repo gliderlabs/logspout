@@ -1,3 +1,5 @@
+.PHONY: build
+
 NAME=logspout
 VERSION=$(shell cat VERSION)
 ifeq ($(shell uname), Darwin)
