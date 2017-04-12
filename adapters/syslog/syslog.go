@@ -120,16 +120,14 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			log.Println("syslog:", err)
 			return
 		}
-		_, err = a.conn.Write(buf)
-		if err != nil {
+		if _, err = a.conn.Write(buf); err != nil {
 			log.Println("syslog:", err)
 			switch a.conn.(type) {
 			case *net.UDPConn:
 				continue
 			default:
-				err = a.retry(buf, err)
-				if err != nil {
-					log.Println("syslog:", err)
+				if err = a.retry(buf, err); err != nil {
+					log.Println("syslog retry err:", err)
 					return
 				}
 			}
@@ -140,14 +138,20 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 func (a *Adapter) retry(buf []byte, err error) error {
 	if opError, ok := err.(*net.OpError); ok {
 		if opError.Temporary() || opError.Timeout() {
-			retryErr := a.retryTemporary(buf)
-			if retryErr == nil {
+			if retryErr := a.retryTemporary(buf); retryErr == nil {
 				return nil
 			}
 		}
 	}
-
-	return a.reconnect()
+	if reconnErr := a.reconnect(); reconnErr != nil {
+		return reconnErr
+	}
+	if _, err = a.conn.Write(buf); err != nil {
+		log.Println("syslog: reconnect failed")
+		return err
+	}
+	log.Println("syslog: reconnect successful")
+	return nil
 }
 
 func (a *Adapter) retryTemporary(buf []byte) error {
@@ -177,16 +181,13 @@ func (a *Adapter) reconnect() error {
 		if err != nil {
 			return err
 		}
-
 		a.conn = conn
 		return nil
 	}, retryCount)
 
 	if err != nil {
-		log.Println("syslog: reconnect failed")
 		return err
 	}
-
 	return nil
 }
 
