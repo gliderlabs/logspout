@@ -10,6 +10,8 @@ ifeq ($(shell uname), Darwin)
 endif
 GOLINT := go list ./... | egrep -v '/custom/|/vendor/' | xargs $(XARGS_ARG) golint | egrep -v 'extpoints.go|types.go'
 TEST_MODULES ?= $(shell go list ./... | egrep -v '/vendor|/custom')
+TEST_ARGS ?= -race
+
 ifdef TEST_RUN
 	TESTRUN := -run ${TEST_RUN}
 endif
@@ -42,10 +44,11 @@ test: build-dev
 	docker run \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
+		-e TEST_ARGS="" \
 		$(NAME):dev make -e test-direct
 
 test-direct:
-	go test -p 1 -v -race $(TEST_MODULES) $(TESTRUN)
+	go test -p 1 -v $(TEST_ARGS) $(TEST_MODULES) $(TESTRUN)
 
 test-image-size:
 	@if [ $(shell docker inspect -f '{{ .Size }}' $(NAME):$(VERSION)) -gt $(MAX_IMAGE_SIZE) ]; then \
