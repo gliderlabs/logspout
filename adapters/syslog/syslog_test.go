@@ -30,7 +30,7 @@ const (
 var (
 	container = &docker.Container{
 		ID:   "8dfafdbc3a40",
-		Name: "0michaelshobbs",
+		Name: "\x00michaelshobbs",
 		Config: &docker.Config{
 			Hostname: "8dfafdbc3a40",
 		},

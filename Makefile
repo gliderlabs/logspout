@@ -8,8 +8,8 @@ MAX_IMAGE_SIZE := 40000000
 ifeq ($(shell uname), Darwin)
 	XARGS_ARG="-L1"
 endif
+GOPACKAGES ?= $(shell go list ./... | egrep -v 'custom|vendor')
 GOLINT := go list ./... | egrep -v '/custom/|/vendor/' | xargs $(XARGS_ARG) golint | egrep -v 'extpoints.go|types.go'
-TEST_MODULES ?= $(shell go list ./... | egrep -v '/vendor|/custom')
 TEST_ARGS ?= -race
 
 ifdef TEST_RUN
@@ -36,7 +36,7 @@ build:
 lint:
 	test -x $(GOPATH)/bin/golint || go get github.com/golang/lint/golint
 	go get \
-		&& go install \
+		&& go install $(GOPACKAGES) \
 		&& ls -d */ | egrep -v 'custom/|vendor/' | xargs $(XARGS_ARG) go tool vet -v
 	@if [ -n "$(shell $(GOLINT) | cut -d ':' -f 1)" ]; then $(GOLINT) && exit 1 ; fi
 
@@ -48,7 +48,7 @@ test: build-dev
 		$(NAME):dev make -e test-direct
 
 test-direct:
-	go test -p 1 -v $(TEST_ARGS) $(TEST_MODULES) $(TESTRUN)
+	go test -p 1 -v $(TEST_ARGS) $(GOPACKAGES) $(TESTRUN)
 
 test-image-size:
 	@if [ $(shell docker inspect -f '{{ .Size }}' $(NAME):$(VERSION)) -gt $(MAX_IMAGE_SIZE) ]; then \
