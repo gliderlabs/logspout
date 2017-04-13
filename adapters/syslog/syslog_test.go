@@ -1,17 +1,20 @@
 package syslog
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"log"
+	"net"
 	"os"
 	"strconv"
-	"strings"
+	"sync"
 	"testing"
 	"text/template"
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gliderlabs/logspout/router"
-	"github.com/gliderlabs/logspout/testutil"
 
 	_ "github.com/gliderlabs/logspout/transports/tcp"
 	_ "github.com/gliderlabs/logspout/transports/tls"
@@ -25,12 +28,13 @@ const (
 	testTag       = "{{.ContainerName}}"
 	testPid       = "{{.Container.State.Pid}}"
 	testData      = "{{.Data}}"
+	connCloseIdx  = 5
 )
 
 var (
 	container = &docker.Container{
 		ID:   "8dfafdbc3a40",
-		Name: "\x00michaelshobbs",
+		Name: "\x00container",
 		Config: &docker.Config{
 			Hostname: "8dfafdbc3a40",
 		},
@@ -55,97 +59,116 @@ func TestSyslogRetryCount(t *testing.T) {
 }
 
 func TestSyslogReconnectOnClose(t *testing.T) {
-	os.Setenv("RETRY_COUNT", strconv.Itoa(int(1)))
-	setRetryCount()
-	defer func() {
-		os.Unsetenv("RETRY_COUNT")
-		setRetryCount()
-	}()
-	tmpl, err := template.New("syslog").Parse(testTmplStr)
+	done := make(chan string)
+	addr, sock, srvWG := startServer("tcp", "", done)
+	defer srvWG.Wait()
+	defer os.Remove(addr)
+	defer sock.Close()
+	route := &router.Route{Adapter: "syslog+tcp", Address: addr}
+	adapter, err := NewSyslogAdapter(route)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ls, err := testutil.NewLocalTCPServer()
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer ls.Teardown()
 
-	route := &router.Route{
-		ID:      "0",
-		Adapter: "syslog",
-		Address: ls.Listener.Addr().String(),
-	}
+	stream := make(chan *router.Message)
+	go adapter.Stream(stream)
 
-	datac := make(chan []byte, testutil.MaxMsgCount)
-	errc := make(chan error, 1)
-	go testutil.AcceptAndCloseConn(ls, datac, errc)
+	count := 100
+	messages := make(chan string, count)
+	go sendLogstream(stream, messages, adapter, count)
 
-	adapter := &Adapter{
-		route:     route,
-		conn:      testutil.Dial(ls),
-		tmpl:      tmpl,
-		transport: testutil.MockTransport{Listener: ls},
-	}
-
-	logstream := make(chan *router.Message)
-	done := make(chan bool)
-	sentMsgs := [][]byte{}
-	// Send msgs to logstream
-	go sendLogstream(logstream, done, &sentMsgs, tmpl)
-
-	// Stream logstream to conn
-	go adapter.Stream(logstream)
-
-	// Check for errs from goroutines
-	for err := range errc {
-		t.Errorf("%v", err)
-	}
-
-	readMsgs := [][]byte{}
+	timeout := time.After(6 * time.Second)
+	msgnum := 1
 	for {
 		select {
-		case <-done:
-			if testutil.MaxMsgCount-1 != len(datac) {
-				t.Errorf("expected %v got %v", testutil.MaxMsgCount-1, len(datac))
+		case msg := <-done:
+			// Don't check a message that we know was dropped
+			if msgnum%connCloseIdx == 0 {
+				_ = <-messages
+				msgnum++
 			}
-			for msg := range datac {
-				readMsgs = append(readMsgs, msg)
-			}
-			sentMsgs = append(sentMsgs[:testutil.CloseOnMsgIdx], sentMsgs[testutil.CloseOnMsgIdx+1:]...)
-			for i, v := range sentMsgs {
-				sent := strings.Trim(fmt.Sprintf("%s", v), "\n")
-				read := strings.Trim(fmt.Sprintf("%s", readMsgs[i]), "\x00\n")
-				if sent != read {
-					t.Errorf("expected %+q got %+q", sent, read)
-				}
+			check(t, adapter.(*Adapter).tmpl, <-messages, msg)
+			msgnum++
+		case <-timeout:
+			adapter.(*Adapter).conn.Close()
+			t.Fatal("timeout after", msgnum, "messages")
+			return
+		default:
+			if msgnum == count {
+				adapter.(*Adapter).conn.Close()
+				return
 			}
 		}
-		return
 	}
 }
 
-func sendLogstream(logstream chan *router.Message, done chan bool, msgs *[][]byte, tmpl *template.Template) {
-	defer func() {
-		close(logstream)
-		close(done)
+func startServer(n, la string, done chan<- string) (addr string, sock io.Closer, wg *sync.WaitGroup) {
+	if n == "udp" || n == "tcp" {
+		la = "127.0.0.1:0"
+	}
+	wg = new(sync.WaitGroup)
+
+	l, err := net.Listen(n, la)
+	if err != nil {
+		log.Fatalf("startServer failed: %v", err)
+	}
+	addr = l.Addr().String()
+	sock = l
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		runStreamSyslog(l, done, wg)
 	}()
-	var count int
+
+	return
+}
+
+func runStreamSyslog(l net.Listener, done chan<- string, wg *sync.WaitGroup) {
 	for {
-		if count == testutil.MaxMsgCount {
-			done <- true
+		c, err := l.Accept()
+		if err != nil {
 			return
 		}
-		msg := &router.Message{
-			Container: container,
-			Data:      "hellooo",
-			Time:      time.Now(),
+		wg.Add(1)
+		go func(c net.Conn) {
+			defer wg.Done()
+			c.SetReadDeadline(time.Now().Add(5 * time.Second))
+			b := bufio.NewReader(c)
+			var i = 1
+			for {
+				i++
+				s, err := b.ReadString('\n')
+				if err != nil {
+					break
+				}
+				done <- s
+				if i%connCloseIdx == 0 {
+					break
+				}
+			}
+			c.Close()
+		}(c)
+	}
+}
+
+func sendLogstream(stream chan *router.Message, messages chan string, adapter router.LogAdapter, count int) {
+	for i := 1; i <= count; i++ {
+		msg := &Message{
+			Message: &router.Message{
+				Container: container,
+				Data:      "test " + strconv.Itoa(i),
+				Time:      time.Now(),
+				Source:    "stdout",
+			},
 		}
-		m := &Message{msg}
-		buf, _ := m.Render(tmpl)
-		*msgs = append(*msgs, buf)
-		logstream <- msg
-		count++
-		time.Sleep(1000 * time.Millisecond)
+		stream <- msg.Message
+		b, _ := msg.Render(adapter.(*Adapter).tmpl)
+		messages <- string(b)
+	}
+}
+
+func check(t *testing.T, tmpl *template.Template, in string, out string) {
+	if in != out {
+		t.Errorf("expected: %s\ngot: %s\n", in, out)
 	}
 }
