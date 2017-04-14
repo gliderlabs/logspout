@@ -11,6 +11,7 @@ dependencies:
     - make circleci
   override:
     - make build
+    - make build-custom
   post:
     - cp build/* $CIRCLE_ARTIFACTS
 
@@ -21,9 +22,11 @@ test:
     - ln -s ~/.go_workspace/src/github.com/gliderlabs/logspout ~/
     - make lint
   override:
-    - make -e test
     - make -e test-image-size
-    - make -e test-build-custom
+    - make -e test
+    # - make -e test-tls
+    - make -e test-custom
+    # - make -e test-tls-custom
 
 deployment:
   release:
