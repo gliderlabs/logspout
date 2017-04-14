@@ -41,7 +41,7 @@ lint:
 	test -x $(GOPATH)/bin/golint || go get github.com/golang/lint/golint
 	go get \
 		&& go install $(GOPACKAGES) \
-		&& ls -d */ | egrep -v 'custom/|vendor/' | xargs $(XARGS_ARG) go tool vet -v
+		&& go tool vet -v $(shell ls -d */ | egrep -v 'custom|vendor/' | xargs $(XARGS_ARG))
 	@if [ -n "$(shell $(GOLINT) | cut -d ':' -f 1)" ]; then $(GOLINT) && exit 1 ; fi
 
 test: build-dev
@@ -94,7 +94,6 @@ release:
 		$(shell git rev-parse --abbrev-ref HEAD) $(VERSION)
 
 circleci:
-	rm ~/.gitconfig
 ifneq ($(CIRCLE_BRANCH), release)
 	echo build-$$CIRCLE_BUILD_NUM > VERSION
 endif

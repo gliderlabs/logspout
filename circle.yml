@@ -1,35 +1,39 @@
-machine:
-  environment:
-    DEBUG: true
-    GO_PROJECT: ../go/src/github.com/gliderlabs/$CIRCLE_PROJECT_REPONAME
-  services:
-    - docker
-
-dependencies:
-  pre:
-    - go get github.com/golang/lint/golint
-    - make circleci
-  override:
-    - make build
-    - make build-custom
-  post:
-    - cp build/* $CIRCLE_ARTIFACTS
-
-test:
-  pre:
-    - mkdir -p ~/.go_workspace/src/github.com/gliderlabs
-    - mv ~/logspout ~/.go_workspace/src/github.com/gliderlabs/
-    - ln -s ~/.go_workspace/src/github.com/gliderlabs/logspout ~/
-    - make lint
-  override:
-    - make -e test-image-size
-    - make -e test
-    # - make -e test-tls
-    - make -e test-custom
-    # - make -e test-tls-custom
-
-deployment:
-  release:
-    branch: release
-    commands:
-      - make release
+version: 2
+jobs:
+  build:
+    machine: true
+    working_directory: ~/.go_workspace/src/github.com/gliderlabs/
+    environment:
+      DEBUG: true
+      GO_PROJECT: ../go/src/github.com/gliderlabs/$CIRCLE_PROJECT_REPONAME
+    steps:
+      - checkout
+      - run: |
+          go get github.com/golang/lint/golint
+      - run: |
+          make circleci
+      - run: |
+          make lint
+      - run: |
+          make build
+      - run: |
+          make build-custom
+      - run: |
+          make -e test-image-size
+      - run: |
+          make -e test
+      - run: |
+          make -e test-tls
+      - run: |
+          make -e test-custom
+      - run: |
+          make -e test-tls-custom
+      - store_artifacts:
+          path: build
+          destination: build
+      - deploy:
+          name: release
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "release" ]; then
+              make release
+            fi
