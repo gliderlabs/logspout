@@ -59,7 +59,7 @@ func (rm *RouteManager) Get(id string) (*Route, error) {
 func (rm *RouteManager) GetAll() ([]*Route, error) {
 	rm.Lock()
 	defer rm.Unlock()
-	var routes []*Route
+	routes := make([]*Route, 0)
 	for _, route := range rm.routes {
 		routes = append(routes, route)
 	}
