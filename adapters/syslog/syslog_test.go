@@ -164,6 +164,7 @@ func sendLogstream(stream chan *router.Message, messages chan string, adapter ro
 		stream <- msg.Message
 		b, _ := msg.Render(adapter.(*Adapter).tmpl)
 		messages <- string(b)
+		time.Sleep(10 * time.Millisecond)
 	}
 }
 
