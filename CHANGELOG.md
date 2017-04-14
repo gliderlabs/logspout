@@ -146,7 +146,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.1...HEAD
+[v3.2.1]: https://github.com/gliderlabs/logspout/compare/v3.2...v3.2.1
 [v3.2]: https://github.com/gliderlabs/logspout/compare/v3.1...v3.2
 [v3.1]: https://github.com/gliderlabs/logspout/compare/v3...v3.1
 [v3]: https://github.com/gliderlabs/logspout/compare/v2...v3
