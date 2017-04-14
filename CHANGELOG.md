@@ -10,6 +10,49 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.2] - 2017-04-13
+### Fixed
+- @ekkinox FIX: add build-base package install to fix missing gcc
+- @bobzoller reconnect log stream unless container is dead
+- @mattaitchison Fix locking around custom route loading
+- @bobzoller avoid duplicate pumps with mutex lock
+- @markine Use InactivityTimeout to work around a bug in docker (#204)
+- @mattaitchison install ca-certificates fixes #247
+- @mattaitchison Dockerfile: use alpine 3.5 to fix build issue from missing context pkg
+
+### Added
+- @micahhausler Add Graylog GELF module
+- @Selim Ekizoglu  Exclude containers by label.
+- @treeder Some help for working on custom modules
+- @davidnortonjr Add more configuration examples to README
+- @davidnortonjr Filter by label (#236)
+- @mattaitchison first pass at tests (#218)
+- @grosskur syslog: Add support for SYSLOG_TIMESTAMP (#260)
+- @michaelshobbs add linting with go vet and golint
+- @andrewgaul Allow configuration of retry count via environment
+- @davidnortonjr Allow containers with TTY enabled using environment variable ALLOW_TTY
+- @michaelshobbs add golint in ci and filter /vendor/ from linting
+- @ebr add env.var switch to turn off backlogs
+- @michaelshobbs add test for max image size
+
+### Changed
+- @selimekizoglu Ignore empty EXCLUDE_LABEL values
+- @pmbauer ignore containers with unsupported log drivers
+- @robertjustjones Updated README to include tls
+- @jmreicha custom: Update README and include example build script
+- @josegonzalez Add a note about build.sh needing to be in the docker build directory
+- @treeder Much, much faster builds
+- @michaelshobbs set common test name prefix for -run ease
+- @michaelshobbs make ignoreContainerTTY more testable and add test
+- @michaelshobbs make retryCount testable and add test
+- @michaelshobbs use glide in dockerfile
+- @michaelshobbs use alpine + build script and add test for custom image building
+- @michaelshobbs attempt to preserve buffer on reconnect()
+- @michaelshobbs race detector for alpine is broken. disable it for now
+- @michaelshobbs make vet more reliable
+- @luketurner Don't retry sending on ECONNRESET
+
+
 ## [v3.1] - 2016-05-23
 ### Fixed
 - Panic when renaming stopped container #183
@@ -93,7 +136,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.1...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2...HEAD
+[v3.2]: https://github.com/gliderlabs/logspout/compare/v3.1...v3.2
 [v3.1]: https://github.com/gliderlabs/logspout/compare/v3...v3.1
 [v3]: https://github.com/gliderlabs/logspout/compare/v2...v3
 [v2]: https://github.com/gliderlabs/logspout/compare/v1...v2
