@@ -1,9 +1,13 @@
 machine:
+  environment:
+    DEBUG: true
+    GO_PROJECT: ../go/src/github.com/gliderlabs/$CIRCLE_PROJECT_REPONAME
   services:
     - docker
 
 dependencies:
   pre:
+    - go get github.com/golang/lint/golint
     - make circleci
   override:
     - make build
@@ -11,8 +15,15 @@ dependencies:
     - cp build/* $CIRCLE_ARTIFACTS
 
 test:
+  pre:
+    - mkdir -p ~/.go_workspace/src/github.com/gliderlabs
+    - mv ~/logspout ~/.go_workspace/src/github.com/gliderlabs/
+    - ln -s ~/.go_workspace/src/github.com/gliderlabs/logspout ~/
+    - make lint
   override:
-    - /bin/true
+    - make -e test
+    - make -e test-image-size
+    - make -e test-build-custom
 
 deployment:
   release:
