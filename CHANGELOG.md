@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 ### Added
-
+- Adapter for GELF (Graylog Extended Log Format)
 ### Removed
 
 ### Changed
