@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 
 
 ## [v3.2.1] - 2017-04-13
-### Fix
+### Fixed
 - @michaelshobbs build: fix missing ca-certificates. closes #294
 
 ### Added
