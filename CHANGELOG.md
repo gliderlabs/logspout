@@ -10,6 +10,17 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+
+## [v3.2.1] - 2017-04-13
+### Fix
+- @michaelshobbs build: fix missing ca-certificates. closes #294
+
+### Added
+- @michaelshobbs build: add tls test case
+
+### Changed
+- @michaelshobbs use circleci 2.0
+
 ## [v3.2] - 2017-04-13
 ### Fixed
 - @ekkinox FIX: add build-base package install to fix missing gcc
@@ -51,7 +62,6 @@ All notable changes to this project will be documented in this file.
 - @michaelshobbs race detector for alpine is broken. disable it for now
 - @michaelshobbs make vet more reliable
 - @luketurner Don't retry sending on ECONNRESET
-
 
 ## [v3.1] - 2016-05-23
 ### Fixed
