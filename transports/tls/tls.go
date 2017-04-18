@@ -69,7 +69,7 @@ func getCAs(path string) *x509.CertPool {
 }
 
 func getCertificates(path string) []tls.Certificate {
-	certs := make([]tls.Certificate, 0)
+	var certs []tls.Certificate
 	certfiles, err := ioutil.ReadDir(path)
 	if err != nil {
 		return certs
