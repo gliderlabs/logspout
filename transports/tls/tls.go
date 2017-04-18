@@ -13,9 +13,10 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
+// default CA and certificate path
 const (
-	CA_PATH   = "/mnt/ca/"
-	CERT_PATH = "/mnt/cert/"
+	CAPath   = "/mnt/ca/"
+	CertPath = "/mnt/cert/"
 )
 
 func init() {
@@ -107,8 +108,8 @@ type tlsTransport int
 
 func (t *tlsTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
 
-	capath := getopt("CA_PATH", CA_PATH)
-	certpath := getopt("CERT_PATH", CERT_PATH)
+	capath := getopt("CA_PATH", CAPath)
+	certpath := getopt("CERT_PATH", CertPath)
 
 	capool := getCAs(capath)
 
