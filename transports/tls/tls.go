@@ -7,7 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
-	"strings"
+	"path/filepath"
 
 	"github.com/gliderlabs/logspout/adapters/raw"
 	"github.com/gliderlabs/logspout/router"
@@ -76,15 +76,12 @@ func getCertificates(path string) []tls.Certificate {
 	}
 	for _, f := range certfiles {
 		fname := f.Name()
-		fext := ""
-		dotindex := strings.LastIndex(fname, ".")
-		if dotindex < 0 {
-			continue
-		}
-		fext = fname[dotindex+1 : len(fname)]
-		fname = fname[0:dotindex]
 
-		if fext != "crt" && fext != "cert" {
+		fext := filepath.Ext(fname)
+
+		fname = fname[0 : len(fname)-len(fext)]
+
+		if fext != ".crt" && fext != ".cert" {
 			continue
 		}
 
@@ -93,9 +90,9 @@ func getCertificates(path string) []tls.Certificate {
 			continue
 		}
 
-		cert, err := tls.LoadX509KeyPair(path+fname+"."+fext, keyfile)
+		cert, err := tls.LoadX509KeyPair(path+fname+fext, keyfile)
 		if err != nil {
-			return certs
+			continue
 		}
 
 		certs = append(certs, cert)
