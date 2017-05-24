@@ -136,6 +136,11 @@ func (rm *RouteManager) Add(route *Route) error {
 	}
 	route.closer = make(chan bool)
 	route.adapter = adapter
+	//Stop any existing route with this ID:
+	if( rm.routes[route.ID] != nil ){
+		rm.routes[route.ID].closer <- true
+	}
+
 	rm.routes[route.ID] = route
 	if rm.persistor != nil {
 		if err := rm.persistor.Add(route); err != nil {
