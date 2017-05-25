@@ -11,8 +11,16 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 
+## [v3.2.2] - 2017-05-25
+### Fixed
+- @michaelshobbs router: fix empty routes response. fixes #299
+- @Crashthatch Close existing routes when adding a new route with an existing ID. fixes #305
+
+### Changed
+- @mattaitchison router/pump: remove logstream send timeout
+
 ## [v3.2.1] - 2017-04-13
-### Fix
+### Fixed
 - @michaelshobbs build: fix missing ca-certificates. closes #294
 
 ### Added
@@ -146,7 +154,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.1...HEAD
+[v3.2.1]: https://github.com/gliderlabs/logspout/compare/v3.2...v3.2.1
 [v3.2]: https://github.com/gliderlabs/logspout/compare/v3.1...v3.2
 [v3.1]: https://github.com/gliderlabs/logspout/compare/v3...v3.1
 [v3]: https://github.com/gliderlabs/logspout/compare/v2...v3

@@ -59,7 +59,7 @@ func (rm *RouteManager) Get(id string) (*Route, error) {
 func (rm *RouteManager) GetAll() ([]*Route, error) {
 	rm.Lock()
 	defer rm.Unlock()
-	var routes []*Route
+	routes := make([]*Route, 0)
 	for _, route := range rm.routes {
 		routes = append(routes, route)
 	}
@@ -136,6 +136,11 @@ func (rm *RouteManager) Add(route *Route) error {
 	}
 	route.closer = make(chan bool)
 	route.adapter = adapter
+	//Stop any existing route with this ID:
+	if rm.routes[route.ID] != nil {
+		rm.routes[route.ID].closer <- true
+	}
+
 	rm.routes[route.ID] = route
 	if rm.persistor != nil {
 		if err := rm.persistor.Add(route); err != nil {

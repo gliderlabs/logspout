@@ -67,6 +67,7 @@ type Route struct {
 	Address       string            `json:"address"`
 	Options       map[string]string `json:"options,omitempty"`
 	adapter       LogAdapter
+	closed	      bool
 	closer        chan bool
 	closerRcv     <-chan bool // used instead of closer when set
 }

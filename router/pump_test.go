@@ -175,19 +175,6 @@ func TestPumpContainerPump(t *testing.T) {
 	}
 }
 
-func TestPumpSendTimeout(t *testing.T) {
-	container := &docker.Container{
-		ID: "8dfafdbc3a40",
-	}
-	pump := newContainerPump(container, os.Stdout, os.Stderr)
-	ch, route := make(chan *Message), &Route{}
-	pump.add(ch, route)
-	pump.send(&Message{Data: "hellooo"})
-	if pump.logstreams[ch] != nil {
-		t.Error("expected logstream to be removed after timeout")
-	}
-}
-
 func TestPumpRoutingFrom(t *testing.T) {
 	container := &docker.Container{
 		ID: "8dfafdbc3a40",
