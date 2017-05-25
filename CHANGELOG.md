@@ -11,6 +11,14 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 
+## [v3.2.2] - 2017-05-25
+### Fixed
+- @michaelshobbs router: fix empty routes response. fixes #299
+- @Crashthatch Close existing routes when adding a new route with an existing ID. fixes #305
+
+### Changed
+- @mattaitchison router/pump: remove logstream send timeout
+
 ## [v3.2.1] - 2017-04-13
 ### Fixed
 - @michaelshobbs build: fix missing ca-certificates. closes #294
