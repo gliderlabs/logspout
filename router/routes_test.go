@@ -9,7 +9,7 @@ type DummyAdapter struct{}
 
 func (a *DummyAdapter) Stream(logstream chan *Message) {
 	for message := range logstream {
-		print( "message passed to DummyAdapter: ", message )
+		print("message passed to DummyAdapter: ", message)
 	}
 }
 
@@ -37,24 +37,23 @@ func TestRouterNoDuplicateIds(t *testing.T) {
 
 	//Start the first route.
 	route1 := &Route{
-		ID: "abc",
+		ID:      "abc",
 		Address: "someUrl",
 		Adapter: "syslog",
 	}
-	err := Routes.Add(route1)
-	if err != nil {
+	if err := Routes.Add(route1); err != nil {
 		t.Error("Error adding route:", err)
 	}
 
 	//Start a second route with the same ID.
 	var route2 = &Route{
-		ID: "abc",
+		ID:      "abc",
 		Address: "someUrl2",
 		Adapter: "syslog",
 	}
 	Routes.Add(route2)
 
-	if( !route1.closed ){
-		t.Errorf("route1 was not closed after route2 added." )
+	if !route1.closed {
+		t.Errorf("route1 was not closed after route2 added.")
 	}
 }
