@@ -10,5 +10,5 @@ You can select specific log types from a source using a comma-delimited list in 
 
 If you include a request `Accept: application/json` header, the output will be JSON objects. Note that when upgrading to WebSocket, it will always use JSON.
 
-Since `/logs` and `/logs/name:<string>` endpoints can return logs from multiple containers, they will by default return color-coded loglines prefixed with the name of the container. You can turn off the color escape codes with query param `colors=off` or the alternative is to stream the data in JSON format, which won't use colors or prefixes.
+Since `/logs` and `/logs/name:<string>` endpoints can return logs from multiple containers, they will by default return color-coded loglines prefixed with the name of the container. If your default terminal background is white and the colored text is unreadable, you can force-set black background with query param 'background=black'. You can turn off the color escape codes with query param `colors=off` or the alternative is to stream the data in JSON format, which won't use colors or prefixes. 
 
