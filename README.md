@@ -163,7 +163,7 @@ You can tell logspout to use your custom client certificate by simply mounting y
 		gliderlabs/logspout \
 		tls://logs.my.server.com
 
-Logspout will automatically load certificates with file extensions crt and cert, keys with .key extension.
+Logspout will automatically load certificates with .crt/.cert file extensions and matching keys with .key extension.
 
 Example: user.cert, user.key
 

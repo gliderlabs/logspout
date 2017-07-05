@@ -44,24 +44,23 @@ func getCAs(path string) *x509.CertPool {
 		return nil
 	}
 	capool := x509.NewCertPool()
-	// TODO: don't khow how to check pool is empty
-	empty := true
+
 	for _, f := range cafiles {
-		if !f.IsDir() {
-			cacert, err := ioutil.ReadFile(path + f.Name())
-			if err != nil {
-				log.Printf("Can't read CA certificate %v: %v", path+f.Name(), err)
-				continue
-			}
-			ok := capool.AppendCertsFromPEM(cacert)
-			if !ok {
-				log.Printf("Bad CA certificate %v", path+f.Name())
-			}
-			empty = !ok && empty
+		if f.IsDir() {
+			continue
+		}
+		cacert, err := ioutil.ReadFile(path + f.Name())
+		if err != nil {
+			log.Printf("Can't read CA certificate %v: %v", path+f.Name(), err)
+			continue
+		}
+		ok := capool.AppendCertsFromPEM(cacert)
+		if !ok {
+			log.Printf("Bad CA certificate %v", path+f.Name())
 		}
 	}
 
-	if empty {
+	if len(capool.Subjects()) == 0 {
 		capool = nil
 	}
 
@@ -75,22 +74,15 @@ func getCertificates(path string) []tls.Certificate {
 		return certs
 	}
 	for _, f := range certfiles {
-		fname := f.Name()
-
-		fext := filepath.Ext(fname)
-
-		fname = fname[0 : len(fname)-len(fext)]
-
-		if fext != ".crt" && fext != ".cert" {
+		ext := filepath.Ext(f.Name())
+		if ext != ".crt" && ext != ".cert" {
 			continue
 		}
 
-		keyfile := path + fname + ".key"
-		if _, err := os.Stat(keyfile); err != nil {
-			continue
-		}
+		certFile := filepath.Join(path, f.Name())
+		keyFile := certFile[:len(certFile)-len(ext)] + ".key"
 
-		cert, err := tls.LoadX509KeyPair(path+fname+fext, keyfile)
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
 			continue
 		}
@@ -109,13 +101,10 @@ func (t *tlsTransport) Dial(addr string, options map[string]string) (net.Conn, e
 	certpath := getopt("CERT_PATH", CertPath)
 
 	capool := getCAs(capath)
-
 	certs := getCertificates(certpath)
 
 	config := tls.Config{Certificates: certs, RootCAs: capool}
-
 	conn, err := tls.Dial("tcp", addr, &config)
-
 	if err != nil {
 		return nil, err
 	}
