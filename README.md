@@ -139,6 +139,7 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 * `EXCLUDE_LABEL` - exclude logs with a given label
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
 * `PORT` or `HTTP_PORT` - configure which port to listen on (default 80)
+* `RAW_FORMAT` - log format for the raw adapter (default `{{.Data}}\n`)
 * `RETRY_COUNT` - how many times to retry a broken socket (default 10)
 * `ROUTESPATH` - path to routes (default `/mnt/routes`)
 * `SYSLOG_DATA` - datum for data field (default `{{.Data}}`)
