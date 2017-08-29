@@ -226,6 +226,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 				Tail:              "all",
 				Since:             sinceTime.Unix(),
 				InactivityTimeout: inactivityTimeout,
+				RawTerminal:  allowTTY,
 			})
 			if err != nil {
 				debug("pump.pumpLogs():", id, "stopped with error:", err)
