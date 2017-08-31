@@ -215,7 +215,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	p.update(event)
 	go func() {
 		for {
-			debug("pump.pumpLogs():", id, "started")
+			debug("pump.pumpLogs():", id, "started, tail:", getopt("TAIL", "all"))
 			err := p.client.Logs(docker.LogsOptions{
 				Container:         id,
 				OutputStream:      outwr,
@@ -223,10 +223,10 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 				Stdout:            true,
 				Stderr:            true,
 				Follow:            true,
-				Tail:              "all",
+				Tail:              getopt("TAIL", "all"),
 				Since:             sinceTime.Unix(),
 				InactivityTimeout: inactivityTimeout,
-				RawTerminal:  allowTTY,
+				RawTerminal:       allowTTY,
 			})
 			if err != nil {
 				debug("pump.pumpLogs():", id, "stopped with error:", err)
