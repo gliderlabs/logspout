@@ -88,7 +88,7 @@ You can route to multiple destinations by comma-separating the URIs:
 		raw://192.168.10.10:5000?filter.name=*_db,syslog+tls://logs.papertrailapp.com:55555?filter.name=*_app
 
 #### Suppressing backlog tail
-You can tell logspout to only display log entries since container "start" or "restart" event by setting a `BACKLOG=false` environment variable (equivalent to `docker logs --tail=0`):
+You can tell logspout to only display log entries since container "start" or "restart" event by setting a `BACKLOG=false` environment variable (equivalent to `docker logs --since=0s`):
 
 	$ docker run -d --name="logspout" \
 		-e 'BACKLOG=false' \
@@ -98,6 +98,10 @@ You can tell logspout to only display log entries since container "start" or "re
 The default behaviour is to output all logs since creation of the container (equivalent to `docker logs --tail=all` or simply `docker logs`).
 
 > NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thorougly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
+
+
+#### Environment variable, TAIL
+Whilst BACKLOG=false restricts the tail by setting the Docker Logs.Options.Since to time.Now(), another mechanism to restrict the tail is to set TAIL=n.  Use of this mechanism avoids parsing the earlier content of the logfile which may have a speed advantage if the tail content is of no interest or has become corrupted.
 
 #### Inspect log streams using curl
 
