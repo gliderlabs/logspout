@@ -139,6 +139,7 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 
 * `ALLOW_TTY` - include logs from containers started with `-t` or `--tty` (i.e. `Allocate a pseudo-TTY`)
 * `BACKLOG` - suppress container tail backlog
+* `TAIL` - specify the number of lines in the log tail to capture when logspout starts (default `all`)
 * `DEBUG` - emit debug logs
 * `EXCLUDE_LABEL` - exclude logs with a given label
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
