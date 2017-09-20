@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 var allowTTY bool
@@ -354,6 +355,7 @@ func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *co
 				}
 				return
 			}
+			pumpMsgSend.With(prometheus.Labels{"container_id": container.ID}).Inc()
 			cp.send(&Message{
 				Data:      strings.TrimSuffix(line, "\n"),
 				Container: container,
