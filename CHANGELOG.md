@@ -10,6 +10,14 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.2.3] - 2017-09-23
+### Added
+- @guigouz guigouz Add `RAW_FORMAT` to the documentation
+- @stevecalvert Allow docker log tail to be specified, default to 'all
+
+### Fixed
+- @jeanlouisboudart RawTerminal should be set to true if we want to collect tty logs
+- @michaelshobbs fix new golint lintballs
 
 ## [v3.2.2] - 2017-05-25
 ### Fixed
@@ -154,7 +162,9 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.1...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.3...HEAD
+[v3.2.3]: https://github.com/gliderlabs/logspout/compare/v3.2.3...v3.2.3
+[v3.2.2]: https://github.com/gliderlabs/logspout/compare/v3.2.1...v3.2.2
 [v3.2.1]: https://github.com/gliderlabs/logspout/compare/v3.2...v3.2.1
 [v3.2]: https://github.com/gliderlabs/logspout/compare/v3.1...v3.2
 [v3.1]: https://github.com/gliderlabs/logspout/compare/v3...v3.1
