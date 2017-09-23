@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - @jeanlouisboudart RawTerminal should be set to true if we want to collect tty logs
+- @michaelshobbs fix new golint lintballs
 
 ## [v3.2.2] - 2017-05-25
 ### Fixed
