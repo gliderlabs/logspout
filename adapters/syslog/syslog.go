@@ -70,11 +70,11 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	priority := getopt("SYSLOG_PRIORITY", "{{.Priority}}")
 	pid := getopt("SYSLOG_PID", "{{.Container.State.Pid}}")
 
-	b, err := ioutil.ReadFile("/etc/host_hostname") // just pass the file name
-	if err != nil {
-		hostname = getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
+	content, err := ioutil.ReadFile("/etc/host_hostname") // just pass the file name
+	if err == nil && len(content) > 0{
+		hostname = string(content) // convert content to a 'string'
 	} else {
-		hostname = string(b) // convert content to a 'string'
+		hostname = getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
 	}
 	tag := getopt("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
 	structuredData := getopt("SYSLOG_STRUCTURED_DATA", "")
