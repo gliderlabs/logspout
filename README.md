@@ -59,17 +59,17 @@ You can tell logspout to only include certain containers by setting filter param
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.name=*_db
-
+	
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.id=3b6ba57db54a
-
+	
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.sources=stdout%2Cstderr
-
+	
 	# Forward logs from containers with both label 'a' starting with 'x', and label 'b' ending in 'y'.
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
@@ -155,6 +155,44 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 * `SYSLOG_STRUCTURED_DATA` - datum for structured data field
 * `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
 * `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
+
+#### Using Logspout in a swarm
+
+In a swarm, logspout is best deployed as a global service.  When running logspout with 'docker run', you can change the value of the hostname field using the `SYSLOG_HOSTNAME` environment variable as explained above. However, this does not work in a compose file because the value for `SYSLOG_HOSTNAME` will be the same for all logspout "tasks", regardless of the docker host on which they run. To support this mode of deployment, the syslog adapter will look for the file `/etc/host_hostname` and, if the file exists and it is not empty, will configure the hostname field with the content of this file. You can then use a volume mount to map a file on the docker hosts with the file `/etc/host_hostname` in the container.  The sample compose file below illustrates how this can be done
+
+```
+version: "3"
+networks:
+  logging:
+services:
+  logspout:
+  image: gliderlabs/logspout:latest
+  networks:
+    - logging
+  volumes:
+    - /etc/hostname:/etc/host_hostname:ro
+    - /var/run/docker.sock:/var/run/docker.sock
+  command:
+    syslog://svt2-logger.am2.cloudra.local:514
+  deploy:
+    mode: global
+    resources:
+      limits:
+        cpus: '0.20'
+        memory: 256M
+      reservations:
+        cpus: '0.10'
+      memory: 128M
+```
+
+logspout can then be deployed as a global service in the swam with the following command
+
+```bash
+docker stack deploy --compose-file <name of your compose file>
+```
+
+More information about services and their mode of deployment can be found here:
+https://docs.docker.com/engine/swarm/how-swarm-mode-works/services/ 
 
 ## Modules
 
