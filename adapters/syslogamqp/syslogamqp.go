@@ -73,7 +73,7 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 
 	routeAddressSplit := strings.Split(route.Address, "://")
 	if len(routeAddressSplit) < 2 {
-		return nil, errors.New("bad uri scheme specification: " + route.Adapter)
+		return nil, errors.New("bad uri scheme specification: " + route.Address)
 	}
 	routeAddressMinusScheme := routeAddressSplit[1]
 	scheme := "amqp://"
