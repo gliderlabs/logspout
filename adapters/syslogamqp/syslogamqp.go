@@ -74,8 +74,8 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	if transportName == "tls" {
 		scheme = "amqps://"
 	}
-
-	connection, err := amqp.DialConfig(scheme+route.Address, amqp.Config{
+  amqpURI := scheme+route.Address
+	connection, err := amqp.DialConfig(amqpURI, amqp.Config{
 		Dial: func (_, address string) (net.Conn, error) {
 			return transport.Dial(address, route.Options)
 		},
@@ -132,7 +132,8 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 	return &AMQPAdapter {
 		route:      route,
-		//connection: connection,
+		transport:  &transport,
+		amqpURI:    amqpURI,
 		channel: 	  channel,
 		exchange:   getopt("AMQP_EXCHANGE", "logspout"),
 		routingKey: getopt("AMQP_ROUTING_KEY", "docker"),
@@ -144,6 +145,8 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 // Adapter publishes log output to an AMQP exchange in the Syslog format
 type AMQPAdapter struct {
 	//connection      amqp.Connection
+	amqpURI         string
+	transport       *router.AdapterTransport
 	channel         *amqp.Channel
 	exchange				string
 	routingKey			string
@@ -182,15 +185,18 @@ func (a *AMQPAdapter) Stream(logstream chan *router.Message) {
 		)
 
 		if err != nil {
-			log.Println("syslog:", err)
+			if err = a.retry(amqpMessage, err); err != nil {
+				log.Println("syslog retry err:", err)
+				return
+			}
 		}
 	}
 }
-/*
-func (a *AMQPAdapter) retry(buf []byte, err error) error {
+
+func (a *AMQPAdapter) retry(amqpMessage amqp.Publishing, err error) error {
 	if opError, ok := err.(*net.OpError); ok {
 		if (opError.Temporary() && opError.Err.Error() != econnResetErrStr) || opError.Timeout() {
-			retryErr := a.retryTemporary(buf)
+			retryErr := a.retryTemporary(amqpMessage)
 			if retryErr == nil {
 				return nil
 			}
@@ -199,7 +205,7 @@ func (a *AMQPAdapter) retry(buf []byte, err error) error {
 	if reconnErr := a.reconnect(); reconnErr != nil {
 		return reconnErr
 	}
-	if _, err = a.conn.Write(buf); err != nil {
+	if err = a.retryTemporary(amqpMessage); err != nil {
 		log.Println("syslog: reconnect failed")
 		return err
 	}
@@ -207,10 +213,16 @@ func (a *AMQPAdapter) retry(buf []byte, err error) error {
 	return nil
 }
 
-func (a *AMQPAdapter) retryTemporary(buf []byte) error {
-	log.Printf("syslog: retrying tcp up to %v times\n", retryCount)
+func (a *AMQPAdapter) retryTemporary(amqpMessage amqp.Publishing) error {
+	log.Printf("syslog: retrying amqp publish up to %v times\n", retryCount)
 	err := retryExp(func() error {
-		_, err := a.conn.Write(buf)
+		err := a.channel.Publish(
+			a.exchange, // exchange
+			a.routingKey, // routing key
+			false, // mandatory
+		  false, //immediate
+		  amqpMessage,
+		)
 		if err == nil {
 			log.Println("syslog: retry successful")
 			return nil
@@ -230,11 +242,24 @@ func (a *AMQPAdapter) retryTemporary(buf []byte) error {
 func (a *AMQPAdapter) reconnect() error {
 	log.Printf("syslog: reconnecting up to %v times\n", retryCount)
 	err := retryExp(func() error {
-		conn, err := a.transport.Dial(a.route.Address, a.route.Options)
+		connection, err := amqp.DialConfig(a.amqpURI, amqp.Config{
+			Dial: func (_, address string) (net.Conn, error) {
+				transport := *(a.transport)
+				return transport.Dial(address, a.route.Options)
+			},
+		})
+
 		if err != nil {
+			log.Printf("amqp.Dial: %s - " + a.route.Address, err)
 			return err
 		}
-		a.conn = conn
+		channel, err := connection.Channel()
+		if err != nil {
+			log.Printf("connection.Channel(): %s", err)
+			return err
+		}
+
+		a.channel = channel
 		return nil
 	}, retryCount)
 
@@ -260,7 +285,7 @@ func retryExp(fun func() error, tries uint) error {
 		time.Sleep((1 << try) * 10 * time.Millisecond)
 	}
 }
-*/
+
 // Message extends router.Message for the syslog standard
 type Message struct {
 	*router.Message
