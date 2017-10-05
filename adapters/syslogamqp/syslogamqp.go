@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"log/syslog"
-	"net"
+
 	"os"
 	"strconv"
 	"syscall"
@@ -29,7 +29,7 @@ var (
 func init() {
 	hostname, _ = os.Hostname()
 	econnResetErrStr = fmt.Sprintf("write: %s", syscall.ECONNRESET.Error())
-	router.AdapterFactories.Register(NewSyslogAdapter, "syslogamqp")
+	router.AdapterFactories.Register(NewSyslogAMQPAdapter, "syslogamqp")
 	setRetryCount()
 }
 
@@ -61,12 +61,12 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	//uri := "amqp://" + a.user + ":" + a.password + "@" + a.address
 	connection, err := amqp.Dial(route.Address)
 	if err != nil {
-		log.Errorf("amqp.Dial: %s - " + route.Address, err)
+		log.Printf("amqp.Dial: %s - " + route.Address, err)
 		return nil, err
 	}
 	channel, err := connection.Channel()
 	if err != nil {
-			log.Errorf("connection.Channel(): %s", err)
+			log.Printf("connection.Channel(): %s", err)
 		return nil, err
 	}
 
@@ -123,16 +123,16 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 // Adapter publishes log output to an AMQP exchange in the Syslog format
 type AMQPAdapter struct {
 	//connection      amqp.Connection
-	channel         amqp.Channel,
-	exchange				string,
-	routingKey			string,
-	route           *router.Route,
-	tmpl            *template.Template,
+	channel         *amqp.Channel
+	exchange				string
+	routingKey			string
+	route           *router.Route
+	tmpl            *template.Template
 	//transport       router.AdapterTransport
 }
 
 // Stream sends log data to a connection
-func (a *Adapter) Stream(logstream chan *router.Message) {
+func (a *AMQPAdapter) Stream(logstream chan *router.Message) {
 	for message := range logstream {
 		m := &Message{message}
 		buf, err := m.Render(a.tmpl)
@@ -165,8 +165,8 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 		}
 	}
 }
-
-func (a *Adapter) retry(buf []byte, err error) error {
+/*
+func (a *AMQPAdapter) retry(buf []byte, err error) error {
 	if opError, ok := err.(*net.OpError); ok {
 		if (opError.Temporary() && opError.Err.Error() != econnResetErrStr) || opError.Timeout() {
 			retryErr := a.retryTemporary(buf)
@@ -186,7 +186,7 @@ func (a *Adapter) retry(buf []byte, err error) error {
 	return nil
 }
 
-func (a *Adapter) retryTemporary(buf []byte) error {
+func (a *AMQPAdapter) retryTemporary(buf []byte) error {
 	log.Printf("syslog: retrying tcp up to %v times\n", retryCount)
 	err := retryExp(func() error {
 		_, err := a.conn.Write(buf)
@@ -206,7 +206,7 @@ func (a *Adapter) retryTemporary(buf []byte) error {
 	return nil
 }
 
-func (a *Adapter) reconnect() error {
+func (a *AMQPAdapter) reconnect() error {
 	log.Printf("syslog: reconnecting up to %v times\n", retryCount)
 	err := retryExp(func() error {
 		conn, err := a.transport.Dial(a.route.Address, a.route.Options)
@@ -239,7 +239,7 @@ func retryExp(fun func() error, tries uint) error {
 		time.Sleep((1 << try) * 10 * time.Millisecond)
 	}
 }
-
+*/
 // Message extends router.Message for the syslog standard
 type Message struct {
 	*router.Message
