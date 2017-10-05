@@ -61,7 +61,7 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	//uri := "amqp://" + a.user + ":" + a.password + "@" + a.address
 	transportName := route.AdapterTransport("tcp")
 
-  if !(transportName == "tcp" || transportName == "tls") {
+	if !(transportName == "tcp" || transportName == "tls") {
 		return nil, errors.New("unsupported transport: " + route.Adapter + ". Supported transports are tcp and tls.")
 	}
 
@@ -74,8 +74,8 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	if transportName == "tls" {
 		scheme = "amqps://"
 	}
-  amqpURI := scheme+route.Address
-  connection, err := amqp.DialConfig(amqpURI, amqp.Config{
+	amqpURI := scheme+route.Address
+	connection, err := amqp.DialConfig(amqpURI, amqp.Config{
 		Dial: func (_, address string) (net.Conn, error) {
 			return transport.Dial(address, route.Options)
 		},
@@ -133,26 +133,23 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	return &AMQPAdapter {
 		route:      route,
 		transport:  &transport,
-		amqpURI:    amqpURI,
-		channel: 	  channel,
+		amqpURI    amqpURI,
+		channel:   channel,
 		exchange:   getopt("AMQP_EXCHANGE", "logspout"),
 		routingKey: getopt("AMQP_ROUTING_KEY", "docker"),
 		tmpl:       tmpl,
-		//transport:  transport,
 	}, nil
 }
 
 // Adapter publishes log output to an AMQP exchange in the Syslog format
 type AMQPAdapter struct {
-	//connection      amqp.Connection
-	amqpURI         string
-	transport       *router.AdapterTransport
-	channel         *amqp.Channel
-	exchange				string
-	routingKey			string
-	route           *router.Route
-	tmpl            *template.Template
-	//transport       router.AdapterTransport
+	amqpURI    string
+	transport  *router.AdapterTransport
+	channel    *amqp.Channel
+	exchange   string
+	routingKey string
+	route      *router.Route
+	tmpl       *template.Template
 }
 
 // Stream sends log data to a connection
@@ -172,16 +169,16 @@ func (a *AMQPAdapter) Stream(logstream chan *router.Message) {
 			//DeliveryMode: amqp.Transient,
 			DeliveryMode: amqp.Persistent,
 			Priority: 0,
-			Timestamp:    time.Now(),
-			Body:         buf,
+			Timestamp: time.Now(),
+			Body:buf,
 		}
 
 		err = a.channel.Publish(
 			a.exchange, // exchange
 			a.routingKey, // routing key
 			false, // mandatory
-		  false, //immediate
-		  amqpMessage,
+			false, //immediate
+			amqpMessage,
 		)
 
 		if err != nil {
@@ -220,8 +217,8 @@ func (a *AMQPAdapter) retryTemporary(amqpMessage amqp.Publishing) error {
 			a.exchange, // exchange
 			a.routingKey, // routing key
 			false, // mandatory
-		  false, //immediate
-		  amqpMessage,
+			false, //immediate
+			amqpMessage,
 		)
 		if err == nil {
 			log.Println("syslog: retry successful")
