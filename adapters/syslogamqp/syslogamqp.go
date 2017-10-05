@@ -111,24 +111,20 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 	return &AMQPAdapter {
 		route:      route,
-		//connection: connection,
 		channel: 	  channel,
 		exchange:   getopt("AMQP_EXCHANGE", "logspout"),
 		routingKey: getopt("AMQP_ROUTING_KEY", "docker"),
 		tmpl:       tmpl,
-		//transport:  transport,
 	}, nil
 }
 
 // Adapter publishes log output to an AMQP exchange in the Syslog format
 type AMQPAdapter struct {
-	//connection      amqp.Connection
 	channel         amqp.Channel,
 	exchange				string,
 	routingKey			string,
 	route           *router.Route
 	tmpl            *template.Template
-	//transport       router.AdapterTransport
 }
 
 // Stream sends log data to a connection
