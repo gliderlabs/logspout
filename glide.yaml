@@ -7,7 +7,6 @@ import:
 - package: github.com/fsouza/go-dockerclient
 - package: github.com/gorilla/mux
 - package: github.com/docker/go-units
-- package: github.com/forestjohnsonpeoplenet/logspout
 - package: github.com/looplab/logspout-logstash
 - package: github.com/gorilla/context
 - package: github.com/streadway/amqp
