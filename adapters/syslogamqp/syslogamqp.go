@@ -133,10 +133,10 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	return &AMQPAdapter {
 		route:      route,
 		transport:  &transport,
-		amqpURI    amqpURI,
+		amqpURI:    amqpURI,
 		channel:   channel,
 		exchange:   getopt("AMQP_EXCHANGE", "logspout"),
-		routingKey: getopt("AMQP_ROUTING_KEY", "docker"),
+		routingKey: getopt("AMQP_ROUTING_KEY", "default"),
 		tmpl:       tmpl,
 	}, nil
 }
