@@ -1,4 +1,4 @@
-package syslog
+package syslogamqp
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/gliderlabs/logspout/router"
+	"github.com/streadway/amqp"
 )
 
 const defaultRetryCount = 10
@@ -28,7 +29,7 @@ var (
 func init() {
 	hostname, _ = os.Hostname()
 	econnResetErrStr = fmt.Sprintf("write: %s", syscall.ECONNRESET.Error())
-	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
+	router.AdapterFactories.Register(NewSyslogAdapter, "syslogamqp")
 	setRetryCount()
 }
 
@@ -55,14 +56,17 @@ func debug(v ...interface{}) {
 	}
 }
 
-// NewSyslogAdapter returnas a configured syslog.Adapter
-func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
-	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
-	if !found {
-		return nil, errors.New("bad transport: " + route.Adapter)
-	}
-	conn, err := transport.Dial(route.Address, route.Options)
+// NewSyslogAMQPAdapter returnas a configured syslog.Adapter
+func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
+	//uri := "amqp://" + a.user + ":" + a.password + "@" + a.address
+	connection, err := amqp.Dial(route.Address)
 	if err != nil {
+		log.Errorf("amqp.Dial: %s - " + route.Address, err)
+		return nil, err
+	}
+	channel, err := connection.Channel()
+	if err != nil {
+			log.Errorf("connection.Channel(): %s", err)
 		return nil, err
 	}
 
@@ -105,20 +109,26 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Adapter{
-		route:     route,
-		conn:      conn,
-		tmpl:      tmpl,
-		transport: transport,
+	return &AMQPAdapter {
+		route:      route,
+		//connection: connection,
+		channel: 	  channel,
+		exchange:   getopt("AMQP_EXCHANGE", "logspout"),
+		routingKey: getopt("AMQP_ROUTING_KEY", "docker"),
+		tmpl:       tmpl,
+		//transport:  transport,
 	}, nil
 }
 
-// Adapter streams log output to a connection in the Syslog format
-type Adapter struct {
-	conn      net.Conn
-	route     *router.Route
-	tmpl      *template.Template
-	transport router.AdapterTransport
+// Adapter publishes log output to an AMQP exchange in the Syslog format
+type AMQPAdapter struct {
+	//connection      amqp.Connection
+	channel         amqp.Channel,
+	exchange				string,
+	routingKey			string,
+	route           *router.Route
+	tmpl            *template.Template
+	//transport       router.AdapterTransport
 }
 
 // Stream sends log data to a connection
@@ -130,17 +140,28 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			log.Println("syslog:", err)
 			return
 		}
-		if _, err = a.conn.Write(buf); err != nil {
+
+		amqpMessage := amqp.Publishing{
+			//Headers: amqp.Table{},
+			//ContentType: "text/plain",
+			//ContentEncoding: "UTF-8",
+			//DeliveryMode: amqp.Transient,
+			DeliveryMode: amqp.Persistent,
+			Priority: 0,
+			Timestamp:    time.Now(),
+			Body:         buf,
+		}
+
+		err = a.channel.Publish(
+			a.exchange, // exchange
+			a.routingKey, // routing key
+			false, // mandatory
+		  false, //immediate
+		  amqpMessage,
+		)
+
+		if err != nil {
 			log.Println("syslog:", err)
-			switch a.conn.(type) {
-			case *net.UDPConn:
-				continue
-			default:
-				if err = a.retry(buf, err); err != nil {
-					log.Println("syslog retry err:", err)
-					return
-				}
-			}
 		}
 	}
 }
