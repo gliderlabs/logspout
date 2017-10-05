@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"log/syslog"
-
+  "strings"
 	"os"
 	"strconv"
 	"syscall"
@@ -59,7 +60,33 @@ func debug(v ...interface{}) {
 // NewSyslogAMQPAdapter returnas a configured syslog.Adapter
 func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	//uri := "amqp://" + a.user + ":" + a.password + "@" + a.address
-	connection, err := amqp.Dial(route.Address)
+	transportName := route.AdapterTransport("tcp")
+
+  if !(transportName == "tcp" || transportName == "tls") {
+		return nil, errors.New("unsupported transport: " + route.Adapter + ". Supported transports are tcp and tls.")
+	}
+
+	transport, found := router.AdapterTransports.Lookup(transportName)
+	if !found {
+		return nil, errors.New("transport not found: " + route.Adapter)
+	}
+
+	routeAddressSplit := strings.Split(route.Address, "://")
+	if len(routeAddressSplit) < 2 {
+		return nil, errors.New("bad uri scheme specification: " + route.Adapter)
+	}
+	routeAddressMinusScheme := routeAddressSplit[1]
+	scheme := "amqp://"
+	if transportName == "tls" {
+		scheme = "amqps://"
+	}
+
+	connection, err := amqp.DialConfig(scheme+routeAddressMinusScheme, amqp.Config{
+		Dial: func (_, address string) (net.Conn, error) {
+			return transport.Dial(address, route.Options)
+		},
+	})
+
 	if err != nil {
 		log.Printf("amqp.Dial: %s - " + route.Address, err)
 		return nil, err
