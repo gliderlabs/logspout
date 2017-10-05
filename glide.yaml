@@ -3,5 +3,6 @@ import:
 - package: github.com/fsouza/go-dockerclient
 - package: github.com/gorilla/mux
 - package: golang.org/x/net
+- package: github.com/streadway/amqp
   subpackages:
   - websocket
