@@ -5,10 +5,7 @@ EXPOSE 80
 
 COPY ./build-env.sh /src/
 RUN cd /src && ./build-env.sh
+COPY ./build-glide.sh ./glide.yaml ./glide.lock modules.go /src/
+RUN cd /src && ./build-glide.sh
 COPY . /src/
 RUN cd /src && ./build.sh "$(cat VERSION)"
-
-ONBUILD COPY ./build-env.sh /src/
-ONBUILD RUN cd /src && ./build-env.sh
-ONBUILD COPY ./modules.go /src/modules.go
-ONBUILD RUN cd /src && ./build.sh "$(cat VERSION)-custom"
