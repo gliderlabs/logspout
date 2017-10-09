@@ -62,14 +62,18 @@ func debug(v ...interface{}) {
 func nslookup(host string) (string, error) {
 	var cmdOut []byte
   cmdName := "nslookup"
-  cmdArgs := []string{"host"}
+  cmdArgs := []string{host}
 	cmdOut, _ = exec.Command(cmdName, cmdArgs...).Output()
 
-	matchIpv4 := regexp.MustCompile("(\\d+\\.){3}\\d+")
-	match := matchIpv4.FindStringSubmatch(string(cmdOut))
+	matchIpv4 := regexp.MustCompile("Address[^\\d]+((\\d+\\.){3}\\d+)")
+	matches := matchIpv4.FindAllStringSubmatch(string(cmdOut), -1)
 
-  if match != nil && len(match) > 0 {
-	  return match[0], nil
+  match := make([]string, 0)
+  if len(matches) > 0 {
+    match = matches[len(matches)-1]
+  }
+  if match != nil && len(match) > 1 {
+	  return match[1], nil
   }
 	return  "", fmt.Errorf("nslookup %s returned:\n %s.\n\n", host, cmdOut)
 }
