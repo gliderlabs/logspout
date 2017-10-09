@@ -121,8 +121,9 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 		},
 	}
 
-
-	amqpURI := scheme+route.Address
+  username := getopt("AMQP_USERNAME", "guest")
+	password := getopt("AMQP_PASSWORD", "guest")
+	amqpURI := scheme+username+":"+password+"@"route.Address
 	log.Println("amqpURI: " + amqpURI)
 	connection, err := amqp.DialConfig(amqpURI, *amqpConfig)
 
