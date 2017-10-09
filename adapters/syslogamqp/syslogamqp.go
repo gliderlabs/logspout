@@ -94,9 +94,11 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 		scheme = "amqps://"
 	}
 
+  useNslookup := getopt("AMQP_SOCKET_USE_NSLOOKUP", "")
   amqpConfig := &amqp.Config{
 		Dial: func (_, address string) (net.Conn, error) {
-			  log.Println("address: " + address)
+			if useNslookup != "" {
+				log.Println("address: " + address)
 				addressParts := strings.Split(address, ":")
 				host := addressParts[0]
 				ipString, err := nslookup(host)
@@ -110,6 +112,7 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 						address = ipString
 					}
 				}
+			}
 
 			return transport.Dial(address, route.Options)
 		},
