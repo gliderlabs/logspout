@@ -1,7 +1,6 @@
 package syslogamqp
 
 import (
-	"math/rand"
 	"bytes"
 	"errors"
 	"strings"
@@ -11,12 +10,13 @@ import (
 	"net"
 	"log/syslog"
 	"os"
+	"regexp"
+	"os/exec"
 	"strconv"
 	"syscall"
 	"text/template"
 	"time"
 
-  "github.com/bogdanovich/dns_resolver"
 	"github.com/gliderlabs/logspout/router"
 	"github.com/streadway/amqp"
 )
@@ -59,6 +59,21 @@ func debug(v ...interface{}) {
 	}
 }
 
+func nslookup(host string) (string, error) {
+	var cmdOut []byte
+  cmdName := "nslookup"
+  cmdArgs := []string{"host"}
+	cmdOut, _ = exec.Command(cmdName, cmdArgs...).Output()
+
+	matchIpv4 := regexp.MustCompile("(\\d+\\.){3}\\d+")
+	match := matchIpv4.FindStringSubmatch(string(cmdOut))
+
+  if match != nil && len(match) > 0 {
+	  return match[0], nil
+  }
+	return  "", fmt.Errorf("nslookup %s returned:\n %s.\n\n", host, cmdOut)
+}
+
 // NewSyslogAMQPAdapter returnas a configured syslog.Adapter
 func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	time.Sleep(time.Second)
@@ -74,15 +89,6 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, errors.New("transport not found: " + route.Adapter)
 	}
 
-	dnsServerHostPort := getopt("AMQP_SOCKET_DNS_SERVER_HOST_PORT", "")
-	var dnsResolver *dns_resolver.DnsResolver
-	if dnsServerHostPort != "" {
-		log.Println("AMQP_SOCKET_DNS_SERVER_HOST_PORT: ", dnsServerHostPort)
-		dnsResolver = dns_resolver.New([]string{dnsServerHostPort})
-	} else {
-		log.Println("AMQP_SOCKET_DNS_SERVER_HOST_PORT: null")
-	}
-
 	scheme := "amqp://"
 	if transportName == "tls" {
 		scheme = "amqps://"
@@ -90,21 +96,21 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 
   amqpConfig := &amqp.Config{
 		Dial: func (_, address string) (net.Conn, error) {
-			if dnsResolver != nil {
+			  log.Println("address: " + address)
 				addressParts := strings.Split(address, ":")
 				host := addressParts[0]
-				ipAddresses, err := dnsResolver.LookupHost(host)
+				ipString, err := nslookup(host)
+				log.Println("ipString: " + ipString)
 				if err != nil {
 					fmt.Printf("DNS resolution of broker hostname (%s) failed!!  error: %s", host, err)
 				} else {
-					ipString := ipAddresses[rand.Intn(len(ipAddresses))].String()
 					if len(addressParts) == 2 {
 						address = fmt.Sprintf("%s:%s", ipString, addressParts[1])
 					} else {
 						address = ipString
 					}
 				}
-			}
+
 			return transport.Dial(address, route.Options)
 		},
 	}
