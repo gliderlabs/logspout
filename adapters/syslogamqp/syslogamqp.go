@@ -1,8 +1,10 @@
 package syslogamqp
 
 import (
+	"math/rand"
 	"bytes"
 	"errors"
+	"strings"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -14,6 +16,7 @@ import (
 	"text/template"
 	"time"
 
+  "github.com/bogdanovich/dns_resolver"
 	"github.com/gliderlabs/logspout/router"
 	"github.com/streadway/amqp"
 )
@@ -70,17 +73,43 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, errors.New("transport not found: " + route.Adapter)
 	}
 
+	dnsServerHostPort := getopt("AMQP_SOCKET_DNS_SERVER_HOST_PORT", "")
+	var dnsResolver *dns_resolver.DnsResolver
+	if dnsServerHostPort != "" {
+		log.Println("AMQP_SOCKET_DNS_SERVER_HOST_PORT: ", dnsServerHostPort)
+		dnsResolver = dns_resolver.New([]string{dnsServerHostPort})
+	} else {
+		log.Println("AMQP_SOCKET_DNS_SERVER_HOST_PORT: null")
+	}
+
 	scheme := "amqp://"
 	if transportName == "tls" {
 		scheme = "amqps://"
 	}
-	amqpURI := scheme+route.Address
-	connection, err := amqp.DialConfig(amqpURI, amqp.Config{
+
+  amqpConfig := &amqp.Config{
 		Dial: func (_, address string) (net.Conn, error) {
-			log.Printf("amqp.Dial: %s", address)
+			if dnsResolver != nil {
+				addressParts := strings.Split(address, ":")
+				host := addressParts[0]
+				ipAddresses, err := dnsResolver.LookupHost(host)
+				if err != nil {
+					fmt.Printf("DNS resolution of broker hostname (%s) failed!!  error: %s", host, err)
+				} else {
+					ipString := ipAddresses[rand.Intn(len(ipAddresses))].String()
+					if len(addressParts) == 2 {
+						address = fmt.Sprintf("%s:%s", ipString, addressParts[1])
+					} else {
+						address = ipString
+					}
+				}
+			}
 			return transport.Dial(address, route.Options)
 		},
-	})
+	}
+
+	amqpURI := scheme+route.Address
+	connection, err := amqp.DialConfig(amqpURI, *amqpConfig)
 
 	if err != nil {
 		log.Printf("amqp.Dial: %s - " + route.Address, err)
@@ -132,9 +161,9 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 	return &AMQPAdapter {
+	  amqpURI:    amqpURI,
+	  amqpConfig: amqpConfig,
 		route:      route,
-		transport:  &transport,
-		amqpURI:    amqpURI,
 		channel:   channel,
 		exchange:   getopt("AMQP_EXCHANGE", "logspout"),
 		routingKey: getopt("AMQP_ROUTING_KEY", "default"),
@@ -144,6 +173,7 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 
 // Adapter publishes log output to an AMQP exchange in the Syslog format
 type AMQPAdapter struct {
+	amqpConfig *amqp.Config
 	amqpURI    string
 	transport  *router.AdapterTransport
 	channel    *amqp.Channel
@@ -240,12 +270,7 @@ func (a *AMQPAdapter) retryTemporary(amqpMessage amqp.Publishing) error {
 func (a *AMQPAdapter) reconnect() error {
 	log.Printf("syslog: reconnecting up to %v times\n", retryCount)
 	err := retryExp(func() error {
-		connection, err := amqp.DialConfig(a.amqpURI, amqp.Config{
-			Dial: func (_, address string) (net.Conn, error) {
-				transport := *(a.transport)
-				return transport.Dial(address, a.route.Options)
-			},
-		})
+		connection, err := amqp.DialConfig(a.amqpURI, *a.amqpConfig)
 
 		if err != nil {
 			log.Printf("amqp.Dial: %s - " + a.route.Address, err)

@@ -21,6 +21,7 @@ import:
 - package: github.com/gogo/protobuf
 - package: github.com/opencontainers/go-digest
 - package: github.com/docker/go-connections
+- package: github.com/bogdanovich/dns_resolver
 - package: golang.org/x/sys
 - package: golang.org/x/net
 - package: github.com/Azure/go-ansiterm
