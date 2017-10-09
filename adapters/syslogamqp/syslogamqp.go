@@ -77,6 +77,7 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 	amqpURI := scheme+route.Address
 	connection, err := amqp.DialConfig(amqpURI, amqp.Config{
 		Dial: func (_, address string) (net.Conn, error) {
+			log.Printf("amqp.Dial: %s", address)
 			return transport.Dial(address, route.Options)
 		},
 	})
