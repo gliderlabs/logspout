@@ -65,7 +65,7 @@ func nslookup(host string) (string, error) {
   cmdArgs := []string{host}
 	cmdOut, _ = exec.Command(cmdName, cmdArgs...).Output()
 
-	matchIpv4 := regexp.MustCompile("Address([^ ]+ )+((\\d+\\.){3}\\d+)")
+	matchIpv4 := regexp.MustCompile("\\b((\\d+\\.){3}\\d+)\\b")
 	matches := matchIpv4.FindAllStringSubmatch(string(cmdOut), -1)
 
   match := make([]string, 0)
