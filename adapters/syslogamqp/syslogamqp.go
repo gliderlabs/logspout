@@ -80,7 +80,6 @@ func nslookup(host string) (string, error) {
 
 // NewSyslogAMQPAdapter returnas a configured syslog.Adapter
 func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
-	time.Sleep(time.Second)
 	//uri := "amqp://" + a.user + ":" + a.password + "@" + a.address
 	transportName := route.AdapterTransport("tcp")
 
@@ -102,11 +101,11 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
   amqpConfig := &amqp.Config{
 		Dial: func (_, address string) (net.Conn, error) {
 			if useNslookup != "" {
-				log.Println("address: " + address)
+				log.Println("dial address: " + address)
 				addressParts := strings.Split(address, ":")
 				host := addressParts[0]
 				ipString, err := nslookup(host)
-				log.Println("ipString: " + ipString)
+				log.Println("dial ipString: " + ipString)
 				if err != nil {
 					fmt.Printf("DNS resolution of broker hostname (%s) failed!!  error: %s", host, err)
 				} else {
@@ -122,7 +121,9 @@ func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
 		},
 	}
 
+
 	amqpURI := scheme+route.Address
+	log.Println("amqpURI: " + amqpURI)
 	connection, err := amqp.DialConfig(amqpURI, *amqpConfig)
 
 	if err != nil {
