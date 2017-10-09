@@ -61,6 +61,7 @@ func debug(v ...interface{}) {
 
 // NewSyslogAMQPAdapter returnas a configured syslog.Adapter
 func NewSyslogAMQPAdapter(route *router.Route) (router.LogAdapter, error) {
+	time.Sleep(time.Second)
 	//uri := "amqp://" + a.user + ":" + a.password + "@" + a.address
 	transportName := route.AdapterTransport("tcp")
 
