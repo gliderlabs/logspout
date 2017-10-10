@@ -3,5 +3,27 @@ import:
 - package: github.com/fsouza/go-dockerclient
 - package: github.com/gorilla/mux
 - package: golang.org/x/net
+- package: github.com/streadway/amqp
+- package: github.com/fsouza/go-dockerclient
+- package: github.com/gorilla/mux
+- package: github.com/docker/go-units
+- package: github.com/looplab/logspout-logstash
+- package: github.com/gorilla/context
+- package: github.com/streadway/amqp
+- package: github.com/containerd/continuity
+- package: github.com/docker/docker
+- package: github.com/opencontainers/image-spec
+- package: github.com/opencontainers/runc
+- package: github.com/Microsoft/go-winio
+- package: github.com/pkg/errors
+- package: github.com/sirupsen/logrus
+- package: github.com/Nvveen/Gotty
+- package: github.com/gogo/protobuf
+- package: github.com/opencontainers/go-digest
+- package: github.com/docker/go-connections
+- package: golang.org/x/sys
+- package: golang.org/x/net
+- package: github.com/Azure/go-ansiterm
+- package: golang.org/x/crypto
   subpackages:
   - websocket
