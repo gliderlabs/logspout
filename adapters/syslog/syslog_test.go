@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+        "io/ioutil"
 	"log"
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"text/template"
@@ -41,7 +43,45 @@ var (
 	}
 	testTmplStr = fmt.Sprintf("<%s>%s %s %s[%s]: %s\n",
 		testPriority, testTimestamp, testHostname, testTag, testPid, testData)
+        hostHostnameFilename = "/etc/host_hostname"
+        hostHostnameContentWithoutLinefeed = "hostname"
+        hostHostnameContent = "hostname\r\n"
 )
+
+func TestHostnameDoesNotHaveLineFeed(t *testing.T) {
+	err := ioutil.WriteFile(hostHostnameFilename, []byte(hostHostnameContent), 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
+	done := make(chan string)
+	addr, sock, srvWG := startServer("tcp", "", done)
+	defer srvWG.Wait()
+	defer os.Remove(addr)
+	defer sock.Close()
+	route := &router.Route{Adapter: "syslog+tcp", Address: addr}
+	adapter, err := NewSyslogAdapter(route)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	msg := &Message{
+		Message: &router.Message{
+			Container: container,
+			Data:      "test",
+			Time:      time.Now(),
+			Source:    "stdout",
+		},
+	}
+	b, _ := msg.Render(adapter.(*Adapter).tmpl)
+	templateString := string(b)
+
+	if strings.Contains(templateString, hostHostnameContent) {
+		t.Errorf("expected hostname to be %s got %s in tmp %s", hostHostnameContentWithoutLinefeed, hostHostnameContent, templateString)
+	}
+	if ! strings.Contains(templateString, hostHostnameContentWithoutLinefeed) {
+		t.Errorf("hostname in template string does not contain the correct hostname in tpl %s. Should be %s", templateString, hostHostnameContentWithoutLinefeed)
+	}
+}
 
 func TestSyslogRetryCount(t *testing.T) {
 	newRetryCount := uint(20)
@@ -173,3 +213,4 @@ func check(t *testing.T, tmpl *template.Template, in string, out string) {
 		t.Errorf("expected: %s\ngot: %s\n", in, out)
 	}
 }
+
