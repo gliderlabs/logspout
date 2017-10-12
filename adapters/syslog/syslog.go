@@ -10,6 +10,7 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"syscall"
 	"text/template"
 	"time"
@@ -70,9 +71,9 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	priority := getopt("SYSLOG_PRIORITY", "{{.Priority}}")
 	pid := getopt("SYSLOG_PID", "{{.Container.State.Pid}}")
 
-	content, err := ioutil.ReadFile("/etc/host_hostname") // just pass the file name
-	if err == nil && len(content) > 0{
-		hostname = string(content) // convert content to a 'string'
+	content, err := ioutil.ReadFile("/etc/host_hostname")
+	if err == nil && len(content) > 0 {
+		hostname = strings.TrimRight(string(content), "\r\n")
 	} else {
 		hostname = getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
 	}
