@@ -1,4 +1,4 @@
-package: github.com/gliderlabs/logspout
+package: github.com/deliveroo/logspout
 import:
 - package: github.com/fsouza/go-dockerclient
 - package: github.com/gorilla/mux

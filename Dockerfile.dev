@@ -4,8 +4,8 @@ EXPOSE 80
 
 ENV GOPATH /go
 RUN apk --no-cache add go build-base git mercurial ca-certificates
-COPY . /go/src/github.com/gliderlabs/logspout
-WORKDIR /go/src/github.com/gliderlabs/logspout
+COPY . /go/src/github.com/deliveroo/logspout
+WORKDIR /go/src/github.com/deliveroo/logspout
 RUN go get
 CMD go get \
 	&& go build -ldflags "-X main.Version=dev" -o /bin/logspout \
