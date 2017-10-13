@@ -4,7 +4,7 @@ Instructions on how to build/test your own modules.
 
 1. Fork this repository
 1. Create a new repository for your adapter
-1. Copy something like [raw.go](https://github.com/gliderlabs/logspout/blob/master/adapters/raw/raw.go) to get started.
+1. Copy something like [raw.go](https://github.com/deliveroo/logspout/blob/master/adapters/raw/raw.go) to get started.
 1. Add your module to modules.go
 
 > You'll need to add the `build.sh` from this repository to the directory from which you run `docker build` or you will get errors

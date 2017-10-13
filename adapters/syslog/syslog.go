@@ -14,7 +14,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/deliveroo/logspout/router"
+	"strings"
 )
 
 const defaultRetryCount = 10
@@ -71,7 +72,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	pid := getopt("SYSLOG_PID", "{{.Container.State.Pid}}")
 
 	content, err := ioutil.ReadFile("/etc/host_hostname") // just pass the file name
-	if err == nil && len(content) > 0{
+	if err == nil && len(content) > 0 {
 		hostname = string(content) // convert content to a 'string'
 	} else {
 		hostname = getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
@@ -259,4 +260,16 @@ func (m *Message) Timestamp() string {
 // ContainerName returns the message's container name
 func (m *Message) ContainerName() string {
 	return m.Message.Container.Name[1:]
+}
+
+func (m *Message) ECSContainerName() string {
+	labels := m.Message.Container.Config.Labels
+	if _, isEcs := labels["com.amazonaws.ecs.cluster"]; !isEcs {
+		return m.ContainerName()
+	}
+	family := labels["com.amazonaws.ecs.task-definition-family"]
+	version := labels["com.amazonaws.ecs.task-definition-version"]
+	taskId := strings.SplitN(labels["com.amazonaws.ecs.task-arn"], "/", 2)[1]
+	shortTaskId := strings.Split(taskId, "-")[0]
+	return fmt.Sprintf("%s:%s/%s", family, version, shortTaskId)
 }

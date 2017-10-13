@@ -3,8 +3,8 @@ package udp
 import (
 	"net"
 
-	"github.com/gliderlabs/logspout/adapters/raw"
-	"github.com/gliderlabs/logspout/router"
+	"github.com/deliveroo/logspout/adapters/raw"
+	"github.com/deliveroo/logspout/router"
 )
 
 const (

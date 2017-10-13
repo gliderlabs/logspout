@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/deliveroo/logspout/router"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
 )
