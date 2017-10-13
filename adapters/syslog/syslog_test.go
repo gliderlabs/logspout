@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"text/template"
@@ -41,6 +43,9 @@ var (
 	}
 	testTmplStr = fmt.Sprintf("<%s>%s %s %s[%s]: %s\n",
 		testPriority, testTimestamp, testHostname, testTag, testPid, testData)
+	hostHostnameFilename = "/etc/host_hostname"
+	hostnameContent      = "hostname"
+	badHostnameContent   = "hostname\r\n"
 )
 
 func TestSyslogRetryCount(t *testing.T) {
@@ -99,6 +104,16 @@ func TestSyslogReconnectOnClose(t *testing.T) {
 				return
 			}
 		}
+	}
+}
+
+func TestHostnameDoesNotHaveLineFeed(t *testing.T) {
+	if err := ioutil.WriteFile(hostHostnameFilename, []byte(badHostnameContent), 0777); err != nil {
+		t.Fatal(err)
+	}
+	testHostname := getHostname()
+	if strings.Contains(testHostname, badHostnameContent) {
+		t.Errorf("expected hostname to be %s. got %s in hostname %s", hostnameContent, badHostnameContent, testHostname)
 	}
 }
 

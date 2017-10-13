@@ -49,6 +49,7 @@ test: build-dev
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
 		-e TEST_ARGS="" \
+		-e DEBUG=$(DEBUG) \
 		$(NAME):dev make -e test-direct
 
 test-direct:
