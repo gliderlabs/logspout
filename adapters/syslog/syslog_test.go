@@ -14,11 +14,11 @@ import (
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
-	"github.com/gliderlabs/logspout/router"
+	"github.com/deliveroo/logspout/router"
 
-	_ "github.com/gliderlabs/logspout/transports/tcp"
-	_ "github.com/gliderlabs/logspout/transports/tls"
-	_ "github.com/gliderlabs/logspout/transports/udp"
+	_ "github.com/deliveroo/logspout/transports/tcp"
+	_ "github.com/deliveroo/logspout/transports/tls"
+	_ "github.com/deliveroo/logspout/transports/udp"
 )
 
 const (

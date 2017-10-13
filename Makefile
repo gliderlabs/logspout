@@ -23,7 +23,7 @@ dev: build-dev
 	@docker run --rm \
 		-e DEBUG=true \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
+		-v $(PWD):/go/src/github.com/deliveroo/logspout \
 		-p 8000:80 \
 		-e ROUTE_URIS=$(ROUTE) \
 		$(NAME):dev
@@ -47,7 +47,7 @@ lint:
 test: build-dev
 	docker run \
 		-v /var/run/docker.sock:/var/run/docker.sock \
-		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
+		-v $(PWD):/go/src/github.com/deliveroo/logspout \
 		-e TEST_ARGS="" \
 		$(NAME):dev make -e test-direct
 
