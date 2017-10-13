@@ -56,6 +56,16 @@ func debug(v ...interface{}) {
 	}
 }
 
+func getHostname() string {
+	content, err := ioutil.ReadFile("/etc/host_hostname")
+	if err == nil && len(content) > 0 {
+		hostname = strings.TrimRight(string(content), "\r\n")
+	} else {
+		hostname = getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
+	}
+	return hostname
+}
+
 // NewSyslogAdapter returnas a configured syslog.Adapter
 func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
@@ -70,13 +80,8 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	format := getopt("SYSLOG_FORMAT", "rfc5424")
 	priority := getopt("SYSLOG_PRIORITY", "{{.Priority}}")
 	pid := getopt("SYSLOG_PID", "{{.Container.State.Pid}}")
+	hostname = getHostname()
 
-	content, err := ioutil.ReadFile("/etc/host_hostname")
-	if err == nil && len(content) > 0 {
-		hostname = strings.TrimRight(string(content), "\r\n")
-	} else {
-		hostname = getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
-	}
 	tag := getopt("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
 	structuredData := getopt("SYSLOG_STRUCTURED_DATA", "")
 	if route.Options["structured_data"] != "" {
