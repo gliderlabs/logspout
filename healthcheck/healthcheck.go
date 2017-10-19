@@ -15,7 +15,7 @@ func init() {
 func HealthCheck() http.Handler {
 	r := mux.NewRouter()
 	r.HandleFunc("/health", func(w http.ResponseWriter, req *http.Request) {
-		w.Write([]byte("Gorilla!\n"))
+		w.Write([]byte("Healthy!\n"))
 	})
 	return r
 }
