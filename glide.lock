@@ -1,6 +1,11 @@
-hash: 521f9762f9a2bb54ab827d2d6e8264d0b3e34321b3b785ea4e38b30fc0ca26c2
-updated: 2017-11-01T16:53:18.861075104-05:00
+hash: 4a298c8c8ed295ed4129f76a616ed15f35c4ed0e86460e917b0a30d399f2d5d1
+updated: 2017-11-06T15:34:24.417738-05:00
 imports:
+- name: github.com/benschw/srv-lb
+  version: c87a20cc531f1babdf710dc3db91dd69becb0e8b
+  subpackages:
+  - dns
+  - lb
 - name: github.com/docker/docker
   version: ad969f1aa782478725a7f338cf963fa82f484609
   subpackages:
@@ -32,6 +37,10 @@ imports:
   version: ad28ea4487f05916463e2423a55166280e8254b5
 - name: github.com/hashicorp/go-version
   version: fc61389e27c71d120f87031ca8c88a3428f372dd
+- name: github.com/miekg/dns
+  version: 822ae18e7187e1bbde923a37081f6c1b8e9ba68a
+  subpackages:
+  - internal/socket
 - name: github.com/opencontainers/runc
   version: 9d7831e41d3ef428b67685eeb27f2b4a22a92391
   subpackages:
