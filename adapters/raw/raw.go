@@ -22,10 +22,9 @@ var funcs = template.FuncMap{
 		bytes, err := json.Marshal(value)
 		if err != nil {
 			log.Println("raw:", err)
-			return "\"\""
+			return "null"
 		}
 		return string(bytes)
-
 	},
 }
 
