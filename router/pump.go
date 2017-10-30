@@ -347,6 +347,8 @@ func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *co
 	pump := func(source string, input io.Reader) {
 		buf := bufio.NewReader(input)
 		for {
+			// Discard header bytes from log message
+			_, err := buf.Discard(8)
 			line, err := buf.ReadString('\n')
 			if err != nil {
 				if err != io.EOF {

@@ -3,6 +3,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased][unreleased]
 ### Fixed
+- @jgreat Strip docker log header bytes from log stream. fixes #331
 
 ### Added
 
