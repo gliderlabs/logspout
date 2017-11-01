@@ -13,11 +13,14 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
+var allowTTY bool
+
 func init() {
 	pump := &LogsPump{
 		pumps:  make(map[string]*containerPump),
 		routes: make(map[chan *update]struct{}),
 	}
+	setAllowTTY()
 	LogRouters.Register(pump, "pump")
 	Jobs.Register(pump, "pump")
 }
@@ -34,6 +37,20 @@ func debug(v ...interface{}) {
 	if os.Getenv("DEBUG") != "" {
 		log.Println(v...)
 	}
+}
+
+func backlog() bool {
+	if os.Getenv("BACKLOG") == "false" {
+		return false
+	}
+	return true
+}
+
+func setAllowTTY() {
+	if t := getopt("ALLOW_TTY", ""); t == "true" {
+		allowTTY = true
+	}
+	debug("setting allowTTY to:", allowTTY)
 }
 
 func assert(err error, context string) {
@@ -76,6 +93,13 @@ func ignoreContainer(container *docker.Container) bool {
 	return false
 }
 
+func ignoreContainerTTY(container *docker.Container) bool {
+	if container.Config.Tty && !allowTTY {
+		return true
+	}
+	return false
+}
+
 func getInactivityTimeoutFromEnv() time.Duration {
 	inactivityTimeout, err := time.ParseDuration(getopt("INACTIVITY_TIMEOUT", "0"))
 	assert(err, "Couldn't parse env var INACTIVITY_TIMEOUT. See https://golang.org/pkg/time/#ParseDuration for valid format.")
@@ -87,6 +111,7 @@ type update struct {
 	pump *containerPump
 }
 
+// LogsPump is responsible for "pumping" logs to their configured destinations
 type LogsPump struct {
 	mu     sync.Mutex
 	pumps  map[string]*containerPump
@@ -94,10 +119,12 @@ type LogsPump struct {
 	client *docker.Client
 }
 
+// Name returns the name of the pump
 func (p *LogsPump) Name() string {
 	return "pump"
 }
 
+// Setup configures the pump
 func (p *LogsPump) Setup() error {
 	var err error
 	p.client, err = docker.NewClientFromEnv()
@@ -117,6 +144,7 @@ func (p *LogsPump) rename(event *docker.APIEvents) {
 	pump.container.Name = container.Name
 }
 
+// Run executes the pump
 func (p *LogsPump) Run() error {
 	inactivityTimeout := getInactivityTimeoutFromEnv()
 	debug("pump.Run(): using inactivity timeout: ", inactivityTimeout)
@@ -140,7 +168,7 @@ func (p *LogsPump) Run() error {
 		debug("pump.Run() event:", normalID(event.ID), event.Status)
 		switch event.Status {
 		case "start", "restart":
-			go p.pumpLogs(event, true, inactivityTimeout)
+			go p.pumpLogs(event, backlog(), inactivityTimeout)
 		case "rename":
 			go p.rename(event)
 		case "die":
@@ -154,7 +182,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
 	assert(err, "pump")
-	if container.Config.Tty {
+	if ignoreContainerTTY(container) {
 		debug("pump.pumpLogs():", id, "ignored: tty enabled")
 		return
 	}
@@ -167,6 +195,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 		return
 	}
 
+	var tail = getopt("TAIL", "all")
 	var sinceTime time.Time
 	if backlog {
 		sinceTime = time.Unix(0, 0)
@@ -187,7 +216,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	p.update(event)
 	go func() {
 		for {
-			debug("pump.pumpLogs():", id, "started")
+			debug("pump.pumpLogs():", id, "started, tail:", tail)
 			err := p.client.Logs(docker.LogsOptions{
 				Container:         id,
 				OutputStream:      outwr,
@@ -195,9 +224,10 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 				Stdout:            true,
 				Stderr:            true,
 				Follow:            true,
-				Tail:              "all",
+				Tail:              tail,
 				Since:             sinceTime.Unix(),
 				InactivityTimeout: inactivityTimeout,
+				RawTerminal:       allowTTY,
 			})
 			if err != nil {
 				debug("pump.pumpLogs():", id, "stopped with error:", err)
@@ -247,6 +277,7 @@ func (p *LogsPump) update(event *docker.APIEvents) {
 	}
 }
 
+// RoutingFrom returns whether a container id is routing from this pump
 func (p *LogsPump) RoutingFrom(id string) bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -254,6 +285,7 @@ func (p *LogsPump) RoutingFrom(id string) bool {
 	return monitoring
 }
 
+// Route takes a logstream and routes it according to the supplied Route
 func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 	p.mu.Lock()
 	for _, pump := range p.pumps {
@@ -273,6 +305,7 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 		p.mu.Lock()
 		delete(p.routes, updates)
 		p.mu.Unlock()
+		route.closed = true
 	}()
 	for {
 		select {
@@ -341,15 +374,7 @@ func (cp *containerPump) send(msg *Message) {
 		if !route.MatchMessage(msg) {
 			continue
 		}
-		select {
-		case logstream <- msg:
-		case <-time.After(time.Second * 1):
-			debug("pump.send(): send timeout, closing")
-			// normal call to remove() triggered by
-			// route.Closer() may not be able to grab
-			// lock under heavy load, so we delete here
-			defer delete(cp.logstreams, logstream)
-		}
+		logstream <- msg
 	}
 }
 

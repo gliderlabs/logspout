@@ -10,6 +10,7 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
+// Version is the running version of logspout
 var Version string
 
 func getopt(name, dfault string) string {
@@ -31,6 +32,9 @@ func main() {
 	fmt.Printf("# options : ")
 	if getopt("DEBUG", "") != "" {
 		fmt.Printf("debug:%s ", getopt("DEBUG", ""))
+	}
+	if getopt("BACKLOG", "") != "" {
+		fmt.Printf("backlog:%s ", getopt("BACKLOG", ""))
 	}
 	fmt.Printf("persist:%s\n", getopt("ROUTESPATH", "/mnt/routes"))
 

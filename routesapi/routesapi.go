@@ -14,6 +14,7 @@ func init() {
 	router.HttpHandlers.Register(RoutesAPI, "routes")
 }
 
+// RoutesAPI returns a handler for the routes API
 func RoutesAPI() http.Handler {
 	routes := router.Routes
 	r := mux.NewRouter()
@@ -71,8 +72,5 @@ func marshal(obj interface{}) []byte {
 
 func unmarshal(input io.Reader, obj interface{}) error {
 	dec := json.NewDecoder(input)
-	if err := dec.Decode(obj); err != nil {
-		return err
-	}
-	return nil
+	return dec.Decode(obj)
 }

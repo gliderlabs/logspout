@@ -59,12 +59,12 @@ You can tell logspout to only include certain containers by setting filter param
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.name=*_db
-		
+	
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.id=3b6ba57db54a
-		
+	
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
@@ -86,6 +86,22 @@ You can route to multiple destinations by comma-separating the URIs:
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.name=*_db,syslog+tls://logs.papertrailapp.com:55555?filter.name=*_app
+
+#### Suppressing backlog tail
+You can tell logspout to only display log entries since container "start" or "restart" event by setting a `BACKLOG=false` environment variable (equivalent to `docker logs --since=0s`):
+
+	$ docker run -d --name="logspout" \
+		-e 'BACKLOG=false' \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout
+
+The default behaviour is to output all logs since creation of the container (equivalent to `docker logs --tail=all` or simply `docker logs`).
+
+> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thorougly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
+
+
+#### Environment variable, TAIL
+Whilst BACKLOG=false restricts the tail by setting the Docker Logs.Options.Since to time.Now(), another mechanism to restrict the tail is to set TAIL=n.  Use of this mechanism avoids parsing the earlier content of the logfile which may have a speed advantage if the tail content is of no interest or has become corrupted.
 
 #### Inspect log streams using curl
 
@@ -119,9 +135,68 @@ See [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesa
 
 Logspout relies on the Docker API to retrieve container logs. A failure in the API may cause a log stream to hang. Logspout can detect and restart inactive Docker log streams. Use the environment variable `INACTIVITY_TIMEOUT` to enable this feature. E.g.: `INACTIVITY_TIMEOUT=1m` for a 1-minute threshold.
 
+#### Environment variables
+
+* `ALLOW_TTY` - include logs from containers started with `-t` or `--tty` (i.e. `Allocate a pseudo-TTY`)
+* `BACKLOG` - suppress container tail backlog
+* `TAIL` - specify the number of lines in the log tail to capture when logspout starts (default `all`)
+* `DEBUG` - emit debug logs
+* `EXCLUDE_LABEL` - exclude logs with a given label
+* `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
+* `PORT` or `HTTP_PORT` - configure which port to listen on (default 80)
+* `RAW_FORMAT` - log format for the raw adapter (default `{{.Data}}\n`)
+* `RETRY_COUNT` - how many times to retry a broken socket (default 10)
+* `ROUTESPATH` - path to routes (default `/mnt/routes`)
+* `SYSLOG_DATA` - datum for data field (default `{{.Data}}`)
+* `SYSLOG_FORMAT` - syslog format to emit, either `rfc3164` or `rfc5424` (default `rfc5424`)
+* `SYSLOG_HOSTNAME` - datum for hostname field (default `{{.Container.Config.Hostname}}`)
+* `SYSLOG_PID` - datum for pid field (default `{{.Container.State.Pid}}`)
+* `SYSLOG_PRIORITY` - datum for priority field (default `{{.Priority}}`)
+* `SYSLOG_STRUCTURED_DATA` - datum for structured data field
+* `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
+* `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
+
+#### Using Logspout in a swarm
+
+In a swarm, logspout is best deployed as a global service.  When running logspout with 'docker run', you can change the value of the hostname field using the `SYSLOG_HOSTNAME` environment variable as explained above. However, this does not work in a compose file because the value for `SYSLOG_HOSTNAME` will be the same for all logspout "tasks", regardless of the docker host on which they run. To support this mode of deployment, the syslog adapter will look for the file `/etc/host_hostname` and, if the file exists and it is not empty, will configure the hostname field with the content of this file. You can then use a volume mount to map a file on the docker hosts with the file `/etc/host_hostname` in the container.  The sample compose file below illustrates how this can be done
+
+```
+version: "3"
+networks:
+  logging:
+services:
+  logspout:
+  image: gliderlabs/logspout:latest
+  networks:
+    - logging
+  volumes:
+    - /etc/hostname:/etc/host_hostname:ro
+    - /var/run/docker.sock:/var/run/docker.sock
+  command:
+    syslog://svt2-logger.am2.cloudra.local:514
+  deploy:
+    mode: global
+    resources:
+      limits:
+        cpus: '0.20'
+        memory: 256M
+      reservations:
+        cpus: '0.10'
+      memory: 128M
+```
+
+logspout can then be deployed as a global service in the swam with the following command
+
+```bash
+docker stack deploy --compose-file <name of your compose file>
+```
+
+More information about services and their mode of deployment can be found here:
+https://docs.docker.com/engine/swarm/how-swarm-mode-works/services/ 
+
 ## Modules
 
-The standard distribution of logspout comes with all modules defined in this repository. You can remove or add new modules with custom builds of logspout. Just edit the `modules.go` file and do a `docker build`.
+The standard distribution of logspout comes with all modules defined in this repository. You can remove or add new modules with custom builds of logspout. In the `custom` dir, edit the `modules.go` file and do a `docker build`.
 
 ### Builtin modules
 
@@ -139,10 +214,11 @@ The standard distribution of logspout comes with all modules defined in this rep
  * logspout-redis...
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
  * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)
+ * [logspout-gelf](https://github.com/micahhausler/logspout-gelf) for Graylog
 
 ### Loggly support
 
-Use logspout to stream your docker logs to Loggly via the [Loggly syslog endpoint](https://www.loggly.com/docs/streaming-syslog-without-using-files/).  
+Use logspout to stream your docker logs to Loggly via the [Loggly syslog endpoint](https://www.loggly.com/docs/streaming-syslog-without-using-files/).
 ```
 $ docker run --name logspout -d --volume=/var/run/docker.sock:/var/run/docker.sock \
     -e SYSLOG_STRUCTURED_DATA="<Loggly API Key>@41058 tag=\"some tag name\"" \

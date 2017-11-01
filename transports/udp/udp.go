@@ -25,7 +25,7 @@ func rawUDPAdapter(route *router.Route) (router.LogAdapter, error) {
 
 type udpTransport int
 
-func (_ *udpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
+func (t *udpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
 	raddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return nil, err

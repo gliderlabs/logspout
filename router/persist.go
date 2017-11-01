@@ -9,12 +9,15 @@ import (
 	"strings"
 )
 
+// RouteFileStore represents a directory for storing routes
 type RouteFileStore string
 
+// Filename returns the filename in a RouteFileStore for a given id
 func (fs RouteFileStore) Filename(id string) string {
 	return string(fs) + "/" + id + ".json"
 }
 
+// Get returns *Route based on an id
 func (fs RouteFileStore) Get(id string) (*Route, error) {
 	file, err := os.Open(fs.Filename(id))
 	if err != nil {
@@ -27,6 +30,7 @@ func (fs RouteFileStore) Get(id string) (*Route, error) {
 	return route, nil
 }
 
+// GetAll returns a slice of *Route for the entire RouteFileStore
 func (fs RouteFileStore) GetAll() ([]*Route, error) {
 	files, err := ioutil.ReadDir(string(fs))
 	if err != nil {
@@ -45,10 +49,12 @@ func (fs RouteFileStore) GetAll() ([]*Route, error) {
 	return routes, nil
 }
 
+// Add writes a marshalled *Route to the RouteFileStore
 func (fs RouteFileStore) Add(route *Route) error {
 	return ioutil.WriteFile(fs.Filename(route.ID), marshal(route), 0644)
 }
 
+// Remove removes route from the RouteFileStore based on id
 func (fs RouteFileStore) Remove(id string) bool {
 	if _, err := os.Stat(fs.Filename(id)); err == nil {
 		if err := os.Remove(fs.Filename(id)); err != nil {
@@ -68,8 +74,5 @@ func marshal(obj interface{}) []byte {
 
 func unmarshal(input io.Reader, obj interface{}) error {
 	dec := json.NewDecoder(input)
-	if err := dec.Decode(obj); err != nil {
-		return err
-	}
-	return nil
+	return dec.Decode(obj)
 }
