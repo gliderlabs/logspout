@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
+	"github.com/hashicorp/go-version"
 )
 
 var allowTTY bool
@@ -180,6 +181,10 @@ func (p *LogsPump) Run() error {
 
 func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTimeout time.Duration) {
 	id := normalID(event.ID)
+
+	dockerVersion, err := p.client.Version()
+	assert(err, "Could not get Docker Version endpoint")
+
 	container, err := p.client.InspectContainer(id)
 	assert(err, "pump")
 	if ignoreContainerTTY(container) {
@@ -211,7 +216,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	}
 	outrd, outwr := io.Pipe()
 	errrd, errwr := io.Pipe()
-	p.pumps[id] = newContainerPump(container, outrd, errrd)
+	p.pumps[id] = newContainerPump(container, dockerVersion, outrd, errrd)
 	p.mu.Unlock()
 	p.update(event)
 	go func() {
@@ -339,14 +344,32 @@ type containerPump struct {
 	logstreams map[chan *Message]*Route
 }
 
-func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *containerPump {
+func newContainerPump(container *docker.Container, dockerVersion *docker.Env, stdout, stderr io.Reader) *containerPump {
+	apiVersion := dockerVersion.Get("ApiVersion")
+	debug("API Version: ", apiVersion)
+	debug("TTY is: ", container.Config.Tty)
+	earliestAPI, _ := version.NewVersion("1.13")
+	currentAPI, err := version.NewVersion(apiVersion)
+	assert(err, "current docker api version is not valid version string")
+	hasHeaders := false
+	if container.Config.Tty == false {
+		if currentAPI.Compare(earliestAPI) >= 0 {
+			hasHeaders = true
+		}
+	}
+	debug("hasHeaders set to: ", hasHeaders)
+
 	cp := &containerPump{
 		container:  container,
 		logstreams: make(map[chan *Message]*Route),
 	}
-	pump := func(source string, input io.Reader) {
+	pump := func(source string, hasHeaders bool, input io.Reader) {
 		buf := bufio.NewReader(input)
 		for {
+			// Discard header bytes from log message if TTY is false and api > 1.13.
+			if hasHeaders {
+				buf.Discard(8)
+			}
 			line, err := buf.ReadString('\n')
 			if err != nil {
 				if err != io.EOF {
@@ -362,8 +385,8 @@ func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *co
 			})
 		}
 	}
-	go pump("stdout", stdout)
-	go pump("stderr", stderr)
+	go pump("stdout", hasHeaders, stdout)
+	go pump("stderr", hasHeaders, stderr)
 	return cp
 }
 
