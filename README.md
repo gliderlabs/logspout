@@ -145,7 +145,6 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
 * `PORT` or `HTTP_PORT` - configure which port to listen on (default 80)
 * `RAW_FORMAT` - log format for the raw adapter (default `{{.Data}}\n`)
-  * The raw adapter has a function `toJSON` that can be used to format the message/fields to a JSON output.
 * `RETRY_COUNT` - how many times to retry a broken socket (default 10)
 * `ROUTESPATH` - path to routes (default `/mnt/routes`)
 * `SYSLOG_DATA` - datum for data field (default `{{.Data}}`)
@@ -156,6 +155,47 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 * `SYSLOG_STRUCTURED_DATA` - datum for structured data field
 * `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
 * `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
+
+#### Raw Format
+
+The raw adapter has a function `toJSON` that can be used to format the message/fields to generate JSON-like output in a simple way, or full JSON output.
+
+Use examples:
+
+##### Mixed JSON + generic:
+```
+{{ .Time.Format "2006-01-02T15:04:05Z07:00" }} { "container" : "{{ .Container.Name }}", "labels": {{ toJSON .Container.Config.Labels }}, "timestamp": "{{ .Time.Format "2006-01-02T15:04:05Z07:00" }}", "source" : "{{ .Source }}", "message": {{ toJSON .Data }} }
+```
+
+```
+2017-10-26T11:59:32Z { "container" : "/catalogo_worker_1", "image": "sha256:e9bce6c17c80c603c4c8dbac2ad2285982d218f6ea0332f8b0fb84572941b773", "labels": {"com.docker.compose.config-hash":"4f9c3d3bfb2f65e29a4bc8a4a1b3f0a1c8a42323106a5e9106fe9279f8031321","com.docker.compose.container-number":"1","com.docker.compose.oneoff":"False","com.docker.compose.project":"catalogo","com.docker.compose.service":"worker","com.docker.compose.version":"1.16.1","logging":"true"}, "timestamp": "2017-10-26T11:59:32Z", "source" : "stdout", "message": "2017-10-26 11:59:32,950 INFO success: command_bus_0 entered RUNNING state, process has stayed up for \u003e than 1 seconds (startsecs)" }
+```
+
+##### Full JSON like:
+
+```
+{ "container" : "{{ .Container.Name }}", "labels": {{ toJSON .Container.Config.Labels }}, "timestamp": "{{ .Time.Format "2006-01-02T15:04:05Z07:00" }}", "source" : "{{ .Source }}", "message": {{ toJSON .Data }} }
+```
+
+```json
+{
+  "container": "/a_container",
+  "image": "sha256:e9bce6c17c80c603c4c8dbac2ad2285982d218f6ea0332f8b0fb84572941b773",
+  "labels": {
+    "com.docker.compose.config-hash": "4f9c3d3bfb2f65e29a4bc8a4a1b3f0a1c8a42323106a5e9106fe9279f8031321",
+    "com.docker.compose.container-number": "1",
+    "com.docker.compose.oneoff": "False",
+    "com.docker.compose.project": "a_project",
+    "com.docker.compose.service": "worker",
+    "com.docker.compose.version": "1.16.1",
+    "logging": "true"
+  },
+  "timestamp": "2017-10-26T11:59:32Z",
+  "source": "stdout",
+  "message": "2017-10-26 11:59:32,950 INFO success: command_bus_0 entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)"
+}
+
+```
 
 #### Using Logspout in a swarm
 
