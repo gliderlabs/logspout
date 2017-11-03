@@ -156,6 +156,47 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 * `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
 * `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
 
+#### Raw Format
+
+The raw adapter has a function `toJSON` that can be used to format the message/fields to generate JSON-like output in a simple way, or full JSON output.
+
+Use examples:
+
+##### Mixed JSON + generic:
+```
+{{ .Time.Format "2006-01-02T15:04:05Z07:00" }} { "container" : "{{ .Container.Name }}", "labels": {{ toJSON .Container.Config.Labels }}, "timestamp": "{{ .Time.Format "2006-01-02T15:04:05Z07:00" }}", "source" : "{{ .Source }}", "message": {{ toJSON .Data }} }
+```
+
+```
+2017-10-26T11:59:32Z { "container" : "/catalogo_worker_1", "image": "sha256:e9bce6c17c80c603c4c8dbac2ad2285982d218f6ea0332f8b0fb84572941b773", "labels": {"com.docker.compose.config-hash":"4f9c3d3bfb2f65e29a4bc8a4a1b3f0a1c8a42323106a5e9106fe9279f8031321","com.docker.compose.container-number":"1","com.docker.compose.oneoff":"False","com.docker.compose.project":"catalogo","com.docker.compose.service":"worker","com.docker.compose.version":"1.16.1","logging":"true"}, "timestamp": "2017-10-26T11:59:32Z", "source" : "stdout", "message": "2017-10-26 11:59:32,950 INFO success: command_bus_0 entered RUNNING state, process has stayed up for \u003e than 1 seconds (startsecs)" }
+```
+
+##### Full JSON like:
+
+```
+{ "container" : "{{ .Container.Name }}", "labels": {{ toJSON .Container.Config.Labels }}, "timestamp": "{{ .Time.Format "2006-01-02T15:04:05Z07:00" }}", "source" : "{{ .Source }}", "message": {{ toJSON .Data }} }
+```
+
+```json
+{
+  "container": "/a_container",
+  "image": "sha256:e9bce6c17c80c603c4c8dbac2ad2285982d218f6ea0332f8b0fb84572941b773",
+  "labels": {
+    "com.docker.compose.config-hash": "4f9c3d3bfb2f65e29a4bc8a4a1b3f0a1c8a42323106a5e9106fe9279f8031321",
+    "com.docker.compose.container-number": "1",
+    "com.docker.compose.oneoff": "False",
+    "com.docker.compose.project": "a_project",
+    "com.docker.compose.service": "worker",
+    "com.docker.compose.version": "1.16.1",
+    "logging": "true"
+  },
+  "timestamp": "2017-10-26T11:59:32Z",
+  "source": "stdout",
+  "message": "2017-10-26 11:59:32,950 INFO success: command_bus_0 entered RUNNING state, process has stayed up for > than 1 seconds (startsecs)"
+}
+
+```
+
 #### Using Logspout in a swarm
 
 In a swarm, logspout is best deployed as a global service.  When running logspout with 'docker run', you can change the value of the hostname field using the `SYSLOG_HOSTNAME` environment variable as explained above. However, this does not work in a compose file because the value for `SYSLOG_HOSTNAME` will be the same for all logspout "tasks", regardless of the docker host on which they run. To support this mode of deployment, the syslog adapter will look for the file `/etc/host_hostname` and, if the file exists and it is not empty, will configure the hostname field with the content of this file. You can then use a volume mount to map a file on the docker hosts with the file `/etc/host_hostname` in the container.  The sample compose file below illustrates how this can be done
