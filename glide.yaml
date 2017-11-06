@@ -8,3 +8,8 @@ import:
   subpackages:
   - websocket
 - package: github.com/hashicorp/go-version
+- package: github.com/benschw/srv-lb
+  subpackages:
+  - dns
+  - lb
+- package: github.com/miekg/dns

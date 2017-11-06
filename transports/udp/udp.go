@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/gliderlabs/logspout/adapters/raw"
+	"github.com/gliderlabs/logspout/resolver"
 	"github.com/gliderlabs/logspout/router"
 )
 
@@ -26,7 +27,12 @@ func rawUDPAdapter(route *router.Route) (router.LogAdapter, error) {
 type udpTransport int
 
 func (t *udpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
-	raddr, err := net.ResolveUDPAddr("udp", addr)
+	daddr, err := resolver.ResolveSrvAddr(resolver.DNSConfig{Addr: addr})
+	if err != nil {
+		return nil, err
+	}
+
+	raddr, err := net.ResolveUDPAddr("udp", daddr)
 	if err != nil {
 		return nil, err
 	}

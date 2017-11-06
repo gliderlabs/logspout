@@ -5,6 +5,7 @@ import (
 	"net"
 
 	"github.com/gliderlabs/logspout/adapters/raw"
+	"github.com/gliderlabs/logspout/resolver"
 	"github.com/gliderlabs/logspout/router"
 )
 
@@ -22,7 +23,12 @@ func rawTLSAdapter(route *router.Route) (router.LogAdapter, error) {
 type tlsTransport int
 
 func (t *tlsTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
-	conn, err := tls.Dial("tcp", addr, nil)
+	daddr, err := resolver.ResolveSrvAddr(resolver.DNSConfig{Addr: addr})
+	if err != nil {
+		return nil, err
+	}
+
+	conn, err := tls.Dial("tcp", daddr, nil)
 	if err != nil {
 		return nil, err
 	}

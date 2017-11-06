@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/gliderlabs/logspout/adapters/raw"
+	"github.com/gliderlabs/logspout/resolver"
 	"github.com/gliderlabs/logspout/router"
 )
 
@@ -21,7 +22,12 @@ func rawTCPAdapter(route *router.Route) (router.LogAdapter, error) {
 type tcpTransport int
 
 func (t *tcpTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
-	raddr, err := net.ResolveTCPAddr("tcp", addr)
+	daddr, err := resolver.ResolveSrvAddr(resolver.DNSConfig{Addr: addr})
+	if err != nil {
+		return nil, err
+	}
+
+	raddr, err := net.ResolveTCPAddr("tcp", daddr)
 	if err != nil {
 		return nil, err
 	}
