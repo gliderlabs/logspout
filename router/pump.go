@@ -212,7 +212,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 
 	// RawTerminal with contianer Tty=false injects binary headers into
 	// the log stream that show up as garbage unicode characters
-	var rawTerminal bool = false
+	rawTerminal := false 
 	if allowTTY && container.Config.Tty {
 		rawTerminal = true
 	}
