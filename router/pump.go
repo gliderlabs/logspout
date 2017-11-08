@@ -210,7 +210,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 		return
 	}
 
-	// RawTerminal with contianer Tty=false injects binary headers into
+	// RawTerminal with container Tty=false injects binary headers into
 	// the log stream that show up as garbage unicode characters
 	rawTerminal := false 
 	if allowTTY && container.Config.Tty {
