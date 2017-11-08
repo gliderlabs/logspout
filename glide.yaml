@@ -7,4 +7,3 @@ import:
 - package: golang.org/x/net
   subpackages:
   - websocket
-- package: github.com/hashicorp/go-version
