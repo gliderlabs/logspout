@@ -1,5 +1,5 @@
-hash: 521f9762f9a2bb54ab827d2d6e8264d0b3e34321b3b785ea4e38b30fc0ca26c2
-updated: 2017-11-01T16:53:18.861075104-05:00
+hash: 83a577e65396190336bd5117580f29dbf983a3e2fdc5732a111ae56f229ed978
+updated: 2017-11-07T22:39:32.638917215-06:00
 imports:
 - name: github.com/docker/docker
   version: ad969f1aa782478725a7f338cf963fa82f484609
@@ -30,8 +30,6 @@ imports:
   version: 9fa818a44c2bf1396a17f9d5a3c0f6dd39d2ff8e
 - name: github.com/hashicorp/go-cleanhttp
   version: ad28ea4487f05916463e2423a55166280e8254b5
-- name: github.com/hashicorp/go-version
-  version: fc61389e27c71d120f87031ca8c88a3428f372dd
 - name: github.com/opencontainers/runc
   version: 9d7831e41d3ef428b67685eeb27f2b4a22a92391
   subpackages:

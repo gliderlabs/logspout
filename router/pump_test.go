@@ -135,10 +135,7 @@ func TestPumpContainerRename(t *testing.T) {
 		Name:   "foo",
 		Config: config,
 	}
-	version := &docker.Env{
-		"ApiVersion=1.33",
-	}
-	p.pumps["8dfafdbc3a40"] = newContainerPump(container, version, os.Stdout, os.Stderr)
+	p.pumps["8dfafdbc3a40"] = newContainerPump(container, os.Stdout, os.Stderr)
 	if name := p.pumps["8dfafdbc3a40"].container.Name; name != "foo" {
 		t.Errorf("containerPump should have name: 'foo' got name: '%s'", name)
 	}
@@ -156,10 +153,7 @@ func TestPumpNewContainerPump(t *testing.T) {
 		ID:     "8dfafdbc3a40",
 		Config: config,
 	}
-	version := &docker.Env{
-		"ApiVersion=1.33",
-	}
-	pump := newContainerPump(container, version, os.Stdout, os.Stderr)
+	pump := newContainerPump(container, os.Stdout, os.Stderr)
 	if pump == nil {
 		t.Error("pump nil")
 		return
@@ -174,10 +168,7 @@ func TestPumpContainerPump(t *testing.T) {
 		ID:     "8dfafdbc3a40",
 		Config: config,
 	}
-	version := &docker.Env{
-		"ApiVersion=1.33",
-	}
-	pump := newContainerPump(container, version, os.Stdout, os.Stderr)
+	pump := newContainerPump(container, os.Stdout, os.Stderr)
 	logstream, route := make(chan *Message), &Route{}
 	go func() {
 		for msg := range logstream {
