@@ -1,3 +1,2 @@
-#FROM gliderlabs/logspout:master
-FROM billimek/logspout:base-test
+FROM gliderlabs/logspout:master
 ENV SYSLOG_FORMAT rfc3164
