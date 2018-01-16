@@ -10,6 +10,22 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.2.4] - 2018-01-16
+### Fixed
+- @michaelshobbs fix working_directory so we don't duplicate test runs
+
+### Added
+- @chris7444 take the hostname from /etc/host_hostname if the file is there
+- @chris7444 update README.md for swarm deployments PR #329
+- @nvanheuverzwijn strip \r and \n when reading the file /etc/host_hostname
+- @lucassabreu toJSON with examples
+
+### Changed
+- @michaelshobbs pass debug to test container
+- @jgreat Strip header bytes from log stream
+- @trondvh chmod +x build.sh
+- @develar alpine 3.7 + golang 1.9.2
+
 ## [v3.2.3] - 2017-09-23
 ### Added
 - @guigouz guigouz Add `RAW_FORMAT` to the documentation
@@ -162,8 +178,9 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.3...HEAD
-[v3.2.3]: https://github.com/gliderlabs/logspout/compare/v3.2.3...v3.2.3
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.4...HEAD
+[v3.2.4]: https://github.com/gliderlabs/logspout/compare/v3.2.3...v3.2.4
+[v3.2.3]: https://github.com/gliderlabs/logspout/compare/v3.2.2...v3.2.3
 [v3.2.2]: https://github.com/gliderlabs/logspout/compare/v3.2.1...v3.2.2
 [v3.2.1]: https://github.com/gliderlabs/logspout/compare/v3.2...v3.2.1
 [v3.2]: https://github.com/gliderlabs/logspout/compare/v3.1...v3.2
