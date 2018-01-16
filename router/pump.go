@@ -209,6 +209,13 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 		debug("pump.pumpLogs():", id, "pump exists")
 		return
 	}
+
+	// RawTerminal with container Tty=false injects binary headers into
+	// the log stream that show up as garbage unicode characters
+	rawTerminal := false 
+	if allowTTY && container.Config.Tty {
+		rawTerminal = true
+	}
 	outrd, outwr := io.Pipe()
 	errrd, errwr := io.Pipe()
 	p.pumps[id] = newContainerPump(container, outrd, errrd)
@@ -227,7 +234,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 				Tail:              tail,
 				Since:             sinceTime.Unix(),
 				InactivityTimeout: inactivityTimeout,
-				RawTerminal:       allowTTY,
+				RawTerminal:       rawTerminal,
 			})
 			if err != nil {
 				debug("pump.pumpLogs():", id, "stopped with error:", err)

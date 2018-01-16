@@ -2,6 +2,7 @@ package raw
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"log"
 	"net"
@@ -14,6 +15,17 @@ import (
 
 func init() {
 	router.AdapterFactories.Register(NewRawAdapter, "raw")
+}
+
+var funcs = template.FuncMap{
+	"toJSON": func(value interface{}) string {
+		bytes, err := json.Marshal(value)
+		if err != nil {
+			log.Println("error marshalling to JSON: ", err)
+			return "null"
+		}
+		return string(bytes)
+	},
 }
 
 // NewRawAdapter returns a configured raw.Adapter
@@ -30,7 +42,7 @@ func NewRawAdapter(route *router.Route) (router.LogAdapter, error) {
 	if os.Getenv("RAW_FORMAT") != "" {
 		tmplStr = os.Getenv("RAW_FORMAT")
 	}
-	tmpl, err := template.New("raw").Parse(tmplStr)
+	tmpl, err := template.New("raw").Funcs(funcs).Parse(tmplStr)
 	if err != nil {
 		return nil, err
 	}
