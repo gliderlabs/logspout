@@ -127,9 +127,13 @@ func TestPumpContainerRename(t *testing.T) {
 		pumps:  make(map[string]*containerPump),
 		routes: make(map[chan *update]struct{}),
 	}
+	config := &docker.Config{
+		Tty: false,
+	}
 	container = &docker.Container{
-		ID:   "8dfafdbc3a40",
-		Name: "foo",
+		ID:     "8dfafdbc3a40",
+		Name:   "foo",
+		Config: config,
 	}
 	p.pumps["8dfafdbc3a40"] = newContainerPump(container, os.Stdout, os.Stderr)
 	if name := p.pumps["8dfafdbc3a40"].container.Name; name != "foo" {
@@ -142,8 +146,12 @@ func TestPumpContainerRename(t *testing.T) {
 }
 
 func TestPumpNewContainerPump(t *testing.T) {
+	config := &docker.Config{
+		Tty: false,
+	}
 	container := &docker.Container{
-		ID: "8dfafdbc3a40",
+		ID:     "8dfafdbc3a40",
+		Config: config,
 	}
 	pump := newContainerPump(container, os.Stdout, os.Stderr)
 	if pump == nil {
@@ -153,8 +161,12 @@ func TestPumpNewContainerPump(t *testing.T) {
 }
 
 func TestPumpContainerPump(t *testing.T) {
+	config := &docker.Config{
+		Tty: true,
+	}
 	container := &docker.Container{
-		ID: "8dfafdbc3a40",
+		ID:     "8dfafdbc3a40",
+		Config: config,
 	}
 	pump := newContainerPump(container, os.Stdout, os.Stderr)
 	logstream, route := make(chan *Message), &Route{}

@@ -1,5 +1,5 @@
-hash: 1b25e45c33a1a8a0afd97c2b43e30882e6fcd7f0eb82a136896a0fdbc30adf62
-updated: 2016-07-08T17:33:18.562222083-04:00
+hash: 83a577e65396190336bd5117580f29dbf983a3e2fdc5732a111ae56f229ed978
+updated: 2017-11-07T22:39:32.638917215-06:00
 imports:
 - name: github.com/docker/docker
   version: ad969f1aa782478725a7f338cf963fa82f484609
@@ -8,13 +8,13 @@ imports:
   - pkg/archive
   - pkg/fileutils
   - pkg/homedir
-  - pkg/stdcopy
   - pkg/idtools
   - pkg/ioutils
+  - pkg/longpath
   - pkg/pools
   - pkg/promise
+  - pkg/stdcopy
   - pkg/system
-  - pkg/longpath
 - name: github.com/docker/engine-api
   version: 98348ad6f9c89bb10f31ac32cd1b12cbadd292b6
   subpackages:
@@ -39,10 +39,10 @@ imports:
 - name: golang.org/x/net
   version: f841c39de738b1d0df95b5a7187744f0e03d8112
   subpackages:
-  - websocket
   - context
+  - websocket
 - name: golang.org/x/sys
   version: a408501be4d17ee978c04a618e7a1b22af058c0e
   subpackages:
   - unix
-devImports: []
+testImports: []
