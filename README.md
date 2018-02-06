@@ -177,6 +177,7 @@ If you use multiline logging with raw, it's recommended to json encode the Data 
 * `MULTILINE_MATCH` - determines which lines the pattern should match, one of first|last|nonfirst|nonlast (default `nonfirst`)
 * `MULTILINE_PATTERN` - pattern for multiline logging, see: MULTILINE_MATCH (default: `^\s`)
 * `MULTILINE_FLUSH_AFTER` - maximum time between the first and last lines of a multiline log entry in milliseconds (default: 500)
+* `MULTILINE_SEPARATOR` - separator between lines for output (default: `\n`)
 
 #### Raw Format
 

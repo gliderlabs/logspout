@@ -30,6 +30,7 @@ type Adapter struct {
 	subAdapter      router.LogAdapter
 	enableByDefault bool
 	pattern         *regexp.Regexp
+	separator       string
 	matchFirstLine  bool
 	negateMatch     bool
 	flushAfter      time.Duration
@@ -58,6 +59,11 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 	pattern := os.Getenv("MULTILINE_PATTERN")
 	if pattern == "" {
 		pattern = `^\s`
+	}
+
+	separator := os.Getenv("MULTILINE_SEPARATOR")
+	if separator == "" {
+		separator = "\n"
 	}
 	patternRegexp, err := regexp.Compile(pattern)
 	if err != nil {
@@ -124,6 +130,7 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 		subAdapter:      subAdapter,
 		enableByDefault: enableByDefault,
 		pattern:         patternRegexp,
+		separator:       separator,
 		matchFirstLine:  matchFirstLine,
 		negateMatch:     negateMatch,
 		flushAfter:      flushAfter,
@@ -178,7 +185,7 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 				a.buffers[cID] = message
 			} else {
 				if oldExists {
-					old.Data += "\n" + message.Data
+					old.Data += a.separator + message.Data
 					message = old
 				}
 
