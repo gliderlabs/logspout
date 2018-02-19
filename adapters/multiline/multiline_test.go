@@ -2,13 +2,13 @@ package multiline
 
 import (
 	"regexp"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/fsouza/go-dockerclient"
 	"github.com/gliderlabs/logspout/router"
-	"strings"
 )
 
 type dummyAdapter struct {
@@ -121,6 +121,7 @@ func TestMultiline(t *testing.T) {
 			checkInterval:   time.Microsecond * 100,
 			buffers:         make(map[string]*router.Message),
 			nextCheck:       time.After(time.Microsecond * 100),
+			separator:       "\n",
 		}
 
 		go ma.Stream(in)
