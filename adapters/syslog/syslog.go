@@ -143,7 +143,7 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 				continue
 			default:
 				if err = a.retry(buf, err); err != nil {
-					log.Println("syslog retry err:", err)
+					log.Panicf("syslog retry err: %+v", err)
 					return
 				}
 			}
