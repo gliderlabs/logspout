@@ -123,10 +123,10 @@ func TestMultiline(t *testing.T) {
 			pattern:         test.pattern,
 			matchFirstLine:  test.matchFirstLine,
 			negateMatch:     test.negateMatch,
-			flushAfter:      time.Millisecond * 200,
-			checkInterval:   time.Microsecond * 100,
+			flushAfter:      time.Second * 10,
+			checkInterval:   time.Millisecond * 100,
 			buffers:         make(map[string]*router.Message),
-			nextCheck:       time.After(time.Microsecond * 100),
+			nextCheck:       time.After(time.Millisecond * 100),
 			separator:       "\n",
 		}
 
