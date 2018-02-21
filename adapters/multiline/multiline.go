@@ -41,11 +41,6 @@ type Adapter struct {
 
 // NewMultilineAdapter returns a configured multiline.Adapter
 func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
-	//debug("creating adapter")
-	//defer func() {
-	//	debug("created adapter", a, err)
-	//}()
-
 	enableByDefault := true
 	enableStr := os.Getenv("MULTILINE_ENABLE_DEFAULT")
 	if enableStr != "" {
@@ -120,7 +115,6 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 		return nil, err
 	}
 	route.Adapter = originalAdapter
-	//debug("created subadapter", subAdapter)
 
 	out := make(chan *router.Message)
 	checkInterval := flushAfter / 2
@@ -142,7 +136,6 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 
 // Stream sends log data to the next adapter
 func (a *Adapter) Stream(logstream chan *router.Message) {
-	//debug("stream strart", a)
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -150,7 +143,6 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 		wg.Done()
 	}()
 	defer func() {
-		//debug("close")
 		for _, message := range a.buffers {
 			a.out <- message
 		}
@@ -166,8 +158,6 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 				return
 			}
 
-			//debug("got message", message.Data)
-
 			if !multilineContainer(message.Container, a.enableByDefault) {
 				a.out <- message
 				continue
@@ -176,9 +166,7 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			cID := message.Container.ID
 			old, oldExists := a.buffers[cID]
 			if a.isFirstLine(message) {
-				//debug("first line", message.Data)
 				if oldExists {
-					//debug("sending prev message", message.Data)
 					a.out <- old
 				}
 
@@ -190,23 +178,19 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 				}
 
 				if a.isLastLine(message) {
-					//debug("last line", message.Data)
 					a.out <- message
 					if oldExists {
 						delete(a.buffers, cID)
 					}
 				} else {
-					//debug("subsequent line", message.Data)
 					a.buffers[cID] = message
 				}
 			}
 		case <-a.nextCheck:
-			//debug("tick")
 			now := time.Now()
 
 			for key, message := range a.buffers {
 				if message.Time.Add(a.flushAfter).After(now) {
-					//debug("sending tick message", message.Data)
 					a.out <- message
 					delete(a.buffers, key)
 				}
@@ -247,10 +231,10 @@ func multilineContainer(container *docker.Container, def bool) bool {
 	for _, kv := range container.Config.Env {
 		kvp := strings.SplitN(kv, "=", 2)
 		if len(kvp) == 2 && kvp[0] == "LOGSPOUT_MULTILINE" {
-			val := strings.ToLower(kvp[1])
-			if val == "true" {
+			switch strings.ToLower(kvp[1]) {
+			case "true":
 				return true
-			} else if val == "false" {
+			case "false":
 				return false
 			}
 			return def
@@ -259,10 +243,3 @@ func multilineContainer(container *docker.Container, def bool) bool {
 
 	return def
 }
-
-//func debug(v ...interface{}) {
-//	if os.Getenv("DEBUG") != "" {
-//		v = append([]interface{}{"multiline: "}, v...)
-//		log.Println(v...)
-//	}
-//}
