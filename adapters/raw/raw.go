@@ -34,8 +34,8 @@ var funcs = template.FuncMap{
 
 		bytes, err := json.Marshal(value)
 		if err != nil {
-			log.Println("error marshalling to JSON: ", err)
-			return fmt.Sprintf("logspout: error marshalling to JSON: %s", err)
+			log.Println("error marshaling to JSON: ", err)
+			return fmt.Sprintf("logspout: error marshaling to JSON: %s", err)
 		}
 		return string(bytes)
 	},
