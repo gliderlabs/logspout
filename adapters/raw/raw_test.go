@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func Test_toJSON(t *testing.T) {
+func TestToJSON(t *testing.T) {
 
 	toJSON := funcs["toJSON"].(func(interface{}) string)
 
