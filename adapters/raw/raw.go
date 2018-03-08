@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -19,10 +20,22 @@ func init() {
 
 var funcs = template.FuncMap{
 	"toJSON": func(value interface{}) string {
+		// Check if input is valid JSON already
+		switch v := value.(type) {
+		case string:
+			if json.Valid([]byte(v)) {
+				return v
+			}
+		case []byte:
+			if json.Valid(v) {
+				return string(v)
+			}
+		}
+
 		bytes, err := json.Marshal(value)
 		if err != nil {
 			log.Println("error marshalling to JSON: ", err)
-			return "null"
+			return fmt.Sprintf("logspout: error marshalling to JSON: %s", err)
 		}
 		return string(bytes)
 	},
