@@ -59,17 +59,17 @@ You can tell logspout to only include certain containers by setting filter param
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.name=*_db
-	
+
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.id=3b6ba57db54a
-	
+
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
 		gliderlabs/logspout \
 		raw://192.168.10.10:5000?filter.sources=stdout%2Cstderr
-	
+
 	# Forward logs from containers with both label 'a' starting with 'x', and label 'b' ending in 'y'.
 	$ docker run \
 		--volume=/var/run/docker.sock:/var/run/docker.sock \
@@ -156,6 +156,15 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 * `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
 * `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
 
+##### Built-in Template Functions
+
+There are a few built in functions as well:
+
+* `join $string[] $sep` - Join concatenates the elements of a to create a single string. The separator string sep is placed between elements in the resulting string. Alias for [`strings.Join`][go.string.Join]. `{{ join . "-"}}`
+* `replace $string $old $new $count` - Replaces all occurrences of a string within another string. Alias for [`strings.Replace`][go.string.Replace]. `{{ replace .Container.Config.Hostname "-" "_" -1 }}`
+* `split $string $sep` - Splits a string into an array using a separator string. Alias for [`strings.Split`][go.string.Split]. `{{ split .Container.Config.Hostname "." }}`
+
+
 #### Raw Format
 
 The raw adapter has a function `toJSON` that can be used to format the message/fields to generate JSON-like output in a simple way, or full JSON output.
@@ -233,7 +242,7 @@ docker stack deploy --compose-file <name of your compose file>
 ```
 
 More information about services and their mode of deployment can be found here:
-https://docs.docker.com/engine/swarm/how-swarm-mode-works/services/ 
+https://docs.docker.com/engine/swarm/how-swarm-mode-works/services/
 
 ## Modules
 

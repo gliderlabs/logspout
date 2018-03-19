@@ -14,6 +14,7 @@ import (
 	"testing"
 	"text/template"
 	"time"
+	"bytes"
 
 	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gliderlabs/logspout/router"
@@ -107,6 +108,64 @@ func TestSyslogReconnectOnClose(t *testing.T) {
 	}
 }
 
+func TestSyslogReplaceFunc(t *testing.T) {
+	in := "{{ replace \"oink oink oink\" \"k\" \"ky\" 2}}"
+	os.Setenv("SYSLOG_STRUCTURED_DATA", in)
+	adapter, err := newDummyAdapter()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := new(bytes.Buffer)
+	err = adapter.(*Adapter).tmpl.Execute(out, "")
+
+	if err != nil {
+		log.Fatalf("template error: %s\n", err)
+	}
+
+	expected := "<PRIORITY>1 TIMESTAMP HOSTNAME TAG PID - [oinky oinky oink] DATA\n"
+	check(t, adapter.(*Adapter).tmpl, expected, out.String())
+}
+
+func TestSyslogJoinFunc(t *testing.T) {
+	array := []string{"foo", "bar"}
+	in := "{{ join . \"-\" }}"
+	os.Setenv("SYSLOG_STRUCTURED_DATA", in)
+	adapter, err := newDummyAdapter()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := new(bytes.Buffer)
+	err = adapter.(*Adapter).tmpl.Execute(out, array)
+
+	if err != nil {
+		log.Fatalf("template error: %s\n", err)
+	}
+
+	expected :=  "<PRIORITY>1 TIMESTAMP HOSTNAME TAG PID - [foo-bar] DATA\n"
+	check(t, adapter.(*Adapter).tmpl, expected, out.String())
+}
+
+func TestSyslogSplitFunc(t *testing.T) {
+	in := "{{ index (split \"foo/bar\" \"/\") 1 }}"
+	os.Setenv("SYSLOG_STRUCTURED_DATA", in)
+	adapter, err := newDummyAdapter()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	out := new(bytes.Buffer)
+	err = adapter.(*Adapter).tmpl.Execute(out, "")
+
+	if err != nil {
+		log.Fatalf("template error: %s\n", err)
+	}
+
+	expected := "<PRIORITY>1 TIMESTAMP HOSTNAME TAG PID - [bar] DATA\n"
+	check(t, adapter.(*Adapter).tmpl, expected, out.String())
+}
+
 func TestHostnameDoesNotHaveLineFeed(t *testing.T) {
 	if err := ioutil.WriteFile(hostHostnameFilename, []byte(badHostnameContent), 0777); err != nil {
 		t.Fatal(err)
@@ -115,6 +174,22 @@ func TestHostnameDoesNotHaveLineFeed(t *testing.T) {
 	if strings.Contains(testHostname, badHostnameContent) {
 		t.Errorf("expected hostname to be %s. got %s in hostname %s", hostnameContent, badHostnameContent, testHostname)
 	}
+}
+
+func newDummyAdapter()(router.LogAdapter, error) {
+	os.Setenv("SYSLOG_PRIORITY", "PRIORITY")
+	os.Setenv("SYSLOG_TIMESTAMP", "TIMESTAMP")
+	os.Setenv("SYSLOG_PID", "PID")
+	os.Setenv("SYSLOG_HOSTNAME", "HOSTNAME")
+	os.Setenv("SYSLOG_TAG", "TAG")
+	os.Setenv("SYSLOG_DATA", "DATA")
+	done := make(chan string)
+	addr, sock, srvWG := startServer("tcp", "", done)
+	defer srvWG.Wait()
+	defer os.Remove(addr)
+	defer sock.Close()
+	route := &router.Route{Adapter: "syslog+tcp", Address: addr}
+	return NewSyslogAdapter(route)
 }
 
 func startServer(n, la string, done chan<- string) (addr string, sock io.Closer, wg *sync.WaitGroup) {
