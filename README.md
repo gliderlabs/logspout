@@ -144,7 +144,7 @@ In order to enable multiline logging, you must first prefix your adapter with th
 		gliderlabs/logspout \
 		multiline+raw://192.168.10.10:5000?filter.name=*_db
 
-Multiline logging is enabled by default on all containers. To enable it only to specific containers set MULTILINE_ENABLE_DEFAULT=false for logspout, and use the LOGSPOUT_MULTILINE environment variable on the monitored container:
+Using the the above prefix enables multiline logging on all containers by default. To enable it only to specific containers set MULTILINE_ENABLE_DEFAULT=false for logspout, and use the LOGSPOUT_MULTILINE environment variable on the monitored container:
 
     $ docker run -d -e 'LOGSPOUT_MULTILINE=true' image
 
