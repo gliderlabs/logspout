@@ -135,6 +135,52 @@ See [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesa
 
 Logspout relies on the Docker API to retrieve container logs. A failure in the API may cause a log stream to hang. Logspout can detect and restart inactive Docker log streams. Use the environment variable `INACTIVITY_TIMEOUT` to enable this feature. E.g.: `INACTIVITY_TIMEOUT=1m` for a 1-minute threshold.
 
+#### Custom CA for TLS transport
+
+You can tell logspout to use your custom CA certificate by simply mounting your directory with certificates to /mnt/ca/:
+
+	$ docker run -d \
+		--name logspout \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v /path/to/ca/dir/:/mnt/ca/ \
+		gliderlabs/logspout \
+		tls://logs.my.server.com
+
+You can set custom CA certificate directory by adding CA_PATH env:
+
+	$ docker run -d \
+		--name logspout \
+		-e "CA_PATH=/data/ca/" \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v /path/to/ca/dir/:/data/ca/ \
+		gliderlabs/logspout \
+		tls://logs.my.server.com
+
+#### Custom client certificates for TLS transport
+
+You can tell logspout to use your custom client certificate by simply mounting your directory with certificate and key to /mnt/cert/:
+
+	$ docker run -d \
+		--name logspout \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v /path/to/cert/dir/:/mnt/cert/ \
+		gliderlabs/logspout \
+		tls://logs.my.server.com
+
+Logspout will automatically load certificates with .crt/.cert file extensions and matching keys with .key extension.
+
+Example: user.cert, user.key
+
+You can set custom client certificate directory by adding CERT_PATH env:
+
+	$ docker run -d \
+		--name logspout \
+		-e "CERT_PATH=/data/cert/" \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v /path/to/cert/dir/:/data/cert/ \
+		gliderlabs/logspout \
+		tls://logs.my.server.com
+
 #### Environment variables
 
 * `ALLOW_TTY` - include logs from containers started with `-t` or `--tty` (i.e. `Allocate a pseudo-TTY`)
