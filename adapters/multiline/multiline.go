@@ -172,12 +172,15 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 
 				a.buffers[cID] = message
 			} else {
+				
+				isLastLine := a.isLastLine(message)
+				
 				if oldExists {
 					old.Data += a.separator + message.Data
 					message = old
 				}
 
-				if a.isLastLine(message) {
+				if isLastLine {
 					a.out <- message
 					if oldExists {
 						delete(a.buffers, cID)
