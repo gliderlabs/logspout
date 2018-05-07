@@ -147,6 +147,12 @@ In order to enable multiline logging, you must first prefix your adapter with th
 Using the the above prefix enables multiline logging on all containers by default. To enable it only to specific containers set MULTILINE_ENABLE_DEFAULT=false for logspout, and use the LOGSPOUT_MULTILINE environment variable on the monitored container:
 
     $ docker run -d -e 'LOGSPOUT_MULTILINE=true' image
+    
+Using the environment variable `MULTILINE_MATCH`=<first|last|nonfirst|nonlast> (default `nonfirst`) you define, which lines should be matched to the `MULTILINE_PATTERN`.
+* first: match first line only and append following messages until you match another line
+* last: concatenate all messages until the pattern matches the next line
+* nonlast: match a line, append upcoming matching lines, also append first non-matching line and start
+* nonfirst: append all matching lines to first line and start over with the next non-matching line
 
 ##### Important!
 If you use multiline logging with raw, it's recommended to json encode the Data to avoid linebreaks in the output, eg:
