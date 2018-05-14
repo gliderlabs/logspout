@@ -103,6 +103,30 @@ func TestMultiline(t *testing.T) {
 			matchFirstLine: false,
 			negateMatch:    false,
 		},
+		{
+			input: []string{
+				"not yet",
+				"Traceback",
+				" tb1",
+				" tb2!",
+				"Error123",
+				"no more traceback",
+				"STATEMENT:",
+				" still statement",
+				"end of statement",
+				"no more statement",
+			},
+			expected: []string{
+				"not yet",
+				"Traceback\n tb1\n tb2!\nError123",
+				"no more traceback",
+				"STATEMENT:\n still statement\nend of statement",
+				"no more statement",
+			},
+			pattern:        regexp.MustCompile(`^(DETAIL:|STATEMENT:|Traceback|\s)`),
+			matchFirstLine: false,
+			negateMatch:    true,
+		},
 	}
 
 	for _, test := range tests {
