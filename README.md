@@ -147,7 +147,9 @@ In order to enable multiline logging, you must first prefix your adapter with th
 Using the the above prefix enables multiline logging on all containers by default. To enable it only to specific containers set MULTILINE_ENABLE_DEFAULT=false for logspout, and use the LOGSPOUT_MULTILINE environment variable on the monitored container:
 
     $ docker run -d -e 'LOGSPOUT_MULTILINE=true' image
-    
+
+##### MULTILINE_MATCH
+
 Using the environment variable `MULTILINE_MATCH`=<first|last|nonfirst|nonlast> (default `nonfirst`) you define, which lines should be matched to the `MULTILINE_PATTERN`.
 * first: match first line only and append following messages until you match another line
 * last: concatenate all messages until the pattern matches the next line
@@ -179,9 +181,9 @@ If you use multiline logging with raw, it's recommended to json encode the Data 
 * `SYSLOG_STRUCTURED_DATA` - datum for structured data field
 * `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
 * `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
-* `MULTILINE_ENABLE_DEFAULT` - enable multiline logging for all containers (default `true`)
-* `MULTILINE_MATCH` - determines which lines the pattern should match, one of first|last|nonfirst|nonlast (default `nonfirst`)
-* `MULTILINE_PATTERN` - pattern for multiline logging, see: MULTILINE_MATCH (default: `^\s`)
+* `MULTILINE_ENABLE_DEFAULT` - enable multiline logging for all containers when using the multiline adapter (default `true`)
+* `MULTILINE_MATCH` - determines which lines the pattern should match, one of first|last|nonfirst|nonlast, for details see: [MULTILINE_MATCH](#MULTILINE_MATCH) (default `nonfirst`)
+* `MULTILINE_PATTERN` - pattern for multiline logging, see: [MULTILINE_MATCH](#MULTILINE_MATCH) (default: `^\s`)
 * `MULTILINE_FLUSH_AFTER` - maximum time between the first and last lines of a multiline log entry in milliseconds (default: 500)
 * `MULTILINE_SEPARATOR` - separator between lines for output (default: `\n`)
 
