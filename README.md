@@ -182,8 +182,8 @@ If you use multiline logging with raw, it's recommended to json encode the Data 
 * `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
 * `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
 * `MULTILINE_ENABLE_DEFAULT` - enable multiline logging for all containers when using the multiline adapter (default `true`)
-* `MULTILINE_MATCH` - determines which lines the pattern should match, one of first|last|nonfirst|nonlast, for details see: [MULTILINE_MATCH](#MULTILINE_MATCH) (default `nonfirst`)
-* `MULTILINE_PATTERN` - pattern for multiline logging, see: [MULTILINE_MATCH](#MULTILINE_MATCH) (default: `^\s`)
+* `MULTILINE_MATCH` - determines which lines the pattern should match, one of first|last|nonfirst|nonlast, for details see: [MULTILINE_MATCH](#multiline_match) (default `nonfirst`)
+* `MULTILINE_PATTERN` - pattern for multiline logging, see: [MULTILINE_MATCH](#multiline_match) (default: `^\s`)
 * `MULTILINE_FLUSH_AFTER` - maximum time between the first and last lines of a multiline log entry in milliseconds (default: 500)
 * `MULTILINE_SEPARATOR` - separator between lines for output (default: `\n`)
 
