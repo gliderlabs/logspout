@@ -71,6 +71,18 @@ test-tls:
 	docker stop $(NAME)-tls || true
 	docker rm $(NAME)-tls || true
 
+test-healthcheck:
+	docker run -d --name $(NAME)-healthcheck \
+		-p 8000:80 \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		$(NAME):$(VERSION)
+	sleep 2
+	docker logs $(NAME)-healthcheck
+	docker inspect --format='{{ .State.Running }}' $(NAME)-healthcheck | grep true
+	curl --head --silent localhost:8000/health | grep "200 OK"
+	docker stop $(NAME)-healthcheck || true
+	docker rm $(NAME)-healthcheck || true
+
 test-custom:
 	docker run --name $(NAME)-custom $(NAME):custom || true
 	docker logs $(NAME)-custom | grep -q logstash
