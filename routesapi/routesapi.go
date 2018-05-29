@@ -18,7 +18,7 @@ func init() {
 func RoutesAPI() http.Handler {
 	routes := router.Routes
 	r := mux.NewRouter()
-	
+
 	r.HandleFunc("/routes/{id}", func(w http.ResponseWriter, req *http.Request) {
 		params := mux.Vars(req)
 		route, _ := routes.Get(params["id"])
