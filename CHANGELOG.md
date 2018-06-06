@@ -10,7 +10,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-## [v3.2.4] - 2018-01-16
+## [v3.2.5] - 2018-06-05
+- @gmelika panic if reconnect fails
+- @masterada Added multiline adapter
+- @billimek sleeping and syncing to fix issues with docker hub builds
+
 ### Fixed
 - @michaelshobbs fix working_directory so we don't duplicate test runs
 
@@ -178,7 +182,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.4...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.5...HEAD
+[v3.2.5]: https://github.com/gliderlabs/logspout/compare/v3.2.4...v3.2.5
 [v3.2.4]: https://github.com/gliderlabs/logspout/compare/v3.2.3...v3.2.4
 [v3.2.3]: https://github.com/gliderlabs/logspout/compare/v3.2.2...v3.2.3
 [v3.2.2]: https://github.com/gliderlabs/logspout/compare/v3.2.1...v3.2.2
