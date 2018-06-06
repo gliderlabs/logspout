@@ -24,6 +24,8 @@ jobs:
       - run: |
           make -e test-tls
       - run: |
+          make -e test-healthcheck
+      - run: |
           make -e test-custom
       - run: |
           make -e test-tls-custom
