@@ -97,7 +97,7 @@ You can tell logspout to only display log entries since container "start" or "re
 
 The default behaviour is to output all logs since creation of the container (equivalent to `docker logs --tail=all` or simply `docker logs`).
 
-> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thorougly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
+> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thoroughly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
 
 
 #### Environment variable, TAIL
@@ -157,7 +157,7 @@ Using the environment variable `MULTILINE_MATCH`=<first|last|nonfirst|nonlast> (
 * nonfirst: append all matching lines to first line and start over with the next non-matching line
 
 ##### Important!
-If you use multiline logging with raw, it's recommended to json encode the Data to avoid linebreaks in the output, eg:
+If you use multiline logging with raw, it's recommended to json encode the Data to avoid line breaks in the output, eg:
     
     "RAW_FORMAT={{ toJSON .Data }}\n"
 
@@ -238,29 +238,29 @@ networks:
   logging:
 services:
   logspout:
-  image: gliderlabs/logspout:latest
-  networks:
-    - logging
-  volumes:
-    - /etc/hostname:/etc/host_hostname:ro
-    - /var/run/docker.sock:/var/run/docker.sock
-  command:
-    syslog://svt2-logger.am2.cloudra.local:514
-  deploy:
-    mode: global
-    resources:
-      limits:
-        cpus: '0.20'
-        memory: 256M
-      reservations:
-        cpus: '0.10'
-      memory: 128M
+    image: gliderlabs/logspout:latest
+    networks:
+      - logging
+    volumes:
+      - /etc/hostname:/etc/host_hostname:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      syslog://svt2-logger.am2.cloudra.local:514
+    deploy:
+      mode: global
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 256M
+        reservations:
+          cpus: '0.10'
+          memory: 128M
 ```
 
-logspout can then be deployed as a global service in the swam with the following command
+logspout can then be deployed as a global service in the swarm with the following command
 
 ```bash
-docker stack deploy --compose-file <name of your compose file>
+docker stack deploy --compose-file <name of your compose file> STACK
 ```
 
 More information about services and their mode of deployment can be found here:
