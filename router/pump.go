@@ -212,7 +212,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 
 	// RawTerminal with container Tty=false injects binary headers into
 	// the log stream that show up as garbage unicode characters
-	rawTerminal := false 
+	rawTerminal := false
 	if allowTTY && container.Config.Tty {
 		rawTerminal = true
 	}
@@ -235,6 +235,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 				Since:             sinceTime.Unix(),
 				InactivityTimeout: inactivityTimeout,
 				RawTerminal:       rawTerminal,
+				Timestamps:        true,
 			})
 			if err != nil {
 				debug("pump.pumpLogs():", id, "stopped with error:", err)
@@ -361,10 +362,15 @@ func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *co
 				}
 				return
 			}
+			logMessage, logTime, err := parseLogLine(line)
+			if err != nil {
+				debug("pump.newContainerPump():", normalID(container.ID), ", failed to parse log line:", err)
+				continue
+			}
 			cp.send(&Message{
-				Data:      strings.TrimSuffix(line, "\n"),
+				Data:      logMessage,
 				Container: container,
-				Time:      time.Now(),
+				Time:      logTime,
 				Source:    source,
 			})
 		}
@@ -395,4 +401,13 @@ func (cp *containerPump) remove(logstream chan *Message) {
 	cp.Lock()
 	defer cp.Unlock()
 	delete(cp.logstreams, logstream)
+}
+
+func parseLogLine(line string) (string, time.Time, error) {
+	logEntry := strings.SplitN(strings.TrimSuffix(line, "\n"), " ", 2)
+	logTime, err := time.Parse(time.RFC3339Nano, logEntry[0])
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	return logEntry[1], logTime, nil
 }
