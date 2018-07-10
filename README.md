@@ -282,7 +282,7 @@ The standard distribution of logspout comes with all modules defined in this rep
 
 ### Third-party modules
 
- * [logspout-kafka](https://github.com/gettyimages/logspout-kafka)
+ * [logspout-kafka](https://github.com/dylanmei/logspout-kafka)
  * logspout-redis...
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
  * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)
