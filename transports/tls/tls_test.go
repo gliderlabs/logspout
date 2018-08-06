@@ -18,13 +18,13 @@ const (
 )
 
 // helper function to create TLS config while handling error
-func createTestTLSConfig(t *testing.T) *tls.Config {
-	testTlsConfig, err := createTLSConfig()
+func createtestTLSConfig(t *testing.T) *tls.Config {
+	testTLSConfig, err := createTLSConfig()
 	if err != nil {
 		t.Fatalf("we got an unexpected error while calling createTLSConfig: %s", err)
 	}
 
-	return testTlsConfig
+	return testTLSConfig
 }
 
 // TestEmptyTrustStore should test the behaviour of having
@@ -34,9 +34,9 @@ func TestEmptyTrustStore(t *testing.T) {
 	os.Setenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS", "true")
 	os.Unsetenv("LOGSPOUT_TLS_CA_CERTS")
 
-	testTlsConfig := createTestTLSConfig(t)
+	testTLSConfig := createtestTLSConfig(t)
 
-	numOfTrustedCerts := len(testTlsConfig.RootCAs.Subjects())
+	numOfTrustedCerts := len(testTLSConfig.RootCAs.Subjects())
 	if numOfTrustedCerts != 0 {
 		t.Fatalf("expected 0 RootCAs but got: %d", numOfTrustedCerts)
 	}
@@ -50,10 +50,10 @@ func TestSingleCustomCA(t *testing.T) {
 	os.Setenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS", "true")
 	os.Setenv("LOGSPOUT_TLS_CA_CERTS", caRootCertFileLocation)
 
-	testTlsConfig := createTestTLSConfig(t)
+	testTLSConfig := createtestTLSConfig(t)
 
 	// check if trust store has this cert
-	if !bytes.Contains(testTlsConfig.RootCAs.Subjects()[0], []byte(caRootCertSubjectCN)) {
+	if !bytes.Contains(testTLSConfig.RootCAs.Subjects()[0], []byte(caRootCertSubjectCN)) {
 		t.Errorf("failed to load custom root CA into trust store: %s", caRootCertFileLocation)
 	}
 
@@ -66,13 +66,13 @@ func TestMultipleCustomCAs(t *testing.T) {
 	os.Setenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS", "true")
 	os.Setenv("LOGSPOUT_TLS_CA_CERTS", caRootCertFileLocation+","+caIntCertFileLocation)
 
-	testTlsConfig := createTestTLSConfig(t)
+	testTLSConfig := createtestTLSConfig(t)
 
 	// check that both certificates are in the trust store
-	if !bytes.Contains(testTlsConfig.RootCAs.Subjects()[0], []byte(caRootCertSubjectCN)) {
+	if !bytes.Contains(testTLSConfig.RootCAs.Subjects()[0], []byte(caRootCertSubjectCN)) {
 		t.Errorf("failed to load custom root CA into trust store: %s", caRootCertFileLocation)
 	}
-	if !bytes.Contains(testTlsConfig.RootCAs.Subjects()[1], []byte(caIntCertSubjectCN)) {
+	if !bytes.Contains(testTLSConfig.RootCAs.Subjects()[1], []byte(caIntCertSubjectCN)) {
 		t.Errorf("failed to load custom intermediate CA into trust store: %s", caIntCertFileLocation)
 	}
 }
@@ -84,9 +84,9 @@ func TestSystemRootCAs(t *testing.T) {
 	os.Unsetenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS")
 	os.Unsetenv("LOGSPOUT_TLS_CA_CERTS")
 
-	testTlsConfig := createTestTLSConfig(t)
+	testTLSConfig := createtestTLSConfig(t)
 	// its possible that the system does not have a trust store (minimal docker container for example)
-	if len(testTlsConfig.RootCAs.Subjects()) < 1 {
+	if len(testTLSConfig.RootCAs.Subjects()) < 1 {
 		t.Errorf("after loading system trust store we still have 0. Do you have a system trust store?")
 	}
 
@@ -98,12 +98,12 @@ func TestSystemRootCAsAndCustomCAs(t *testing.T) {
 
 	os.Unsetenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS")
 	os.Unsetenv("LOGSPOUT_TLS_CA_CERTS")
-	testTlsConfig := createTestTLSConfig(t)
-	systemCACount := len(testTlsConfig.RootCAs.Subjects())
+	testTLSConfig := createtestTLSConfig(t)
+	systemCACount := len(testTLSConfig.RootCAs.Subjects())
 
 	os.Setenv("LOGSPOUT_TLS_CA_CERTS", caRootCertFileLocation)
-	testTlsConfig = createTestTLSConfig(t)
-	currentCACount := len(testTlsConfig.RootCAs.Subjects())
+	testTLSConfig = createtestTLSConfig(t)
+	currentCACount := len(testTLSConfig.RootCAs.Subjects())
 	if currentCACount != (systemCACount + 1) {
 		t.Errorf("expected %d certs in trust store but got %d", systemCACount+1, currentCACount)
 	}
@@ -118,8 +118,8 @@ func TestLoadingClientCertAndKey(t *testing.T) {
 	os.Setenv("LOGSPOUT_TLS_CLIENT_CERT", clientCertFileLocation)
 	os.Setenv("LOGSPOUT_TLS_CLIENT_KEY", clientKeyFileLocation)
 
-	testTlsConfig := createTestTLSConfig(t)
-	if len(testTlsConfig.Certificates) < 1 {
+	testTLSConfig := createtestTLSConfig(t)
+	if len(testTLSConfig.Certificates) < 1 {
 		t.Error("failed to load client certficate and key")
 	}
 }
