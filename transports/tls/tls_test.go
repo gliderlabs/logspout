@@ -18,7 +18,7 @@ const (
 )
 
 // helper function to create TLS config while handling error
-func createtestTLSConfig(t *testing.T) *tls.Config {
+func createTestTLSConfig(t *testing.T) *tls.Config {
 	testTLSConfig, err := createTLSConfig()
 	if err != nil {
 		t.Fatalf("we got an unexpected error while calling createTLSConfig: %s", err)
@@ -31,10 +31,10 @@ func createtestTLSConfig(t *testing.T) *tls.Config {
 // an empty TLS CA trust store.
 func TestEmptyTrustStore(t *testing.T) {
 
-	os.Setenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS", "true")
-	os.Unsetenv("LOGSPOUT_TLS_CA_CERTS")
+	os.Setenv(envDisableSystemRoots, "true")
+	os.Unsetenv(envCaCerts)
 
-	testTLSConfig := createtestTLSConfig(t)
+	testTLSConfig := createTestTLSConfig(t)
 
 	numOfTrustedCerts := len(testTLSConfig.RootCAs.Subjects())
 	if numOfTrustedCerts != 0 {
@@ -47,10 +47,10 @@ func TestEmptyTrustStore(t *testing.T) {
 // a single custom CA certificate in to the trust store.
 func TestSingleCustomCA(t *testing.T) {
 
-	os.Setenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS", "true")
-	os.Setenv("LOGSPOUT_TLS_CA_CERTS", caRootCertFileLocation)
+	os.Setenv(envDisableSystemRoots, "true")
+	os.Setenv(envCaCerts, caRootCertFileLocation)
 
-	testTLSConfig := createtestTLSConfig(t)
+	testTLSConfig := createTestTLSConfig(t)
 
 	// check if trust store has this cert
 	if !bytes.Contains(testTLSConfig.RootCAs.Subjects()[0], []byte(caRootCertSubjectCN)) {
@@ -63,10 +63,10 @@ func TestSingleCustomCA(t *testing.T) {
 // multiple custom CA certificates in to the trust store.
 func TestMultipleCustomCAs(t *testing.T) {
 
-	os.Setenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS", "true")
-	os.Setenv("LOGSPOUT_TLS_CA_CERTS", caRootCertFileLocation+","+caIntCertFileLocation)
+	os.Setenv(envDisableSystemRoots, "true")
+	os.Setenv(envCaCerts, caRootCertFileLocation+","+caIntCertFileLocation)
 
-	testTLSConfig := createtestTLSConfig(t)
+	testTLSConfig := createTestTLSConfig(t)
 
 	// check that both certificates are in the trust store
 	if !bytes.Contains(testTLSConfig.RootCAs.Subjects()[0], []byte(caRootCertSubjectCN)) {
@@ -81,10 +81,10 @@ func TestMultipleCustomCAs(t *testing.T) {
 func TestSystemRootCAs(t *testing.T) {
 
 	// default behaviour is none of these environment variables are set
-	os.Unsetenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS")
-	os.Unsetenv("LOGSPOUT_TLS_CA_CERTS")
+	os.Unsetenv(envDisableSystemRoots)
+	os.Unsetenv(envCaCerts)
 
-	testTLSConfig := createtestTLSConfig(t)
+	testTLSConfig := createTestTLSConfig(t)
 	// its possible that the system does not have a trust store (minimal docker container for example)
 	if len(testTLSConfig.RootCAs.Subjects()) < 1 {
 		t.Errorf("after loading system trust store we still have 0. Do you have a system trust store?")
@@ -96,13 +96,13 @@ func TestSystemRootCAs(t *testing.T) {
 // both system CAs and custom CAs into trust store
 func TestSystemRootCAsAndCustomCAs(t *testing.T) {
 
-	os.Unsetenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS")
-	os.Unsetenv("LOGSPOUT_TLS_CA_CERTS")
-	testTLSConfig := createtestTLSConfig(t)
+	os.Unsetenv(envDisableSystemRoots)
+	os.Unsetenv(envCaCerts)
+	testTLSConfig := createTestTLSConfig(t)
 	systemCACount := len(testTLSConfig.RootCAs.Subjects())
 
-	os.Setenv("LOGSPOUT_TLS_CA_CERTS", caRootCertFileLocation)
-	testTLSConfig = createtestTLSConfig(t)
+	os.Setenv(envCaCerts, caRootCertFileLocation)
+	testTLSConfig = createTestTLSConfig(t)
 	currentCACount := len(testTLSConfig.RootCAs.Subjects())
 	if currentCACount != (systemCACount + 1) {
 		t.Errorf("expected %d certs in trust store but got %d", systemCACount+1, currentCACount)
@@ -113,12 +113,12 @@ func TestSystemRootCAsAndCustomCAs(t *testing.T) {
 // a pem encoded client x509 certificate and private key
 func TestLoadingClientCertAndKey(t *testing.T) {
 
-	os.Unsetenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS")
-	os.Unsetenv("LOGSPOUT_TLS_CA_CERTS")
-	os.Setenv("LOGSPOUT_TLS_CLIENT_CERT", clientCertFileLocation)
-	os.Setenv("LOGSPOUT_TLS_CLIENT_KEY", clientKeyFileLocation)
+	os.Unsetenv(envDisableSystemRoots)
+	os.Unsetenv(envCaCerts)
+	os.Setenv(envClientCert, clientCertFileLocation)
+	os.Setenv(envClientKey, clientKeyFileLocation)
 
-	testTLSConfig := createtestTLSConfig(t)
+	testTLSConfig := createTestTLSConfig(t)
 	if len(testTLSConfig.Certificates) < 1 {
 		t.Error("failed to load client certficate and key")
 	}
