@@ -16,7 +16,17 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
+// package wide cache of TLS config
 var clientTLSConfig *tls.Config
+
+const (
+	// constants used to identify environment variable names
+	envDisableSystemRoots = "LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS"
+	envCaCerts            = "LOGSPOUT_TLS_CA_CERTS"
+	envClientCert         = "LOGSPOUT_TLS_CLIENT_CERT"
+	envClientKey          = "LOGSPOUT_TLS_CLIENT_KEY"
+	envTLSHardening       = "LOGSPOUT_TLS_HARDENING"
+)
 
 func init() {
 	router.AdapterTransports.Register(new(tlsTransport), "tls")
@@ -65,7 +75,7 @@ func createTLSConfig() (*tls.Config, error) {
 
 	// use stronger TLS settings if enabled
 	// TODO: perhaps this should be default setting
-	if os.Getenv("LOGSPOUT_TLS_HARDENING") != "true" {
+	if os.Getenv(envTLSHardening) != "true" {
 		tlsConfig.MinVersion = tls.VersionTLS11
 		tlsConfig.InsecureSkipVerify = false
 		// allowed ciphers. Disable CBC suites (Lucky13). For now we allow RSA
@@ -95,7 +105,7 @@ func createTLSConfig() (*tls.Config, error) {
 	// if we cannot, then it's fatal.
 	// NOTE that we ONLY fail if SystemCertPool returns an error,
 	// not if our system trust store is empty or doesn't exist!
-	if os.Getenv("LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS") != "true" {
+	if os.Getenv(envDisableSystemRoots) != "true" {
 		tlsConfig.RootCAs, err = x509.SystemCertPool()
 		if err != nil {
 			return nil, err
@@ -108,7 +118,7 @@ func createTLSConfig() (*tls.Config, error) {
 	// as the user may not wish to send logs through an untrusted TLS connection
 	// also note that each file specified above can contain one or more certificates
 	// and we also _DO NOT_ check if they are CA certificates (in case of self-signed)
-	if certsEnv := os.Getenv("LOGSPOUT_TLS_CA_CERTS"); certsEnv != "" {
+	if certsEnv := os.Getenv(envCaCerts); certsEnv != "" {
 		certFilePaths := strings.Split(certsEnv, ",")
 
 		for _, certFilePath := range certFilePaths {
@@ -125,8 +135,8 @@ func createTLSConfig() (*tls.Config, error) {
 
 	// load a client certificate and key if enabled
 	// we should fail if unable to load the keypair since the user intended mutual authentication
-	clientCertFilePath := os.Getenv("LOGSPOUT_TLS_CLIENT_CERT")
-	clientKeyFilePath := os.Getenv("LOGSPOUT_TLS_CLIENT_KEY")
+	clientCertFilePath := os.Getenv(envClientCert)
+	clientKeyFilePath := os.Getenv(envClientKey)
 	if clientCertFilePath != "" && clientKeyFilePath != "" {
 		clientCert, err := tls.LoadX509KeyPair(clientCertFilePath, clientKeyFilePath)
 		if err != nil {
