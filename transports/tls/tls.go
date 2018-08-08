@@ -75,7 +75,7 @@ func createTLSConfig() (*tls.Config, error) {
 
 	// use stronger TLS settings if enabled
 	// TODO: perhaps this should be default setting
-	if os.Getenv(envTLSHardening) != "true" {
+	if os.Getenv(envTLSHardening) == "true" {
 		tlsConfig.MinVersion = tls.VersionTLS11
 		tlsConfig.InsecureSkipVerify = false
 		// allowed ciphers. Disable CBC suites (Lucky13). For now we allow RSA
