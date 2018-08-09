@@ -16,9 +16,6 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
-// package wide cache of TLS config
-var clientTLSConfig *tls.Config
-
 const (
 	// constants used to identify environment variable names
 	envDisableSystemRoots = "LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS"
@@ -27,6 +24,39 @@ const (
 	envClientKey          = "LOGSPOUT_TLS_CLIENT_KEY"
 	envTLSHardening       = "LOGSPOUT_TLS_HARDENING"
 )
+
+var (
+	// package wide cache of TLS config
+	clientTLSConfig *tls.Config
+	// PCI compliance as of Jun 30, 2018: anything under TLS 1.1 must be disabled
+	// we bump this up to TLS 1.2 so we can support best possible ciphers
+	hardenedMinVersion = uint16(tls.VersionTLS12)
+	// allowed ciphers when in hardened mode
+	// disable CBC suites (Lucky13 attack) this means TLS 1.1 can't work (no GCM)
+	// only use perfect forward secrecy ciphers
+	hardenedCiphers = []uint16{
+		tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
+		tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
+		tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
+		// these ciphers require go 1.8+
+		tls.TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,
+		tls.TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,
+	}
+	// EC curve preference when in hardened mode
+	// curve reference: http://safecurves.cr.yp.to/
+	hardenedCurvePreferences = []tls.CurveID{
+		// this curve is a non-NIST curve with no NSA influence. Prefer this over all others!
+		// this curve required go 1.8+
+		tls.X25519,
+		// These curves are provided by NIST; prefer in descending order
+		tls.CurveP521,
+		tls.CurveP384,
+		tls.CurveP256,
+	}
+)
+
+type tlsTransport int
 
 func init() {
 	router.AdapterTransports.Register(new(tlsTransport), "tls")
@@ -42,7 +72,6 @@ func init() {
 	if err != nil {
 		log.Fatalf("error with TLSConfig: %s", err)
 	}
-
 }
 
 func rawTLSAdapter(route *router.Route) (router.LogAdapter, error) {
@@ -50,11 +79,9 @@ func rawTLSAdapter(route *router.Route) (router.LogAdapter, error) {
 	return raw.NewRawAdapter(route)
 }
 
-type tlsTransport int
-
 func (t *tlsTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
-
-	// at this point, if our trust store is empty, there is no point of continuing...
+	// at this point, if our trust store is empty, there is no point of continuing
+	// since it would be impossible to successfully validate any x509 server certificates
 	if len(clientTLSConfig.RootCAs.Subjects()) < 1 {
 		return nil, fmt.Errorf("FATAL: TLS CA trust store is empty! Can not trust any TLS endpoints: tls://%s", addr)
 	}
@@ -69,32 +96,16 @@ func (t *tlsTransport) Dial(addr string, options map[string]string) (net.Conn, e
 
 // createTLSConfig creates the required TLS configuration that we need to establish a TLS connection
 func createTLSConfig() (*tls.Config, error) {
-
 	var err error
 	tlsConfig := &tls.Config{}
 
 	// use stronger TLS settings if enabled
 	// TODO: perhaps this should be default setting
 	if os.Getenv(envTLSHardening) == "true" {
-		tlsConfig.MinVersion = tls.VersionTLS11
 		tlsConfig.InsecureSkipVerify = false
-		// allowed ciphers. Disable CBC suites (Lucky13). For now we allow RSA
-		tlsConfig.CipherSuites = []uint16{
-			tls.TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
-			tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
-			tls.TLS_RSA_WITH_AES_256_GCM_SHA384,
-		}
-		// curve reference: http://safecurves.cr.yp.to/
-		tlsConfig.CurvePreferences = []tls.CurveID{
-			// this curve is a non-NIST curve with no NSA influence. Prefer this over all others!
-			tls.X25519,
-			// These curves are provided by NIST; prefer in descending order
-			tls.CurveP521,
-			tls.CurveP384,
-			tls.CurveP256,
-		}
+		tlsConfig.MinVersion = hardenedMinVersion
+		tlsConfig.CipherSuites = hardenedCiphers
+		tlsConfig.CurvePreferences = hardenedCurvePreferences
 	}
 
 	// load possible TLS CA chain(s) for server certificate validation
@@ -120,7 +131,6 @@ func createTLSConfig() (*tls.Config, error) {
 	// and we also _DO NOT_ check if they are CA certificates (in case of self-signed)
 	if certsEnv := os.Getenv(envCaCerts); certsEnv != "" {
 		certFilePaths := strings.Split(certsEnv, ",")
-
 		for _, certFilePath := range certFilePaths {
 			// each pem file may contain more than one certficate
 			certBytes, err := ioutil.ReadFile(certFilePath)
@@ -149,5 +159,4 @@ func createTLSConfig() (*tls.Config, error) {
 	}
 
 	return tlsConfig, nil
-
 }
