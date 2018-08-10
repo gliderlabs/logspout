@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 ### Added
+- @alex3305 added retry to raw adapter
 
 ### Removed
 
