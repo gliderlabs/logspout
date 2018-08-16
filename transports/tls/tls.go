@@ -66,10 +66,8 @@ func init() {
 	// we should load our TLS configuration only once
 	// since it is not expected to change during runtime
 	var err error
-	clientTLSConfig, err = createTLSConfig()
-
-	// without a valid/desired TLS config, we should exit
-	if err != nil {
+	if clientTLSConfig, err = createTLSConfig(); err != nil {
+		// without a valid/desired TLS config, we should exit
 		log.Fatalf("error with TLSConfig: %s", err)
 	}
 }
@@ -83,7 +81,8 @@ func (t *tlsTransport) Dial(addr string, options map[string]string) (net.Conn, e
 	// at this point, if our trust store is empty, there is no point of continuing
 	// since it would be impossible to successfully validate any x509 server certificates
 	if len(clientTLSConfig.RootCAs.Subjects()) < 1 {
-		return nil, fmt.Errorf("FATAL: TLS CA trust store is empty! Can not trust any TLS endpoints: tls://%s", addr)
+		err := fmt.Errorf("FATAL: TLS CA trust store is empty! Can not trust any TLS endpoints: tls://%s", addr)
+		return nil, err
 	}
 
 	// attempt to establish the TLS connection
@@ -152,9 +151,9 @@ func createTLSConfig() (*tls.Config, error) {
 		if err != nil {
 			return nil, err
 		}
-		// according to TLS spec, the client _SHOULD_ send the CA certificate chain
-		// which issued its own client cert (at the very least the intermediates).
-		// However, we will make this optional as the client cert pem file can contain more than one certificate
+		// according to TLS spec (RFC 5246 appendix F.1.1) the certificate message
+		// must provide a valid certificate chain leading to an acceptable certificate authority.
+		// We will make this optional; the client cert pem file can contain more than one certificate
 		tlsConfig.Certificates = []tls.Certificate{clientCert}
 	}
 
