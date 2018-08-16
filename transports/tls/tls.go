@@ -72,31 +72,28 @@ func init() {
 	}
 }
 
-func rawTLSAdapter(route *router.Route) (router.LogAdapter, error) {
+func rawTLSAdapter(route *router.Route) (r router.LogAdapter, err error) {
 	route.Adapter = "raw+tls"
-	return raw.NewRawAdapter(route)
+	r, err = raw.NewRawAdapter(route)
+	return
 }
 
-func (t *tlsTransport) Dial(addr string, options map[string]string) (net.Conn, error) {
+func (t *tlsTransport) Dial(addr string, options map[string]string) (conn net.Conn, err error) {
 	// at this point, if our trust store is empty, there is no point of continuing
 	// since it would be impossible to successfully validate any x509 server certificates
 	if len(clientTLSConfig.RootCAs.Subjects()) < 1 {
-		err := fmt.Errorf("FATAL: TLS CA trust store is empty! Can not trust any TLS endpoints: tls://%s", addr)
-		return nil, err
+		err = fmt.Errorf("FATAL: TLS CA trust store is empty! Can not trust any TLS endpoints: tls://%s", addr)
+		return
 	}
 
 	// attempt to establish the TLS connection
-	conn, err := tls.Dial("tcp", addr, clientTLSConfig)
-	if err != nil {
-		return nil, err
-	}
-	return conn, nil
+	conn, err = tls.Dial("tcp", addr, clientTLSConfig)
+	return
 }
 
 // createTLSConfig creates the required TLS configuration that we need to establish a TLS connection
-func createTLSConfig() (*tls.Config, error) {
-	var err error
-	tlsConfig := &tls.Config{}
+func createTLSConfig() (tlsConfig *tls.Config, err error) {
+	tlsConfig = &tls.Config{}
 
 	// use stronger TLS settings if enabled
 	// TODO: perhaps this should be default setting
@@ -118,7 +115,7 @@ func createTLSConfig() (*tls.Config, error) {
 	if os.Getenv(envDisableSystemRoots) != "true" {
 		tlsConfig.RootCAs, err = x509.SystemCertPool()
 		if err != nil {
-			return nil, err
+			return
 		}
 	}
 
@@ -132,30 +129,33 @@ func createTLSConfig() (*tls.Config, error) {
 		certFilePaths := strings.Split(certsEnv, ",")
 		for _, certFilePath := range certFilePaths {
 			// each pem file may contain more than one certficate
-			certBytes, err := ioutil.ReadFile(certFilePath)
+			var certBytes []byte
+			certBytes, err = ioutil.ReadFile(certFilePath)
 			if err != nil {
-				return nil, err
+				return
 			}
 			if !tlsConfig.RootCAs.AppendCertsFromPEM(certBytes) {
-				return nil, fmt.Errorf("failed to load CA certificate(s): %s", certFilePath)
+				err = fmt.Errorf("failed to load CA certificate(s): %s", certFilePath)
+				return
 			}
 		}
 	}
 
 	// load a client certificate and key if enabled
-	// we should fail if unable to load the keypair since the user intended mutual authentication
+	// we should only attempt this if BOTH cert and key are defined
 	clientCertFilePath := os.Getenv(envClientCert)
 	clientKeyFilePath := os.Getenv(envClientKey)
 	if clientCertFilePath != "" && clientKeyFilePath != "" {
-		clientCert, err := tls.LoadX509KeyPair(clientCertFilePath, clientKeyFilePath)
+		var clientCert tls.Certificate
+		clientCert, err = tls.LoadX509KeyPair(clientCertFilePath, clientKeyFilePath)
+		// we should fail if unable to load the keypair since the user intended mutual authentication
 		if err != nil {
-			return nil, err
+			return
 		}
 		// according to TLS spec (RFC 5246 appendix F.1.1) the certificate message
 		// must provide a valid certificate chain leading to an acceptable certificate authority.
 		// We will make this optional; the client cert pem file can contain more than one certificate
 		tlsConfig.Certificates = []tls.Certificate{clientCert}
 	}
-
-	return tlsConfig, nil
+	return
 }
