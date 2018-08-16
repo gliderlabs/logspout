@@ -5,10 +5,16 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 ### Added
+- @vbeausoleil added a simple healthcheck
+- @gbolo added option to load TLS client certificate and key
+- @gbolo added ability to control the TLS client trust store
+- @gbolo added option to harden the TLS client
 
 ### Removed
 
 ### Changed
+- @develar alpine 3.8 + golang 1.10.1
+- @gbolo enforced the use of `go 1.8+` in order to accommodate some TLS settings
 
 ## [v3.2.5] - 2018-06-05
 - @gmelika panic if reconnect fails
