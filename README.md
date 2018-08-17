@@ -169,6 +169,7 @@ If you use multiline logging with raw, it's recommended to json encode the Data 
 * `DEBUG` - emit debug logs
 * `EXCLUDE_LABEL` - exclude logs with a given label
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
+* `HTTP_BIND_ADDRESS` - configure which address to listen on (default 0.0.0.0)
 * `PORT` or `HTTP_PORT` - configure which port to listen on (default 80)
 * `RAW_FORMAT` - log format for the raw adapter (default `{{.Data}}\n`)
 * `RETRY_COUNT` - how many times to retry a broken socket (default 10)
