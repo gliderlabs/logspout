@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 - @gbolo added option to load TLS client certificate and key
 - @gbolo added ability to control the TLS client trust store
 - @gbolo added option to harden the TLS client
+- @chopmann added option to bind the http server to an address
 
 ### Removed
 
