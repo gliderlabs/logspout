@@ -4,21 +4,42 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"log/syslog"
 	"net"
 	"os"
+	"strconv"
+	"strings"
+	"syscall"
 	"text/template"
 	"time"
 
 	"github.com/gliderlabs/logspout/router"
 )
 
-var hostname string
+const defaultRetryCount = 10
+
+var (
+	hostname         string
+	retryCount       uint
+	econnResetErrStr string
+)
 
 func init() {
 	hostname, _ = os.Hostname()
+	econnResetErrStr = fmt.Sprintf("write: %s", syscall.ECONNRESET.Error())
 	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
+	setRetryCount()
+}
+
+func setRetryCount() {
+	if count, err := strconv.Atoi(getopt("RETRY_COUNT", strconv.Itoa(defaultRetryCount))); err != nil {
+		retryCount = uint(defaultRetryCount)
+	} else {
+		retryCount = uint(count)
+	}
+	debug("setting retryCount to:", retryCount)
 }
 
 func getopt(name, dfault string) string {
@@ -29,6 +50,23 @@ func getopt(name, dfault string) string {
 	return value
 }
 
+func debug(v ...interface{}) {
+	if os.Getenv("DEBUG") != "" {
+		log.Println(v...)
+	}
+}
+
+func getHostname() string {
+	content, err := ioutil.ReadFile("/etc/host_hostname")
+	if err == nil && len(content) > 0 {
+		hostname = strings.TrimRight(string(content), "\r\n")
+	} else {
+		hostname = getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
+	}
+	return hostname
+}
+
+// NewSyslogAdapter returnas a configured syslog.Adapter
 func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
 	if !found {
@@ -41,8 +79,9 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 
 	format := getopt("SYSLOG_FORMAT", "rfc5424")
 	priority := getopt("SYSLOG_PRIORITY", "{{.Priority}}")
-	hostname := getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
 	pid := getopt("SYSLOG_PID", "{{.Container.State.Pid}}")
+	hostname = getHostname()
+
 	tag := getopt("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
 	structuredData := getopt("SYSLOG_STRUCTURED_DATA", "")
 	if route.Options["structured_data"] != "" {
@@ -72,7 +111,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &SyslogAdapter{
+	return &Adapter{
 		route:     route,
 		conn:      conn,
 		tmpl:      tmpl,
@@ -80,31 +119,31 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	}, nil
 }
 
-type SyslogAdapter struct {
+// Adapter streams log output to a connection in the Syslog format
+type Adapter struct {
 	conn      net.Conn
 	route     *router.Route
 	tmpl      *template.Template
 	transport router.AdapterTransport
 }
 
-func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
+// Stream sends log data to a connection
+func (a *Adapter) Stream(logstream chan *router.Message) {
 	for message := range logstream {
-		m := &SyslogMessage{message}
+		m := &Message{message}
 		buf, err := m.Render(a.tmpl)
 		if err != nil {
 			log.Println("syslog:", err)
 			return
 		}
-		_, err = a.conn.Write(buf)
-		if err != nil {
+		if _, err = a.conn.Write(buf); err != nil {
 			log.Println("syslog:", err)
 			switch a.conn.(type) {
 			case *net.UDPConn:
 				continue
 			default:
-				err = a.retry(buf, err)
-				if err != nil {
-					log.Println("syslog:", err)
+				if err = a.retry(buf, err); err != nil {
+					log.Panicf("syslog retry err: %+v", err)
 					return
 				}
 			}
@@ -112,21 +151,28 @@ func (a *SyslogAdapter) Stream(logstream chan *router.Message) {
 	}
 }
 
-func (a *SyslogAdapter) retry(buf []byte, err error) error {
+func (a *Adapter) retry(buf []byte, err error) error {
 	if opError, ok := err.(*net.OpError); ok {
-		if opError.Temporary() || opError.Timeout() {
+		if (opError.Temporary() && opError.Err.Error() != econnResetErrStr) || opError.Timeout() {
 			retryErr := a.retryTemporary(buf)
 			if retryErr == nil {
 				return nil
 			}
 		}
 	}
-
-	return a.reconnect()
+	if reconnErr := a.reconnect(); reconnErr != nil {
+		return reconnErr
+	}
+	if _, err = a.conn.Write(buf); err != nil {
+		log.Println("syslog: reconnect failed")
+		return err
+	}
+	log.Println("syslog: reconnect successful")
+	return nil
 }
 
-func (a *SyslogAdapter) retryTemporary(buf []byte) error {
-	log.Println("syslog: retrying tcp up to 11 times")
+func (a *Adapter) retryTemporary(buf []byte) error {
+	log.Printf("syslog: retrying tcp up to %v times\n", retryCount)
 	err := retryExp(func() error {
 		_, err := a.conn.Write(buf)
 		if err == nil {
@@ -135,7 +181,7 @@ func (a *SyslogAdapter) retryTemporary(buf []byte) error {
 		}
 
 		return err
-	}, 11)
+	}, retryCount)
 
 	if err != nil {
 		log.Println("syslog: retry failed")
@@ -145,23 +191,20 @@ func (a *SyslogAdapter) retryTemporary(buf []byte) error {
 	return nil
 }
 
-func (a *SyslogAdapter) reconnect() error {
-	log.Println("syslog: reconnecting up to 11 times")
+func (a *Adapter) reconnect() error {
+	log.Printf("syslog: reconnecting up to %v times\n", retryCount)
 	err := retryExp(func() error {
 		conn, err := a.transport.Dial(a.route.Address, a.route.Options)
 		if err != nil {
 			return err
 		}
-
 		a.conn = conn
 		return nil
-	}, 11)
+	}, retryCount)
 
 	if err != nil {
-		log.Println("syslog: reconnect failed")
 		return err
 	}
-
 	return nil
 }
 
@@ -182,11 +225,13 @@ func retryExp(fun func() error, tries uint) error {
 	}
 }
 
-type SyslogMessage struct {
+// Message extends router.Message for the syslog standard
+type Message struct {
 	*router.Message
 }
 
-func (m *SyslogMessage) Render(tmpl *template.Template) ([]byte, error) {
+// Render transforms the log message using the Syslog template
+func (m *Message) Render(tmpl *template.Template) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	err := tmpl.Execute(buf, m)
 	if err != nil {
@@ -195,7 +240,8 @@ func (m *SyslogMessage) Render(tmpl *template.Template) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func (m *SyslogMessage) Priority() syslog.Priority {
+// Priority returns a syslog.Priority based on the message source
+func (m *Message) Priority() syslog.Priority {
 	switch m.Message.Source {
 	case "stdout":
 		return syslog.LOG_USER | syslog.LOG_INFO
@@ -206,14 +252,17 @@ func (m *SyslogMessage) Priority() syslog.Priority {
 	}
 }
 
-func (m *SyslogMessage) Hostname() string {
+// Hostname returns the os hostname
+func (m *Message) Hostname() string {
 	return hostname
 }
 
-func (m *SyslogMessage) Timestamp() string {
+// Timestamp returns the message's syslog formatted timestamp
+func (m *Message) Timestamp() string {
 	return m.Message.Time.Format(time.RFC3339)
 }
 
-func (m *SyslogMessage) ContainerName() string {
+// ContainerName returns the message's container name
+func (m *Message) ContainerName() string {
 	return m.Message.Container.Name[1:]
 }

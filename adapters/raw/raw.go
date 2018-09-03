@@ -2,6 +2,7 @@ package raw
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"log"
 	"net"
@@ -16,6 +17,18 @@ func init() {
 	router.AdapterFactories.Register(NewRawAdapter, "raw")
 }
 
+var funcs = template.FuncMap{
+	"toJSON": func(value interface{}) string {
+		bytes, err := json.Marshal(value)
+		if err != nil {
+			log.Println("error marshalling to JSON: ", err)
+			return "null"
+		}
+		return string(bytes)
+	},
+}
+
+// NewRawAdapter returns a configured raw.Adapter
 func NewRawAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
 	if !found {
@@ -29,24 +42,26 @@ func NewRawAdapter(route *router.Route) (router.LogAdapter, error) {
 	if os.Getenv("RAW_FORMAT") != "" {
 		tmplStr = os.Getenv("RAW_FORMAT")
 	}
-	tmpl, err := template.New("raw").Parse(tmplStr)
+	tmpl, err := template.New("raw").Funcs(funcs).Parse(tmplStr)
 	if err != nil {
 		return nil, err
 	}
-	return &RawAdapter{
+	return &Adapter{
 		route: route,
 		conn:  conn,
 		tmpl:  tmpl,
 	}, nil
 }
 
-type RawAdapter struct {
+// Adapter is a simple adapter that streams log output to a connection without any templating
+type Adapter struct {
 	conn  net.Conn
 	route *router.Route
 	tmpl  *template.Template
 }
 
-func (a *RawAdapter) Stream(logstream chan *router.Message) {
+// Stream sends log data to a connection
+func (a *Adapter) Stream(logstream chan *router.Message) {
 	for message := range logstream {
 		buf := new(bytes.Buffer)
 		err := a.tmpl.Execute(buf, message)

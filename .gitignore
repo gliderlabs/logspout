@@ -1,4 +1,4 @@
-logspout
+/logspout
 release
 build
-.idea
+vendor/

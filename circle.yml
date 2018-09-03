@@ -1,21 +1,38 @@
-machine:
-  services:
-    - docker
-
-dependencies:
-  pre:
-    - make circleci
-  override:
-    - make build
-  post:
-    - cp build/* $CIRCLE_ARTIFACTS
-
-test:
-  override:
-    - make test
-
-deployment:
-  release:
-    branch: release
-    commands:
-      - make release
+version: 2
+jobs:
+  build:
+    machine: true
+    working_directory: ~/.go_workspace/src/github.com/gliderlabs/logspout
+    environment:
+      DEBUG: true
+    steps:
+      - checkout
+      - run: |
+          go get github.com/golang/lint/golint
+      - run: |
+          make circleci
+      - run: |
+          make lint
+      - run: |
+          make build
+      - run: |
+          make build-custom
+      - run: |
+          make -e test-image-size
+      - run: |
+          make -e test
+      - run: |
+          make -e test-tls
+      - run: |
+          make -e test-custom
+      - run: |
+          make -e test-tls-custom
+      - store_artifacts:
+          path: build
+          destination: build
+      - deploy:
+          name: release
+          command: |
+            if [ "${CIRCLE_BRANCH}" == "release" ]; then
+              make release
+            fi

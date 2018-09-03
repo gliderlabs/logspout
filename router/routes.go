@@ -14,6 +14,7 @@ import (
 	"time"
 )
 
+// Routes is all the configured routes
 var Routes *RouteManager
 
 func init() {
@@ -21,6 +22,7 @@ func init() {
 	Jobs.Register(Routes, "routes")
 }
 
+// RouteManager is responsible for maintaining route state
 type RouteManager struct {
 	sync.Mutex
 	persistor RouteStore
@@ -29,6 +31,7 @@ type RouteManager struct {
 	wg        sync.WaitGroup
 }
 
+// Load loads all route from a RouteStore
 func (rm *RouteManager) Load(persistor RouteStore) error {
 	routes, err := persistor.GetAll()
 	if err != nil {
@@ -41,6 +44,7 @@ func (rm *RouteManager) Load(persistor RouteStore) error {
 	return nil
 }
 
+// Get returns a Route based on id
 func (rm *RouteManager) Get(id string) (*Route, error) {
 	rm.Lock()
 	defer rm.Unlock()
@@ -51,6 +55,7 @@ func (rm *RouteManager) Get(id string) (*Route, error) {
 	return route, nil
 }
 
+// GetAll returns all routes in the RouteManager
 func (rm *RouteManager) GetAll() ([]*Route, error) {
 	rm.Lock()
 	defer rm.Unlock()
@@ -61,6 +66,7 @@ func (rm *RouteManager) GetAll() ([]*Route, error) {
 	return routes, nil
 }
 
+// Remove removes a route from a RouteManager based on id
 func (rm *RouteManager) Remove(id string) bool {
 	rm.Lock()
 	defer rm.Unlock()
@@ -75,7 +81,8 @@ func (rm *RouteManager) Remove(id string) bool {
 	return ok
 }
 
-func (rm *RouteManager) AddFromUri(uri string) error {
+// AddFromURI creates a new route from an URI string and adds it to the RouteManager
+func (rm *RouteManager) AddFromURI(uri string) error {
 	expandedRoute := os.ExpandEnv(uri)
 	u, err := url.Parse(expandedRoute)
 	if err != nil {
@@ -91,7 +98,7 @@ func (rm *RouteManager) AddFromUri(uri string) error {
 		if err != nil {
 			return err
 		}
-		for key, _ := range params {
+		for key := range params {
 			value := params.Get(key)
 			switch key {
 			case "filter.id":
@@ -110,6 +117,7 @@ func (rm *RouteManager) AddFromUri(uri string) error {
 	return rm.Add(r)
 }
 
+// Add adds a route to the RouteManager
 func (rm *RouteManager) Add(route *Route) error {
 	rm.Lock()
 	defer rm.Unlock()
@@ -128,6 +136,11 @@ func (rm *RouteManager) Add(route *Route) error {
 	}
 	route.closer = make(chan bool)
 	route.adapter = adapter
+	//Stop any existing route with this ID:
+	if rm.routes[route.ID] != nil {
+		rm.routes[route.ID].closer <- true
+	}
+
 	rm.routes[route.ID] = route
 	if rm.persistor != nil {
 		if err := rm.persistor.Add(route); err != nil {
@@ -147,12 +160,14 @@ func (rm *RouteManager) route(route *Route) {
 	route.adapter.Stream(logstream)
 }
 
+// Route takes a logstream and route and passes them off to all configure LogRouters
 func (rm *RouteManager) Route(route *Route, logstream chan *Message) {
 	for _, router := range LogRouters.All() {
 		go router.Route(route, logstream)
 	}
 }
 
+// RoutingFrom returns whether a given container is routing through the RouteManager
 func (rm *RouteManager) RoutingFrom(containerID string) bool {
 	for _, router := range LogRouters.All() {
 		if router.RoutingFrom(containerID) {
@@ -162,6 +177,7 @@ func (rm *RouteManager) RoutingFrom(containerID string) bool {
 	return false
 }
 
+// Run executes the RouteManager
 func (rm *RouteManager) Run() error {
 	rm.Lock()
 	for _, route := range rm.routes {
@@ -181,10 +197,12 @@ func (rm *RouteManager) Run() error {
 	return nil
 }
 
+// Name returns the name of the RouteManager
 func (rm *RouteManager) Name() string {
 	return "routes"
 }
 
+// Setup configures the RouteManager
 func (rm *RouteManager) Setup() error {
 	var uris string
 	if os.Getenv("ROUTE_URIS") != "" {
@@ -195,7 +213,7 @@ func (rm *RouteManager) Setup() error {
 	}
 	if uris != "" {
 		for _, uri := range strings.Split(uris, ",") {
-			err := rm.AddFromUri(uri)
+			err := rm.AddFromURI(uri)
 			if err != nil {
 				return err
 			}
