@@ -86,9 +86,29 @@ func ignoreContainer(container *docker.Container) bool {
 			return true
 		}
 	}
-	excludeLabel := getopt("EXCLUDE_LABEL", "")
+
+	// Extra logic to allow excludeLabel to handle custom key pair values //
+
+	excludeString := getopt("EXCLUDE_LABEL", "")
+
+	excludeStringArr := strings.Split(excludeString, ":")
+	var excludeLabel, excludeValue string
+
+	if len(excludeStringArr) == 1 {
+		excludeLabel = excludeStringArr[0]
+		excludeValue = "true"
+	} else if len(excludeStringArr) == 2 {
+		excludeLabel = excludeStringArr[0]
+		excludeValue = excludeStringArr[1]
+	} else {
+		// Label definition may be invalid //
+		return false
+	}
+
 	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		return len(excludeLabel) > 0 && strings.ToLower(value) == "true"
+		// Change check to match values from the default of true //
+		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
+
 	}
 	return false
 }
@@ -212,7 +232,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 
 	// RawTerminal with container Tty=false injects binary headers into
 	// the log stream that show up as garbage unicode characters
-	rawTerminal := false 
+	rawTerminal := false
 	if allowTTY && container.Config.Tty {
 		rawTerminal = true
 	}
