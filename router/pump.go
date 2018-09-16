@@ -101,13 +101,6 @@ func ignoreContainer(container *docker.Container) bool {
 		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
 	}
 	return false
-
-	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		// Change check to match values from the default of true //
-		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
-
-	}
-	return false
 }
 
 func ignoreContainerTTY(container *docker.Container) bool {
