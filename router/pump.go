@@ -106,7 +106,10 @@ func ignoreContainer(container *docker.Container) bool {
 	}
 
 	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		// Change check to match values from the default of true //
+		// If label is of the form kube-app:* then ignore all
+		// containers with label kube-app irrespective of their value.
+		// Else for a normal label definition make sure key:values on
+		// container match
 		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
 
 	}
@@ -166,6 +169,7 @@ func (p *LogsPump) rename(event *docker.APIEvents) {
 
 // Run executes the pump
 func (p *LogsPump) Run() error {
+	debug("Making sure using my custom adapter")
 	inactivityTimeout := getInactivityTimeoutFromEnv()
 	debug("pump.Run(): using inactivity timeout: ", inactivityTimeout)
 
