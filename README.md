@@ -167,7 +167,7 @@ If you use multiline logging with raw, it's recommended to json encode the Data 
 * `BACKLOG` - suppress container tail backlog
 * `TAIL` - specify the number of lines in the log tail to capture when logspout starts (default `all`)
 * `DEBUG` - emit debug logs
-* `EXCLUDE_LABEL` - exclude logs with a given label
+* `EXCLUDE_LABEL` - exclude logs with a given label. The variable can be of the form `label_name` or `label_name:label_value`. If no explicit key:value pair is specified then the default label matching will be of the form `label_name = true`.
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
 * `HTTP_BIND_ADDRESS` - configure which interface address to listen on (default 0.0.0.0)
 * `PORT` or `HTTP_PORT` - configure which port to listen on (default 80)
