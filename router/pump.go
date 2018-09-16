@@ -89,27 +89,21 @@ func ignoreContainer(container *docker.Container) bool {
 
 	// Extra logic to allow excludeLabel to handle custom key pair values //
 
-	excludeString := getopt("EXCLUDE_LABEL", "")
-
-	excludeStringArr := strings.Split(excludeString, ":")
-	var excludeLabel, excludeValue string
-
-	if len(excludeStringArr) == 1 {
-		excludeLabel = excludeStringArr[0]
-		excludeValue = "true"
-	} else if len(excludeStringArr) == 2 {
-		excludeLabel = excludeStringArr[0]
-		excludeValue = excludeStringArr[1]
-	} else {
-		// Label definition may be invalid //
-		return false
+	excludeLabel := getopt("EXCLUDE_LABEL", "")
+	excludeValue := "true"
+	// support EXCLUDE_LABEL having a custom label value
+	excludeLabelArr := strings.Split(excludeLabel, ":")
+	if len(excludeLabelArr) == 2 {
+		excludeValue = excludeLabelArr[1]
 	}
 
 	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		// If label is of the form kube-app:* then ignore all
-		// containers with label kube-app irrespective of their value.
-		// Else for a normal label definition make sure key:values on
-		// container match
+		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
+	}
+	return false
+
+	if value, ok := container.Config.Labels[excludeLabel]; ok {
+		// Change check to match values from the default of true //
 		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
 
 	}
