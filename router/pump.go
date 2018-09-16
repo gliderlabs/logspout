@@ -87,8 +87,6 @@ func ignoreContainer(container *docker.Container) bool {
 		}
 	}
 
-	// Extra logic to allow excludeLabel to handle custom key pair values //
-
 	excludeLabel := getopt("EXCLUDE_LABEL", "")
 	excludeValue := "true"
 	// support EXCLUDE_LABEL having a custom label value
@@ -157,7 +155,6 @@ func (p *LogsPump) rename(event *docker.APIEvents) {
 
 // Run executes the pump
 func (p *LogsPump) Run() error {
-	debug("Making sure using my custom adapter")
 	inactivityTimeout := getInactivityTimeoutFromEnv()
 	debug("pump.Run(): using inactivity timeout: ", inactivityTimeout)
 
