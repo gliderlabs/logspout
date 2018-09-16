@@ -95,6 +95,7 @@ func ignoreContainer(container *docker.Container) bool {
 	excludeLabelArr := strings.Split(excludeLabel, ":")
 	if len(excludeLabelArr) == 2 {
 		excludeValue = excludeLabelArr[1]
+		excludeLabel = excludeLabelArr[0]
 	}
 
 	if value, ok := container.Config.Labels[excludeLabel]; ok {
