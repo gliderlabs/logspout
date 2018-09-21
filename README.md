@@ -167,8 +167,9 @@ If you use multiline logging with raw, it's recommended to json encode the Data 
 * `BACKLOG` - suppress container tail backlog
 * `TAIL` - specify the number of lines in the log tail to capture when logspout starts (default `all`)
 * `DEBUG` - emit debug logs
-* `EXCLUDE_LABEL` - exclude logs with a given label
+* `EXCLUDE_LABEL` - exclude containers with a given label. The label can have a value of true or a custom value matched with : after the label name like label_name:label_value.
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
+* `HTTP_BIND_ADDRESS` - configure which interface address to listen on (default 0.0.0.0)
 * `PORT` or `HTTP_PORT` - configure which port to listen on (default 80)
 * `RAW_FORMAT` - log format for the raw adapter (default `{{.Data}}\n`)
 * `RETRY_COUNT` - how many times to retry a broken socket (default 10)
@@ -266,6 +267,47 @@ docker stack deploy --compose-file <name of your compose file> STACK
 More information about services and their mode of deployment can be found here:
 https://docs.docker.com/engine/swarm/how-swarm-mode-works/services/ 
 
+### TLS Settings
+logspout supports modification of the client TLS settings via environment variables described below:
+
+| Environment Variable  | Description |
+| :---                  |  :---       |
+| `LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS` | when set to `true` it disables loading the system trust store into the trust store of logspout |
+| `LOGSPOUT_TLS_CA_CERTS` | a comma seperated list of filesystem paths to pem encoded CA certificates that should be added to logsput's TLS trust store. Each pem file can contain more than one certificate |
+| `LOGSPOUT_TLS_CLIENT_CERT` | filesytem path to pem encoded x509 client certificate to load when TLS mutual authentication is desired |
+| `LOGSPOUT_TLS_CLIENT_KEY` | filesytem path to pem encoded client private key to load when TLS mutual authentication is desired |
+| `LOGSPOUT_TLS_HARDENING` | when set to `true` it enables stricter client TLS settings designed to mitigate some known TLS vulnerabilities |
+
+#### Example TLS settings
+The following settings cover some common use cases.
+When running docker, use the `-e` flag to supply environment variables
+
+**add your own CAs to the list of trusted authorities**
+```
+export LOGSPOUT_TLS_CA_CERTS="/opt/tls/ca/myRootCA1.pem,/opt/tls/ca/myRootCA2.pem"
+```
+
+**force logspout to ONLY trust your own CA**
+```
+export LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS=true
+export LOGSPOUT_TLS_CA_CERTS="/opt/tls/ca/myRootCA1.pem"
+```
+
+**configure client authentication**
+```
+export LOGSPOUT_TLS_CLIENT_CERT="/opt/tls/client/myClient.pem"
+export LOGSPOUT_TLS_CLIENT_KEY="/opt/tls/client/myClient-key.pem"
+```
+
+**highest possible security settings (paranoid mode)**
+```
+export LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS=true
+export LOGSPOUT_TLS_HARDENING=true
+export LOGSPOUT_TLS_CA_CERTS="/opt/tls/ca/myRootCA1.pem"
+export LOGSPOUT_TLS_CLIENT_CERT="/opt/tls/client/myClient.pem"
+export LOGSPOUT_TLS_CLIENT_KEY="/opt/tls/client/myClient-key.pem"
+```
+
 ## Modules
 
 The standard distribution of logspout comes with all modules defined in this repository. You can remove or add new modules with custom builds of logspout. In the `custom` dir, edit the `modules.go` file and do a `docker build`.
@@ -282,7 +324,7 @@ The standard distribution of logspout comes with all modules defined in this rep
 
 ### Third-party modules
 
- * [logspout-kafka](https://github.com/gettyimages/logspout-kafka)
+ * [logspout-kafka](https://github.com/dylanmei/logspout-kafka)
  * logspout-redis...
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
  * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)
