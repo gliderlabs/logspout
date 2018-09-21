@@ -33,6 +33,10 @@ func getopt(name, dfault string) string {
 	return value
 }
 
+func originalTimestamps() bool {
+	return getopt("ORIGINAL_TIMESTAMPS", "false") == "true"
+}
+
 func debug(v ...interface{}) {
 	if os.Getenv("DEBUG") != "" {
 		log.Println(v...)
@@ -244,7 +248,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 				Since:             sinceTime.Unix(),
 				InactivityTimeout: inactivityTimeout,
 				RawTerminal:       rawTerminal,
-				Timestamps:        true,
+				Timestamps:        originalTimestamps(),
 			})
 			if err != nil {
 				debug("pump.pumpLogs():", id, "stopped with error:", err)
@@ -371,11 +375,7 @@ func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *co
 				}
 				return
 			}
-			logMessage, logTime, err := parseLogLine(line)
-			if err != nil {
-				debug("pump.newContainerPump():", normalID(container.ID), ", failed to parse log line:", err)
-				continue
-			}
+			logMessage, logTime := parseLogLine(line, originalTimestamps())
 			cp.send(&Message{
 				Data:      logMessage,
 				Container: container,
@@ -412,11 +412,21 @@ func (cp *containerPump) remove(logstream chan *Message) {
 	delete(cp.logstreams, logstream)
 }
 
-func parseLogLine(line string) (string, time.Time, error) {
-	logEntry := strings.SplitN(strings.TrimSuffix(line, "\n"), " ", 2)
+func parseLogLine(line string, originalTimestamps bool) (string, time.Time) {
+	line = strings.TrimSuffix(line, "\n")
+
+	if ! originalTimestamps {
+		return line, time.Now()
+	}
+
+	logEntry := strings.SplitN(line, " ", 2)
 	logTime, err := time.Parse(time.RFC3339Nano, logEntry[0])
 	if err != nil {
-		return "", time.Time{}, err
+		return line, time.Now()
 	}
-	return logEntry[1], logTime, nil
+
+	if len(logEntry) == 2 {
+		return logEntry[1], logTime
+	}
+	return "", logTime
 }

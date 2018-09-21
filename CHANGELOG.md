@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - @gbolo added option to harden the TLS client
 - @chopmann added option to bind the http server to an address
 - @ibrokethecloud added ability to add custom key:value pairs as EXCLUDE_LABEL.
+- @localghost added option to read original logs timestamps from containers
 
 ### Removed
 
