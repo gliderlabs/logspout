@@ -28,12 +28,11 @@ All notable changes to this project will be documented in this file.
 - @gbolo enforced the use of `go 1.8+` in order to accommodate some TLS settings
 
 ## [v3.2.5] - 2018-06-05
+### Fixed
+- @michaelshobbs fix working_directory so we don't duplicate test runs
 - @gmelika panic if reconnect fails
 - @masterada Added multiline adapter
 - @billimek sleeping and syncing to fix issues with docker hub builds
-
-### Fixed
-- @michaelshobbs fix working_directory so we don't duplicate test runs
 
 ### Added
 - @chris7444 take the hostname from /etc/host_hostname if the file is there
