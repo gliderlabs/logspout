@@ -5,26 +5,34 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 ### Added
+
+### Removed
+
+### Changed
+
+## [v3.2.6] - 2018-10-04
+### Fixed
+- @jdgiotta Spelling corrections and fixed stack compose formatting in example
+- @dylanmei dylanmei Update 3rd party module link in README
+
+### Added
 - @vbeausoleil added a simple healthcheck
 - @gbolo added option to load TLS client certificate and key
 - @gbolo added ability to control the TLS client trust store
 - @gbolo added option to harden the TLS client
 - @chopmann added option to bind the http server to an address
-- @ibrokethecloud added ability to add custom key:value pairs as EXCLUDE_LABEL.
-
-### Removed
+- @ibrokethecloud added ability to add custom key:value pairs as EXCLUDE_LABEL
 
 ### Changed
 - @develar alpine 3.8 + golang 1.10.1
 - @gbolo enforced the use of `go 1.8+` in order to accommodate some TLS settings
 
 ## [v3.2.5] - 2018-06-05
+### Fixed
+- @michaelshobbs fix working_directory so we don't duplicate test runs
 - @gmelika panic if reconnect fails
 - @masterada Added multiline adapter
 - @billimek sleeping and syncing to fix issues with docker hub builds
-
-### Fixed
-- @michaelshobbs fix working_directory so we don't duplicate test runs
 
 ### Added
 - @chris7444 take the hostname from /etc/host_hostname if the file is there
@@ -190,7 +198,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.5...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.6...HEAD
+[v3.2.6]: https://github.com/gliderlabs/logspout/compare/v3.2.5...v3.2.6
 [v3.2.5]: https://github.com/gliderlabs/logspout/compare/v3.2.4...v3.2.5
 [v3.2.4]: https://github.com/gliderlabs/logspout/compare/v3.2.3...v3.2.4
 [v3.2.3]: https://github.com/gliderlabs/logspout/compare/v3.2.2...v3.2.3
