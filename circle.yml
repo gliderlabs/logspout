@@ -8,7 +8,7 @@ jobs:
     steps:
       - checkout
       - run: |
-          go get github.com/golang/lint/golint
+          go get golang.org/x/lint/golint
       - run: |
           make circleci
       - run: |
