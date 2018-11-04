@@ -37,6 +37,8 @@ logspout will gather logs from other containers that are started **without the `
 
 To see what data is used for syslog messages, see the [syslog adapter](http://github.com/gliderlabs/logspout/blob/master/adapters) docs.
 
+The container must be able to access the Docker Unix socket to mount it. This is typically a problem when [namespace remapping](https://docs.docker.com/engine/security/userns-remap/) is enabled. To disable remapping for the logspout container, pass the `--userns=host` flag to `docker run`, `.. create`, etc. 
+
 #### Ignoring specific containers
 
 You can tell logspout to ignore specific containers by setting an environment variable when starting your container, like so:-
