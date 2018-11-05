@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 ### Added
+@nourchawich added docker build for arm architecture
 
 ### Removed
 

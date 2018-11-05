@@ -33,6 +33,11 @@ build:
 	docker build -t $(NAME):$(VERSION) .
 	docker save $(NAME):$(VERSION) | gzip -9 > build/$(NAME)_$(VERSION).tgz
 
+build-arm:
+	mkdir -p build
+	docker build -f Dockerfile.arm -t $(NAME):$(VERSION)-arm .
+	docker save $(NAME):$(VERSION)-arm | gzip -9 > build/$(NAME)_$(VERSION)_arm.tgz
+
 build-custom:
 	docker tag $(NAME):$(VERSION) gliderlabs/$(NAME):master
 	cd custom && docker build -t $(NAME):custom .
@@ -82,6 +87,16 @@ test-healthcheck:
 	curl --head --silent localhost:8000/health | grep "200 OK"
 	docker stop $(NAME)-healthcheck || true
 	docker rm $(NAME)-healthcheck || true
+
+test-arm:
+	docker run -d --name $(NAME)-arm \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		$(NAME):$(VERSION)-arm syslog://logs3.papertrailapp.com:54202
+	sleep 2
+	docker logs $(NAME)-arm
+	docker inspect --format='{{ .State.Running }}' $(NAME)-arm | grep true
+	docker stop $(NAME)-arm || true
+	docker rm $(NAME)-arm || true
 
 test-custom:
 	docker run --name $(NAME)-custom $(NAME):custom || true

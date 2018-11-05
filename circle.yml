@@ -16,6 +16,8 @@ jobs:
       - run: |
           make build
       - run: |
+          make build-arm
+      - run: |
           make build-custom
       - run: |
           make -e test-image-size
@@ -25,6 +27,8 @@ jobs:
           make -e test-tls
       - run: |
           make -e test-healthcheck
+      - run: |
+          make -e test-arm
       - run: |
           make -e test-custom
       - run: |
