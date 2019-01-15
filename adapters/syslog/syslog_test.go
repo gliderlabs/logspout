@@ -48,6 +48,56 @@ var (
 	badHostnameContent   = "hostname\r\n"
 )
 
+func TestSyslogOctetFraming(t *testing.T) {
+	os.Setenv("SYSLOG_TCP_FRAMING", "octet-counted")
+	defer os.Unsetenv("SYSLOG_TCP_FRAMING")
+
+	done := make(chan string)
+	addr, sock, srvWG := startServer("tcp", "", done)
+	defer srvWG.Wait()
+	defer os.Remove(addr)
+	defer sock.Close()
+
+	route := &router.Route{Adapter: "syslog+tcp", Address: addr}
+	adapter, err := NewSyslogAdapter(route)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer adapter.(*Adapter).conn.Close()
+
+	stream := make(chan *router.Message)
+	go adapter.Stream(stream)
+
+	count := 1
+	messages := make(chan string, count)
+	go sendLogstream(stream, messages, adapter, count)
+
+	timeout := time.After(6 * time.Second)
+	msgnum := 1
+	select {
+	case msg := <-done:
+		sizeStr := ""
+		_, err := fmt.Sscan(msg, &sizeStr)
+		if err != nil {
+			t.Fatal("unable to scan size from message: ", err)
+		}
+
+		size, err := strconv.ParseInt(sizeStr, 10, 32)
+		if err != nil {
+			t.Fatal("unable to scan size from message: ", err)
+		}
+
+		expectedOctetFrame := len(sizeStr) + 1 + int(size)
+		if len(msg) != expectedOctetFrame {
+			t.Errorf("expected octet frame to be %d. got %d instead for message %s", expectedOctetFrame, size, msg)
+		}
+		return
+	case <-timeout:
+		t.Fatal("timeout after", msgnum, "messages")
+		return
+	}
+}
+
 func TestSyslogRetryCount(t *testing.T) {
 	newRetryCount := uint(20)
 	os.Setenv("RETRY_COUNT", strconv.Itoa(int(newRetryCount)))

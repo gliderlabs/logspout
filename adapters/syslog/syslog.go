@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -23,7 +24,15 @@ const defaultRetryCount = 10
 var (
 	hostname         string
 	retryCount       uint
+	tcpFraming       TCPFraming
 	econnResetErrStr string
+)
+
+type TCPFraming string
+
+const (
+	TraditionalTCPFraming  TCPFraming = "traditional"   // LF framing
+	OctetCountedTCPFraming            = "octet-counted" // https://tools.ietf.org/html/rfc6587#section-3.4.1
 )
 
 func init() {
@@ -82,11 +91,23 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	pid := getopt("SYSLOG_PID", "{{.Container.State.Pid}}")
 	hostname = getHostname()
 
+	if isTCPConnecion(conn) {
+		switch s := getopt("SYSLOG_TCP_FRAMING", "traditional"); s {
+		case "traditional":
+			tcpFraming = TraditionalTCPFraming
+		case "octet-counted":
+			tcpFraming = OctetCountedTCPFraming
+		default:
+			return nil, fmt.Errorf("unknown SYSLOG_TCP_FRAMING value: %s", s)
+		}
+	}
+
 	tag := getopt("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
 	structuredData := getopt("SYSLOG_STRUCTURED_DATA", "")
 	if route.Options["structured_data"] != "" {
 		structuredData = route.Options["structured_data"]
 	}
+
 	data := getopt("SYSLOG_DATA", "{{.Data}}")
 	timestamp := getopt("SYSLOG_TIMESTAMP", "{{.Timestamp}}")
 
@@ -136,6 +157,19 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			log.Println("syslog:", err)
 			return
 		}
+
+		if isTCPConnecion(a.conn) {
+			switch tcpFraming {
+			case OctetCountedTCPFraming:
+				buf = append([]byte(fmt.Sprintf("%d ", len(buf))), buf...)
+			case TraditionalTCPFraming:
+				// leave as-is
+			default:
+				// should never get here, validated above
+				panic("unknown framing format: " + tcpFraming)
+			}
+		}
+
 		if _, err = a.conn.Write(buf); err != nil {
 			log.Println("syslog:", err)
 			switch a.conn.(type) {
@@ -222,6 +256,17 @@ func retryExp(fun func() error, tries uint) error {
 		}
 
 		time.Sleep((1 << try) * 10 * time.Millisecond)
+	}
+}
+
+func isTCPConnecion(conn net.Conn) bool {
+	switch conn.(type) {
+	case *net.TCPConn:
+		return true
+	case *tls.Conn:
+		return true
+	default:
+		return false
 	}
 }
 
