@@ -29,11 +29,14 @@ var (
 	econnResetErrStr string
 )
 
+// TCPFraming represents the type of framing to use for syslog messages
 type TCPFraming string
 
 const (
-	TraditionalTCPFraming  TCPFraming = "traditional"   // LF framing
-	OctetCountedTCPFraming            = "octet-counted" // https://tools.ietf.org/html/rfc6587#section-3.4.1
+	// TraditionalTCPFraming is the traditional LF framing of syslog messages on the wire
+	TraditionalTCPFraming TCPFraming = "traditional"
+	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
+	OctetCountedTCPFraming = "octet-counted"
 )
 
 func init() {
