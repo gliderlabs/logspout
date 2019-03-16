@@ -101,7 +101,7 @@ func TestSystemRootCAsAndCustomCAs(t *testing.T) {
 	}
 }
 
-// TestLoadingClientCert should test the behaviour of loading
+// TestLoadingClientCertAndKey: should test the behaviour of loading
 // a pem encoded client x509 certificate and private key
 func TestLoadingClientCertAndKey(t *testing.T) {
 	os.Unsetenv(envDisableSystemRoots)
