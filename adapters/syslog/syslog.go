@@ -36,7 +36,7 @@ const (
 	// TraditionalTCPFraming is the traditional LF framing of syslog messages on the wire
 	TraditionalTCPFraming TCPFraming = "traditional"
 	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
-	OctetCountedTCPFraming = "octet-counted"
+	OctetCountedTCPFraming TCPFraming = "octet-counted"
 )
 
 func init() {
