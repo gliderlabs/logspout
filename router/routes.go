@@ -89,7 +89,7 @@ func (rm *RouteManager) AddFromURI(uri string) error {
 		return err
 	}
 	r := &Route{
-		Address: u.Host,
+		Address: u.Host+u.Path,
 		Adapter: u.Scheme,
 		Options: make(map[string]string),
 	}
