@@ -368,6 +368,15 @@ func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *co
 				if err != io.EOF {
 					debug("pump.newContainerPump():", normalID(container.ID), source+":", err)
 				}
+				debug("Got EOF and had read: '" + line + "'")
+				if len(line) > 0 {
+					cp.send(&Message{
+						Data:      strings.TrimSuffix(line, "\n"),
+						Container: container,
+						Time:      time.Now(),
+						Source:    source,
+					})
+				}
 				return
 			}
 			cp.send(&Message{

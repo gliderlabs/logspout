@@ -38,7 +38,7 @@ build-custom:
 	cd custom && docker build -t $(NAME):custom .
 
 lint:
-	test -x $(GOPATH)/bin/golint || go get github.com/golang/lint/golint
+	test -x $(GOPATH)/bin/golint || go get golang.org/x/lint/golint
 	go get \
 		&& go install $(GOPACKAGES) \
 		&& go tool vet -v $(shell ls -d */ | egrep -v 'custom|vendor/' | xargs $(XARGS_ARG))
