@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 ### Added
+- @localghost added option to read original logs timestamps from containers
 
 ### Removed
 

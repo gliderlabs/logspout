@@ -3,12 +3,14 @@ package router
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
 )
@@ -228,4 +230,46 @@ func TestPumpRoutingFrom(t *testing.T) {
 	if p.RoutingFrom("foo") != false {
 		t.Errorf("expected RoutingFrom to return 'false'")
 	}
+}
+
+func TestParseLogLine(t *testing.T) {
+	checkMessage := func(expectedMessage, actualMessage string) {
+		if actualMessage != expectedMessage {
+			t.Errorf("Expected message '%s' but got '%s'", expectedMessage, actualMessage)
+		}
+	}
+
+	checkEqual := func(expectedMessage, actualMessage string, expectedTime, actualTime time.Time) {
+		if !actualTime.Equal(expectedTime) {
+			t.Errorf("Expected time %s but got %s", expectedTime, actualTime)
+		}
+		checkMessage(expectedMessage, actualMessage)
+	}
+
+	checkAfter := func(expectedMessage, actualMessage string, expectedTime, actualTime time.Time) {
+		if !actualTime.After(expectedTime) {
+			t.Errorf("Expected actual time %s to be greater than %s", actualTime, expectedTime)
+		}
+		checkMessage(expectedMessage, actualMessage)
+	}
+
+	originalTime := time.Now().Add(-time.Hour)
+
+	actualMessage, actualTime := parseLogLine(fmt.Sprintf("%s Hello world!", originalTime.Format(time.RFC3339Nano)), true)
+	checkEqual("Hello world!", actualMessage, originalTime, actualTime)
+
+	actualMessage, actualTime = parseLogLine(fmt.Sprintf("%s  ", originalTime.Format(time.RFC3339Nano)), true)
+	checkEqual(" ", actualMessage, originalTime, actualTime)
+
+	actualMessage, actualTime = parseLogLine(originalTime.Format(time.RFC3339Nano), true)
+	checkEqual("", actualMessage, originalTime, actualTime)
+
+	actualMessage, _ = parseLogLine("Hello world!", true)
+	checkMessage("Hello world!", actualMessage)
+
+	actualMessage, _ = parseLogLine("Hello world!", false)
+	checkMessage("Hello world!", actualMessage)
+
+	actualMessage, actualTime = parseLogLine(fmt.Sprintf("%s Hello world!", originalTime.Format(time.RFC3339Nano)), false)
+	checkAfter(fmt.Sprintf("%s Hello world!", originalTime.Format(time.RFC3339Nano)), actualMessage, originalTime, actualTime)
 }
