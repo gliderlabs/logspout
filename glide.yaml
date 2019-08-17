@@ -2,6 +2,7 @@ package: github.com/gliderlabs/logspout
 excludeDirs:
 - custom
 import:
+- package: github.com/docker/docker/api/types/swarm
 - package: github.com/fsouza/go-dockerclient
 - package: github.com/gorilla/mux
 - package: golang.org/x/net
