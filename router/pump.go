@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -81,8 +80,7 @@ func logDriverSupported(container *docker.Container) bool {
 	}
 }
 
-func ignoreContainer(container *docker.Container) bool {
-	debug("Checking ignore container")
+func ignoreContainer(container *docker.Container, serviceLabels map[string]string) bool {
 	for _, kv := range container.Config.Env {
 		kvp := strings.SplitN(kv, "=", 2)
 		if len(kvp) == 2 && kvp[0] == "LOGSPOUT" && strings.ToLower(kvp[1]) == "ignore" {
@@ -99,7 +97,11 @@ func ignoreContainer(container *docker.Container) bool {
 		excludeLabel = excludeLabelArr[0]
 	}
 
-	if value, ok := container.Config.Labels[excludeLabel]; ok {
+	for k, v := range container.Config.Labels {
+		serviceLabels[k] = v
+	}
+
+	if value, ok := serviceLabels[excludeLabel]; ok {
 		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
 	}
 	return false
@@ -193,24 +195,27 @@ func (p *LogsPump) Run() error {
 func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTimeout time.Duration) {
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
-	serviceID := container.Config.Labels["com.docker.swarm.service.id"]
-	debug("Service ID: " + serviceID)
 	var service *swarm.Service
-	if serviceID != "" {
-		svc, err := p.client.InspectService(serviceID)
-		if err != nil {
-			debug("Error getting service", err)
-		} else {
-			service = svc
+	serviceLabels := make(map[string]string)
+	if err == nil {
+		serviceID := container.Config.Labels["com.docker.swarm.service.id"]
+		debug("Service ID: " + serviceID)
+		if serviceID != "" {
+			svc, err := p.client.InspectService(serviceID)
+			if err != nil {
+				debug("Error getting service", err)
+			} else {
+				service = svc
+				serviceLabels = service.Spec.Labels
+			}
 		}
 	}
-	debug("service is nil: " + strconv.FormatBool(service == nil))
 	assert(err, "pump")
 	if ignoreContainerTTY(container) {
 		debug("pump.pumpLogs():", id, "ignored: tty enabled")
 		return
 	}
-	if ignoreContainer(container) {
+	if ignoreContainer(container, serviceLabels) {
 		debug("pump.pumpLogs():", id, "ignored: environ ignore")
 		return
 	}
@@ -323,9 +328,6 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 		var serviceLabels map[string]string
 		if pump.service != nil {
 			serviceLabels = pump.service.Spec.Labels
-			for k, v := range serviceLabels {
-				debug(k + "=" + v)
-			}
 		}
 		if route.MatchContainer(
 			normalID(pump.container.ID),
