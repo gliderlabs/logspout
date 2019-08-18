@@ -1,48 +1,117 @@
-hash: 83a577e65396190336bd5117580f29dbf983a3e2fdc5732a111ae56f229ed978
-updated: 2017-11-07T22:39:32.638917215-06:00
+hash: 28bbe4dbb607479fc1f84400e0d165ee8ecb96015fe493d1deb320df0c6d51ad
+updated: 2019-08-16T20:52:00.354722402-04:00
 imports:
-- name: github.com/docker/docker
-  version: ad969f1aa782478725a7f338cf963fa82f484609
+- name: github.com/Azure/go-ansiterm
+  version: d6e3b3328b783f23731bc4d058875b0371ff8109
   subpackages:
-  - opts
-  - pkg/archive
+  - winterm
+- name: github.com/containerd/containerd
+  version: 074b75907b1f6a753b26d24de93b3eeddb5d0d22
+  subpackages:
+  - errdefs
+- name: github.com/containerd/continuity
+  version: f2a389ac0a02ce21c09edd7344677a601970f41c
+  subpackages:
+  - pathdriver
+- name: github.com/docker/distribution
+  version: 1fb7fffdb26687adf375a4433a58a0d66a13fede
+  subpackages:
+  - registry/api/errcode
+- name: github.com/docker/docker
+  version: f18ad28874fe4bdc5dc61db366bb818797153909
+  subpackages:
+  - api/types/blkiodev
+  - api/types/container
+  - api/types/filters
+  - api/types/mount
+  - api/types/network
+  - api/types/registry
+  - api/types/strslice
+  - api/types/swarm
+  - api/types/swarm/runtime
+  - api/types/versions
+  - errdefs
   - pkg/fileutils
   - pkg/homedir
   - pkg/idtools
   - pkg/ioutils
   - pkg/longpath
+  - pkg/mount
   - pkg/pools
-  - pkg/promise
   - pkg/stdcopy
   - pkg/system
-- name: github.com/docker/engine-api
-  version: 98348ad6f9c89bb10f31ac32cd1b12cbadd292b6
+- name: github.com/docker/go-connections
+  version: fd1b1942c4d55f7f210a8387e612dc6ffee78ff6
   subpackages:
-  - types/filters
-  - types/versions
+  - nat
 - name: github.com/docker/go-units
-  version: f2d77a61e3c169b43402a0a1e84f06daf29b8190
+  version: 519db1ee28dcc9fd2474ae59fca29a810482bfb1
 - name: github.com/fsouza/go-dockerclient
-  version: 1a3d0cfd7814bbfe44ada7617654948c99891749
-- name: github.com/gorilla/context
-  version: aed02d124ae4a0e94fea4541c8effd05bf0c8296
+  version: 308dc73c17d7c26a1d0f2ff0057637cc500d7c06
+  subpackages:
+  - internal/archive
+  - internal/jsonmessage
+  - internal/term
+- name: github.com/gogo/protobuf
+  version: 28a6bbf47e48e0b2220b2a244750b660c83d4942
+  subpackages:
+  - proto
+- name: github.com/golang/protobuf
+  version: 4c88cc3f1a34ffade77b79abc53335d1e511f25b
+  subpackages:
+  - proto
+  - ptypes
+  - ptypes/any
+  - ptypes/duration
+  - ptypes/timestamp
 - name: github.com/gorilla/mux
-  version: 9fa818a44c2bf1396a17f9d5a3c0f6dd39d2ff8e
-- name: github.com/hashicorp/go-cleanhttp
-  version: ad28ea4487f05916463e2423a55166280e8254b5
+  version: e67b3c02c7195c052acff13261f0c9fd1ba53011
+- name: github.com/ijc/Gotty
+  version: a8b993ba6abdb0e0c12b0125c603323a71c7790c
+- name: github.com/konsorten/go-windows-terminal-sequences
+  version: f55edac94c9bbba5d6182a4be46d86a2c9b5b50e
+- name: github.com/Microsoft/go-winio
+  version: 6c72808b55902eae4c5943626030429ff20f3b63
+  subpackages:
+  - pkg/guid
+- name: github.com/Microsoft/hcsshim
+  version: f3a709278302553a13f3076369160103d274276c
+  subpackages:
+  - osversion
+- name: github.com/opencontainers/go-digest
+  version: ac19fd6e7483ff933754af248d80be865e543d22
+- name: github.com/opencontainers/image-spec
+  version: da296dcb1e473a9b4e2d148941d7faa9ac8fea3f
+  subpackages:
+  - specs-go
+  - specs-go/v1
 - name: github.com/opencontainers/runc
-  version: 9d7831e41d3ef428b67685eeb27f2b4a22a92391
+  version: 2e94378464ae22b92e1335c200edb37ebc94a1b7
   subpackages:
   - libcontainer/user
-- name: github.com/Sirupsen/logrus
-  version: f3cfb454f4c209e6668c95216c4744b8fddb2356
+- name: github.com/pkg/errors
+  version: 27936f6d90f9c8e1145f11ed52ffffbfdb9e0af7
+- name: github.com/sirupsen/logrus
+  version: de736cf91b921d56253b4010270681d33fdf7cb5
 - name: golang.org/x/net
-  version: f841c39de738b1d0df95b5a7187744f0e03d8112
+  version: 74dc4d7220e7acc4e100824340f3e66577424772
   subpackages:
-  - context
   - websocket
 - name: golang.org/x/sys
-  version: a408501be4d17ee978c04a618e7a1b22af058c0e
+  version: fde4db37ae7ad8191b03d30d27f258b5291ae4e3
   subpackages:
   - unix
+  - windows
+- name: google.golang.org/genproto
+  version: fa694d86fc64c7654a660f8908de4e879866748d
+  subpackages:
+  - googleapis/rpc/status
+- name: google.golang.org/grpc
+  version: 030824531b6588b2f7fb381c9efa96c560693b83
+  subpackages:
+  - codes
+  - connectivity
+  - grpclog
+  - internal
+  - status
 testImports: []

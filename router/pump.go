@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/fsouza/go-dockerclient"
 )
 
@@ -79,7 +80,7 @@ func logDriverSupported(container *docker.Container) bool {
 	}
 }
 
-func ignoreContainer(container *docker.Container) bool {
+func ignoreContainer(container *docker.Container, serviceLabels map[string]string) bool {
 	for _, kv := range container.Config.Env {
 		kvp := strings.SplitN(kv, "=", 2)
 		if len(kvp) == 2 && kvp[0] == "LOGSPOUT" && strings.ToLower(kvp[1]) == "ignore" {
@@ -96,7 +97,11 @@ func ignoreContainer(container *docker.Container) bool {
 		excludeLabel = excludeLabelArr[0]
 	}
 
-	if value, ok := container.Config.Labels[excludeLabel]; ok {
+	for k, v := range container.Config.Labels {
+		serviceLabels[k] = v
+	}
+
+	if value, ok := serviceLabels[excludeLabel]; ok {
 		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
 	}
 	return false
@@ -190,12 +195,27 @@ func (p *LogsPump) Run() error {
 func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTimeout time.Duration) {
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
+	var service *swarm.Service
+	serviceLabels := make(map[string]string)
+	if err == nil {
+		serviceID := container.Config.Labels["com.docker.swarm.service.id"]
+		debug("Service ID: " + serviceID)
+		if serviceID != "" {
+			svc, err := p.client.InspectService(serviceID)
+			if err != nil {
+				debug("Error getting service", err)
+			} else {
+				service = svc
+				serviceLabels = service.Spec.Labels
+			}
+		}
+	}
 	assert(err, "pump")
 	if ignoreContainerTTY(container) {
 		debug("pump.pumpLogs():", id, "ignored: tty enabled")
 		return
 	}
-	if ignoreContainer(container) {
+	if ignoreContainer(container, serviceLabels) {
 		debug("pump.pumpLogs():", id, "ignored: environ ignore")
 		return
 	}
@@ -227,7 +247,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 	}
 	outrd, outwr := io.Pipe()
 	errrd, errwr := io.Pipe()
-	p.pumps[id] = newContainerPump(container, outrd, errrd)
+	p.pumps[id] = newContainerPump(container, service, outrd, errrd)
 	p.mu.Unlock()
 	p.update(event)
 	go func() {
@@ -305,10 +325,15 @@ func (p *LogsPump) RoutingFrom(id string) bool {
 func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 	p.mu.Lock()
 	for _, pump := range p.pumps {
+		var serviceLabels map[string]string
+		if pump.service != nil {
+			serviceLabels = pump.service.Spec.Labels
+		}
 		if route.MatchContainer(
 			normalID(pump.container.ID),
 			normalName(pump.container.Name),
-			pump.container.Config.Labels) {
+			pump.container.Config.Labels,
+			serviceLabels) {
 
 			pump.add(logstream, route)
 			defer pump.remove(logstream)
@@ -328,10 +353,15 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 		case event := <-updates:
 			switch event.Status {
 			case "start", "restart":
+				var serviceLabels map[string]string
+				if event.pump.service != nil {
+					serviceLabels = event.pump.service.Spec.Labels
+				}
 				if route.MatchContainer(
 					normalID(event.pump.container.ID),
 					normalName(event.pump.container.Name),
-					event.pump.container.Config.Labels) {
+					event.pump.container.Config.Labels,
+					serviceLabels) {
 
 					event.pump.add(logstream, route)
 					defer event.pump.remove(logstream)
@@ -352,12 +382,14 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 type containerPump struct {
 	sync.Mutex
 	container  *docker.Container
+	service    *swarm.Service
 	logstreams map[chan *Message]*Route
 }
 
-func newContainerPump(container *docker.Container, stdout, stderr io.Reader) *containerPump {
+func newContainerPump(container *docker.Container, service *swarm.Service, stdout, stderr io.Reader) *containerPump {
 	cp := &containerPump{
 		container:  container,
+		service:    service,
 		logstreams: make(map[chan *Message]*Route),
 	}
 	pump := func(source string, input io.Reader) {

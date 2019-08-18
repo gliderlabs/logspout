@@ -10,6 +10,7 @@ import (
 	"os"
 	"testing"
 
+	swarm "github.com/docker/docker/api/types/swarm"
 	docker "github.com/fsouza/go-dockerclient"
 )
 
@@ -67,9 +68,23 @@ func TestPumpIgnoreContainer(t *testing.T) {
 		{&docker.Config{Labels: map[string]string{"exclude": "false"}}, false},
 	}
 
+	serviceLabels := []struct {
+		in  map[string]string
+		out bool
+	}{
+		{map[string]string{"exclude": "true"}, true},
+		{map[string]string{"exclude": "false"}, false},
+	}
+
 	for _, conf := range containers {
-		if actual := ignoreContainer(&docker.Container{Config: conf.in}); actual != conf.out {
+		if actual := ignoreContainer(&docker.Container{Config: conf.in}, make(map[string]string)); actual != conf.out {
 			t.Errorf("expected %v got %v", conf.out, actual)
+		}
+	}
+
+	for _, serviceLabel := range serviceLabels {
+		if actual := ignoreContainer(&docker.Container{Config: &docker.Config{Labels: make(map[string]string)}}, serviceLabel.in); actual != serviceLabel.out {
+			t.Errorf("expected %v got %v", serviceLabel.out, actual)
 		}
 	}
 }
@@ -85,9 +100,23 @@ func TestPumpIgnoreContainerCustomLabels(t *testing.T) {
 		{&docker.Config{Labels: map[string]string{"app": "demo-app"}}, false},
 	}
 
+	serviceLabels := []struct {
+		in  map[string]string
+		out bool
+	}{
+		{map[string]string{"k8s-app": "canal"}, true},
+		{map[string]string{"app": "demo-app"}, false},
+	}
+
 	for _, conf := range containers {
-		if actual := ignoreContainer(&docker.Container{Config: conf.in}); actual != conf.out {
+		if actual := ignoreContainer(&docker.Container{Config: conf.in}, make(map[string]string)); actual != conf.out {
 			t.Errorf("expected %v got %v", conf.out, actual)
+		}
+	}
+
+	for _, serviceLabel := range serviceLabels {
+		if actual := ignoreContainer(&docker.Container{Config: &docker.Config{Labels: make(map[string]string)}}, serviceLabel.in); actual != serviceLabel.out {
+			t.Errorf("expected %v got %v", serviceLabel.out, actual)
 		}
 	}
 }
@@ -139,6 +168,9 @@ func TestPumpContainerRename(t *testing.T) {
 		ID:   "8dfafdbc3a40",
 		Name: "bar",
 	}
+	service := &swarm.Service{
+		ID: "83nf93ndin2j",
+	}
 	client := newTestClient(&FakeRoundTripper{message: container, status: http.StatusOK})
 	p := &LogsPump{
 		client: &client,
@@ -153,7 +185,7 @@ func TestPumpContainerRename(t *testing.T) {
 		Name:   "foo",
 		Config: config,
 	}
-	p.pumps["8dfafdbc3a40"] = newContainerPump(container, os.Stdout, os.Stderr)
+	p.pumps["8dfafdbc3a40"] = newContainerPump(container, service, os.Stdout, os.Stderr)
 	if name := p.pumps["8dfafdbc3a40"].container.Name; name != "foo" {
 		t.Errorf("containerPump should have name: 'foo' got name: '%s'", name)
 	}
@@ -171,7 +203,10 @@ func TestPumpNewContainerPump(t *testing.T) {
 		ID:     "8dfafdbc3a40",
 		Config: config,
 	}
-	pump := newContainerPump(container, os.Stdout, os.Stderr)
+	service := &swarm.Service{
+		ID: "83nf93ndin2j",
+	}
+	pump := newContainerPump(container, service, os.Stdout, os.Stderr)
 	if pump == nil {
 		t.Error("pump nil")
 		return
@@ -186,7 +221,10 @@ func TestPumpContainerPump(t *testing.T) {
 		ID:     "8dfafdbc3a40",
 		Config: config,
 	}
-	pump := newContainerPump(container, os.Stdout, os.Stderr)
+	service := &swarm.Service{
+		ID: "83nf93ndin2j",
+	}
+	pump := newContainerPump(container, service, os.Stdout, os.Stderr)
 	logstream, route := make(chan *Message), &Route{}
 	go func() {
 		for msg := range logstream {

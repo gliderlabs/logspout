@@ -117,7 +117,7 @@ func (r *Route) MultiContainer() bool {
 }
 
 // MatchContainer returns whether the Route is responsible for a given container
-func (r *Route) MatchContainer(id, name string, labels map[string]string) bool {
+func (r *Route) MatchContainer(id, name string, containerLabels map[string]string, serviceLabels map[string]string) bool {
 	if r.matchAll() {
 		return true
 	}
@@ -128,12 +128,15 @@ func (r *Route) MatchContainer(id, name string, labels map[string]string) bool {
 	if err != nil || (r.FilterName != "" && !match) {
 		return false
 	}
+	for k, v := range serviceLabels {
+		containerLabels[k] = v
+	}
 	for _, label := range r.FilterLabels {
 		labelParts := strings.SplitN(label, ":", 2)
 		if len(labelParts) > 1 {
 			labelKey := labelParts[0]
 			labelValue := labelParts[1]
-			labelMatch, labelErr := path.Match(labelValue, labels[labelKey])
+			labelMatch, labelErr := path.Match(labelValue, containerLabels[labelKey])
 			if labelErr != nil || (labelValue != "" && !labelMatch) {
 				return false
 			}
