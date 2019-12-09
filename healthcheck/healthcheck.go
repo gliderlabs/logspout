@@ -3,12 +3,13 @@ package healthcheck
 import (
 	"net/http"
 
-	"github.com/gliderlabs/logspout/router"
 	"github.com/gorilla/mux"
+
+	"github.com/gliderlabs/logspout/router"
 )
 
 func init() {
-	router.HttpHandlers.Register(HealthCheck, "health")
+	router.HTTPHandlers.Register(HealthCheck, "health")
 }
 
 // HealthCheck returns a http.Handler for the health check

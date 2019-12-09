@@ -2,17 +2,15 @@ version: 2
 jobs:
   build:
     machine: true
-    working_directory: ~/.go_workspace/src/github.com/gliderlabs/logspout
+    working_directory: /home/circleci/logspout
     environment:
       DEBUG: true
     steps:
       - checkout
       - run: |
-          go get github.com/golang/lint/golint
-      - run: |
           make circleci
       - run: |
-          make lint
+          make lint-ci
       - run: |
           make build
       - run: |

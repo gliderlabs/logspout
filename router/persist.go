@@ -49,7 +49,7 @@ func (fs RouteFileStore) GetAll() ([]*Route, error) {
 	return routes, nil
 }
 
-// Add writes a marshalled *Route to the RouteFileStore
+// Add writes a marshaled *Route to the RouteFileStore
 func (fs RouteFileStore) Add(route *Route) error {
 	return ioutil.WriteFile(fs.Filename(route.ID), marshal(route), 0644)
 }
