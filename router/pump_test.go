@@ -43,7 +43,7 @@ func (rt *FakeRoundTripper) Reset() {
 	rt.requests = nil
 }
 
-func newTestClient(rt *FakeRoundTripper) docker.Client {
+func newTestClient(rt http.RoundTripper) docker.Client {
 	endpoint := "http://localhost:4243"
 	client, _ := docker.NewClient(endpoint)
 	client.HTTPClient = &http.Client{Transport: rt}
@@ -65,6 +65,24 @@ func TestPumpIgnoreContainer(t *testing.T) {
 		{&docker.Config{Env: []string{"LOGSPOUT=foo"}}, false},
 		{&docker.Config{Labels: map[string]string{"exclude": "true"}}, true},
 		{&docker.Config{Labels: map[string]string{"exclude": "false"}}, false},
+	}
+
+	for _, conf := range containers {
+		if actual := ignoreContainer(&docker.Container{Config: conf.in}); actual != conf.out {
+			t.Errorf("expected %v got %v", conf.out, actual)
+		}
+	}
+}
+
+func TestPumpIgnoreContainerCustomLabels(t *testing.T) {
+	os.Setenv("EXCLUDE_LABEL", "k8s-app:canal")
+	defer os.Unsetenv("EXCLUDE_LABEL")
+	containers := []struct {
+		in  *docker.Config
+		out bool
+	}{
+		{&docker.Config{Labels: map[string]string{"k8s-app": "canal"}}, true},
+		{&docker.Config{Labels: map[string]string{"app": "demo-app"}}, false},
 	}
 
 	for _, conf := range containers {

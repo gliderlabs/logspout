@@ -8,13 +8,14 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/gliderlabs/logspout/router"
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
+
+	"github.com/gliderlabs/logspout/router"
 )
 
 func init() {
-	router.HttpHandlers.Register(LogStreamer, "logs")
+	router.HTTPHandlers.Register(LogStreamer, "logs")
 }
 
 func debug(v ...interface{}) {
@@ -51,16 +52,16 @@ func LogStreamer() http.Handler {
 		logstream := make(chan *router.Message)
 		defer close(logstream)
 
-		var closer <-chan bool
+		var closer <-chan struct{}
 		if req.Header.Get("Upgrade") == "websocket" {
 			debug("http: logs streamer connected [websocket]")
-			closerBi := make(chan bool)
+			closerBi := make(chan struct{})
 			defer websocketStreamer(w, req, logstream, closerBi)
 			closer = closerBi
 		} else {
 			debug("http: logs streamer connected [http]")
 			defer httpStreamer(w, req, logstream, route.MultiContainer())
-			closer = w.(http.CloseNotifier).CloseNotify()
+			closer = req.Context().Done()
 		}
 		route.OverrideCloser(closer)
 
@@ -100,7 +101,7 @@ func normalName(name string) string {
 	return name[1:]
 }
 
-func websocketStreamer(w http.ResponseWriter, req *http.Request, logstream chan *router.Message, closer chan bool) {
+func websocketStreamer(w http.ResponseWriter, req *http.Request, logstream chan *router.Message, closer chan struct{}) {
 	websocket.Handler(func(conn *websocket.Conn) {
 		for logline := range logstream {
 			if req.URL.Query().Get("source") != "" && logline.Source != req.URL.Query().Get("source") {
@@ -108,7 +109,7 @@ func websocketStreamer(w http.ResponseWriter, req *http.Request, logstream chan 
 			}
 			_, err := conn.Write(append(marshal(logline), '\n'))
 			if err != nil {
-				closer <- true
+				closer <- struct{}{}
 				return
 			}
 		}

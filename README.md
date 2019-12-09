@@ -37,6 +37,8 @@ logspout will gather logs from other containers that are started **without the `
 
 To see what data is used for syslog messages, see the [syslog adapter](http://github.com/gliderlabs/logspout/blob/master/adapters) docs.
 
+The container must be able to access the Docker Unix socket to mount it. This is typically a problem when [namespace remapping](https://docs.docker.com/engine/security/userns-remap/) is enabled. To disable remapping for the logspout container, pass the `--userns=host` flag to `docker run`, `.. create`, etc. 
+
 #### Ignoring specific containers
 
 You can tell logspout to ignore specific containers by setting an environment variable when starting your container, like so:-
@@ -97,7 +99,7 @@ You can tell logspout to only display log entries since container "start" or "re
 
 The default behaviour is to output all logs since creation of the container (equivalent to `docker logs --tail=all` or simply `docker logs`).
 
-> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thorougly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
+> NOTE: Use of this option **may** cause the first few lines of log output to be missed following a container being started, if the container starts outputting logs before logspout has a chance to see them. If consistent capture of *every* line of logs is critical to your application, you might want to test thoroughly and/or avoid this option (at the expense of getting the entire backlog for every restarting container). This does not affect containers that are removed and recreated.
 
 
 #### Environment variable, TAIL
@@ -135,14 +137,41 @@ See [routesapi module](http://github.com/gliderlabs/logspout/blob/master/routesa
 
 Logspout relies on the Docker API to retrieve container logs. A failure in the API may cause a log stream to hang. Logspout can detect and restart inactive Docker log streams. Use the environment variable `INACTIVITY_TIMEOUT` to enable this feature. E.g.: `INACTIVITY_TIMEOUT=1m` for a 1-minute threshold.
 
+#### Multiline logging
+
+In order to enable multiline logging, you must first prefix your adapter with the multiline adapter:
+
+	$ docker run \
+		--volume=/var/run/docker.sock:/var/run/docker.sock \
+		gliderlabs/logspout \
+		multiline+raw://192.168.10.10:5000?filter.name=*_db
+
+Using the the above prefix enables multiline logging on all containers by default. To enable it only to specific containers set MULTILINE_ENABLE_DEFAULT=false for logspout, and use the LOGSPOUT_MULTILINE environment variable on the monitored container:
+
+    $ docker run -d -e 'LOGSPOUT_MULTILINE=true' image
+
+##### MULTILINE_MATCH
+
+Using the environment variable `MULTILINE_MATCH`=<first|last|nonfirst|nonlast> (default `nonfirst`) you define, which lines should be matched to the `MULTILINE_PATTERN`.
+* first: match first line only and append following messages until you match another line
+* last: concatenate all messages until the pattern matches the next line
+* nonlast: match a line, append upcoming matching lines, also append first non-matching line and start
+* nonfirst: append all matching lines to first line and start over with the next non-matching line
+
+##### Important!
+If you use multiline logging with raw, it's recommended to json encode the Data to avoid line breaks in the output, eg:
+    
+    "RAW_FORMAT={{ toJSON .Data }}\n"
+
 #### Environment variables
 
 * `ALLOW_TTY` - include logs from containers started with `-t` or `--tty` (i.e. `Allocate a pseudo-TTY`)
 * `BACKLOG` - suppress container tail backlog
 * `TAIL` - specify the number of lines in the log tail to capture when logspout starts (default `all`)
 * `DEBUG` - emit debug logs
-* `EXCLUDE_LABEL` - exclude logs with a given label
+* `EXCLUDE_LABEL` - exclude containers with a given label. The label can have a value of true or a custom value matched with : after the label name like label_name:label_value.
 * `INACTIVITY_TIMEOUT` - detect hang in Docker API (default 0)
+* `HTTP_BIND_ADDRESS` - configure which interface address to listen on (default 0.0.0.0)
 * `PORT` or `HTTP_PORT` - configure which port to listen on (default 80)
 * `RAW_FORMAT` - log format for the raw adapter (default `{{.Data}}\n`)
 * `RETRY_COUNT` - how many times to retry a broken socket (default 10)
@@ -155,6 +184,11 @@ Logspout relies on the Docker API to retrieve container logs. A failure in the A
 * `SYSLOG_STRUCTURED_DATA` - datum for structured data field
 * `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
 * `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
+* `MULTILINE_ENABLE_DEFAULT` - enable multiline logging for all containers when using the multiline adapter (default `true`)
+* `MULTILINE_MATCH` - determines which lines the pattern should match, one of first|last|nonfirst|nonlast, for details see: [MULTILINE_MATCH](#multiline_match) (default `nonfirst`)
+* `MULTILINE_PATTERN` - pattern for multiline logging, see: [MULTILINE_MATCH](#multiline_match) (default: `^\s`)
+* `MULTILINE_FLUSH_AFTER` - maximum time between the first and last lines of a multiline log entry in milliseconds (default: 500)
+* `MULTILINE_SEPARATOR` - separator between lines for output (default: `\n`)
 
 ##### Built-in Template Functions
 
@@ -216,33 +250,74 @@ networks:
   logging:
 services:
   logspout:
-  image: gliderlabs/logspout:latest
-  networks:
-    - logging
-  volumes:
-    - /etc/hostname:/etc/host_hostname:ro
-    - /var/run/docker.sock:/var/run/docker.sock
-  command:
-    syslog://svt2-logger.am2.cloudra.local:514
-  deploy:
-    mode: global
-    resources:
-      limits:
-        cpus: '0.20'
-        memory: 256M
-      reservations:
-        cpus: '0.10'
-      memory: 128M
+    image: gliderlabs/logspout:latest
+    networks:
+      - logging
+    volumes:
+      - /etc/hostname:/etc/host_hostname:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command:
+      syslog://svt2-logger.am2.cloudra.local:514
+    deploy:
+      mode: global
+      resources:
+        limits:
+          cpus: '0.20'
+          memory: 256M
+        reservations:
+          cpus: '0.10'
+          memory: 128M
 ```
 
-logspout can then be deployed as a global service in the swam with the following command
+logspout can then be deployed as a global service in the swarm with the following command
 
 ```bash
-docker stack deploy --compose-file <name of your compose file>
+docker stack deploy --compose-file <name of your compose file> STACK
 ```
 
 More information about services and their mode of deployment can be found here:
 https://docs.docker.com/engine/swarm/how-swarm-mode-works/services/
+
+### TLS Settings
+logspout supports modification of the client TLS settings via environment variables described below:
+
+| Environment Variable  | Description |
+| :---                  |  :---       |
+| `LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS` | when set to `true` it disables loading the system trust store into the trust store of logspout |
+| `LOGSPOUT_TLS_CA_CERTS` | a comma separated list of filesystem paths to pem encoded CA certificates that should be added to logsput's TLS trust store. Each pem file can contain more than one certificate |
+| `LOGSPOUT_TLS_CLIENT_CERT` | filesystem path to pem encoded x509 client certificate to load when TLS mutual authentication is desired |
+| `LOGSPOUT_TLS_CLIENT_KEY` | filesystem path to pem encoded client private key to load when TLS mutual authentication is desired |
+| `LOGSPOUT_TLS_HARDENING` | when set to `true` it enables stricter client TLS settings designed to mitigate some known TLS vulnerabilities |
+
+#### Example TLS settings
+The following settings cover some common use cases.
+When running docker, use the `-e` flag to supply environment variables
+
+**add your own CAs to the list of trusted authorities**
+```
+export LOGSPOUT_TLS_CA_CERTS="/opt/tls/ca/myRootCA1.pem,/opt/tls/ca/myRootCA2.pem"
+```
+
+**force logspout to ONLY trust your own CA**
+```
+export LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS=true
+export LOGSPOUT_TLS_CA_CERTS="/opt/tls/ca/myRootCA1.pem"
+```
+
+**configure client authentication**
+```
+export LOGSPOUT_TLS_CLIENT_CERT="/opt/tls/client/myClient.pem"
+export LOGSPOUT_TLS_CLIENT_KEY="/opt/tls/client/myClient-key.pem"
+```
+
+**highest possible security settings (paranoid mode)**
+```
+export LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS=true
+export LOGSPOUT_TLS_HARDENING=true
+export LOGSPOUT_TLS_CA_CERTS="/opt/tls/ca/myRootCA1.pem"
+export LOGSPOUT_TLS_CLIENT_CERT="/opt/tls/client/myClient.pem"
+export LOGSPOUT_TLS_CLIENT_KEY="/opt/tls/client/myClient-key.pem"
+```
 
 ## Modules
 
@@ -260,7 +335,7 @@ The standard distribution of logspout comes with all modules defined in this rep
 
 ### Third-party modules
 
- * [logspout-kafka](https://github.com/gettyimages/logspout-kafka)
+ * [logspout-kafka](https://github.com/dylanmei/logspout-kafka)
  * logspout-redis...
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
  * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)
