@@ -10,10 +10,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
+
+	"github.com/gliderlabs/logspout/cfg"
 )
 
-var allowTTY bool
+const (
+	defaultPumpName            = "pump"
+	pumpEventStatusStartName   = "start"
+	pumpEventStatusRestartName = "restart"
+	pumpEventStatusRenameName  = "rename"
+	pumpEventStatusDieName     = "die"
+	trueString                 = "true"
+)
+
+var (
+	allowTTY bool
+)
 
 func init() {
 	pump := &LogsPump{
@@ -21,16 +34,8 @@ func init() {
 		routes: make(map[chan *update]struct{}),
 	}
 	setAllowTTY()
-	LogRouters.Register(pump, "pump")
-	Jobs.Register(pump, "pump")
-}
-
-func getopt(name, dfault string) string {
-	value := os.Getenv(name)
-	if value == "" {
-		value = dfault
-	}
-	return value
+	LogRouters.Register(pump, defaultPumpName)
+	Jobs.Register(pump, defaultPumpName)
 }
 
 func debug(v ...interface{}) {
@@ -40,14 +45,11 @@ func debug(v ...interface{}) {
 }
 
 func backlog() bool {
-	if os.Getenv("BACKLOG") == "false" {
-		return false
-	}
-	return true
+	return os.Getenv("BACKLOG") == "false"
 }
 
 func setAllowTTY() {
-	if t := getopt("ALLOW_TTY", ""); t == "true" {
+	if t := cfg.GetEnvDefault("ALLOW_TTY", ""); t == trueString {
 		allowTTY = true
 	}
 	debug("setting allowTTY to:", allowTTY)
@@ -82,12 +84,12 @@ func logDriverSupported(container *docker.Container) bool {
 func ignoreContainer(container *docker.Container) bool {
 	for _, kv := range container.Config.Env {
 		kvp := strings.SplitN(kv, "=", 2)
-		if len(kvp) == 2 && kvp[0] == "LOGSPOUT" && strings.ToLower(kvp[1]) == "ignore" {
+		if len(kvp) == 2 && kvp[0] == "LOGSPOUT" && strings.EqualFold(kvp[1], "ignore") {
 			return true
 		}
 	}
 
-	excludeLabel := getopt("EXCLUDE_LABEL", "")
+	excludeLabel := cfg.GetEnvDefault("EXCLUDE_LABEL", "")
 	excludeValue := "true"
 	// support EXCLUDE_LABEL having a custom label value
 	excludeLabelArr := strings.Split(excludeLabel, ":")
@@ -97,7 +99,7 @@ func ignoreContainer(container *docker.Container) bool {
 	}
 
 	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		return len(excludeLabel) > 0 && strings.ToLower(value) == strings.ToLower(excludeValue)
+		return len(excludeLabel) > 0 && strings.EqualFold(value, strings.ToLower(excludeValue))
 	}
 	return false
 }
@@ -110,7 +112,7 @@ func ignoreContainerTTY(container *docker.Container) bool {
 }
 
 func getInactivityTimeoutFromEnv() time.Duration {
-	inactivityTimeout, err := time.ParseDuration(getopt("INACTIVITY_TIMEOUT", "0"))
+	inactivityTimeout, err := time.ParseDuration(cfg.GetEnvDefault("INACTIVITY_TIMEOUT", "0"))
 	assert(err, "Couldn't parse env var INACTIVITY_TIMEOUT. See https://golang.org/pkg/time/#ParseDuration for valid format.")
 	return inactivityTimeout
 }
@@ -130,7 +132,7 @@ type LogsPump struct {
 
 // Name returns the name of the pump
 func (p *LogsPump) Name() string {
-	return "pump"
+	return defaultPumpName
 }
 
 // Setup configures the pump
@@ -144,7 +146,7 @@ func (p *LogsPump) rename(event *docker.APIEvents) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	container, err := p.client.InspectContainer(event.ID)
-	assert(err, "pump")
+	assert(err, defaultPumpName)
 	pump, ok := p.pumps[normalID(event.ID)]
 	if !ok {
 		debug("pump.rename(): ignore: pump not found, state:", container.State.StateString())
@@ -162,10 +164,10 @@ func (p *LogsPump) Run() error {
 	if err != nil {
 		return err
 	}
-	for _, listing := range containers {
+	for idx := range containers {
 		p.pumpLogs(&docker.APIEvents{
-			ID:     normalID(listing.ID),
-			Status: "start",
+			ID:     normalID(containers[idx].ID),
+			Status: pumpEventStatusStartName,
 		}, false, inactivityTimeout)
 	}
 	events := make(chan *docker.APIEvents)
@@ -176,21 +178,21 @@ func (p *LogsPump) Run() error {
 	for event := range events {
 		debug("pump.Run() event:", normalID(event.ID), event.Status)
 		switch event.Status {
-		case "start", "restart":
+		case pumpEventStatusStartName, pumpEventStatusRestartName:
 			go p.pumpLogs(event, backlog(), inactivityTimeout)
-		case "rename":
+		case pumpEventStatusRenameName:
 			go p.rename(event)
-		case "die":
+		case pumpEventStatusDieName:
 			go p.update(event)
 		}
 	}
 	return errors.New("docker event stream closed")
 }
 
-func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTimeout time.Duration) {
+func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTimeout time.Duration) { //nolint:gocyclo
 	id := normalID(event.ID)
 	container, err := p.client.InspectContainer(id)
-	assert(err, "pump")
+	assert(err, defaultPumpName)
 	if ignoreContainerTTY(container) {
 		debug("pump.pumpLogs():", id, "ignored: tty enabled")
 		return
@@ -204,7 +206,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 		return
 	}
 
-	var tail = getopt("TAIL", "all")
+	var tail = cfg.GetEnvDefault("TAIL", "all")
 	var sinceTime time.Time
 	if backlog {
 		sinceTime = time.Unix(0, 0)
@@ -260,7 +262,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 			if err != nil {
 				_, four04 := err.(*docker.NoSuchContainer)
 				if !four04 {
-					assert(err, "pump")
+					assert(err, defaultPumpName)
 				}
 			} else if container.State.Running {
 				continue
@@ -327,7 +329,7 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 		select {
 		case event := <-updates:
 			switch event.Status {
-			case "start", "restart":
+			case pumpEventStatusStartName, pumpEventStatusRestartName:
 				if route.MatchContainer(
 					normalID(event.pump.container.ID),
 					normalName(event.pump.container.Name),
@@ -336,7 +338,7 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 					event.pump.add(logstream, route)
 					defer event.pump.remove(logstream)
 				}
-			case "die":
+			case pumpEventStatusDieName:
 				if strings.HasPrefix(route.FilterID, event.ID) {
 					// If the route is just about a single container,
 					// we can stop routing when it dies.

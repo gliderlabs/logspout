@@ -2,7 +2,6 @@ package syslog
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -15,22 +14,17 @@ import (
 	"text/template"
 	"time"
 
-	docker "github.com/fsouza/go-dockerclient"
-	"github.com/gliderlabs/logspout/router"
-
 	_ "github.com/gliderlabs/logspout/transports/tcp"
 	_ "github.com/gliderlabs/logspout/transports/tls"
 	_ "github.com/gliderlabs/logspout/transports/udp"
+
+	docker "github.com/fsouza/go-dockerclient"
+
+	"github.com/gliderlabs/logspout/router"
 )
 
 const (
-	testPriority  = "{{.Priority}}"
-	testTimestamp = "{{.Timestamp}}"
-	testHostname  = "{{.Container.Config.Hostname}}"
-	testTag       = "{{.ContainerName}}"
-	testPid       = "{{.Container.State.Pid}}"
-	testData      = "{{.Data}}"
-	connCloseIdx  = 5
+	connCloseIdx = 5
 )
 
 var (
@@ -41,8 +35,6 @@ var (
 			Hostname: "8dfafdbc3a40",
 		},
 	}
-	testTmplStr = fmt.Sprintf("<%s>%s %s %s[%s]: %s\n",
-		testPriority, testTimestamp, testHostname, testTag, testPid, testData)
 	hostHostnameFilename = "/etc/host_hostname"
 	hostnameContent      = "hostname"
 	badHostnameContent   = "hostname\r\n"
@@ -89,7 +81,7 @@ func TestSyslogReconnectOnClose(t *testing.T) {
 		case msg := <-done:
 			// Don't check a message that we know was dropped
 			if msgnum%connCloseIdx == 0 {
-				_ = <-messages
+				<-messages
 				msgnum++
 			}
 			check(t, adapter.(*Adapter).tmpl, <-messages, msg)

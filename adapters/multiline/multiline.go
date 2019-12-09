@@ -9,7 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
+
 	"github.com/gliderlabs/logspout/router"
 )
 
@@ -40,11 +41,10 @@ type Adapter struct {
 }
 
 // NewMultilineAdapter returns a configured multiline.Adapter
-func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
+func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) { //nolint:gocyclo
 	enableByDefault := true
 	enableStr := os.Getenv("MULTILINE_ENABLE_DEFAULT")
 	if enableStr != "" {
-		var err error
 		enableByDefault, err = strconv.ParseBool(enableStr)
 		if err != nil {
 			return nil, errors.New("multiline: invalid value for MULTILINE_ENABLE_DEFAULT (must be true|false): " + enableStr)
@@ -92,8 +92,8 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 	flushAfter := 500 * time.Millisecond
 	flushAfterStr := os.Getenv("MULTILINE_FLUSH_AFTER")
 	if flushAfterStr != "" {
-		timeoutMS, err := strconv.Atoi(flushAfterStr)
-		if err != nil {
+		timeoutMS, errConv := strconv.Atoi(flushAfterStr)
+		if errConv != nil {
 			return nil, errors.New("multiline: invalid value for multiline_timeout (must be number): " + flushAfterStr)
 		}
 		flushAfter = time.Duration(timeoutMS) * time.Millisecond
@@ -135,7 +135,7 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 }
 
 // Stream sends log data to the next adapter
-func (a *Adapter) Stream(logstream chan *router.Message) {
+func (a *Adapter) Stream(logstream chan *router.Message) { //nolint:gocyclo
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -173,7 +173,7 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 				a.buffers[cID] = message
 			} else {
 				isLastLine := a.isLastLine(message)
-				
+
 				if oldExists {
 					old.Data += a.separator + message.Data
 					message = old
