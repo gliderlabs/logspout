@@ -5,11 +5,13 @@ VERSION=$(shell cat VERSION)
 # max image size of 40MB
 MAX_IMAGE_SIZE := 40000000
 
+GOBIN := $(shell go env GOPATH | awk -F ":" '{ print $$1 }')/bin
+GOLANGCI_LINT_VERSION := v1.18.0
+
 ifeq ($(shell uname), Darwin)
 	XARGS_ARG="-L1"
 endif
 GOPACKAGES ?= $(shell go list ./... | egrep -v 'custom|vendor')
-GOLINT := go list ./... | egrep -v '/custom/|/vendor/' | xargs $(XARGS_ARG) golint | egrep -v 'extpoints.go|types.go'
 TEST_ARGS ?= -race
 
 ifdef TEST_RUN
@@ -37,12 +39,21 @@ build-custom:
 	docker tag $(NAME):$(VERSION) gliderlabs/$(NAME):master
 	cd custom && docker build -t $(NAME):custom .
 
-lint:
-	test -x $(GOPATH)/bin/golint || go get github.com/golang/lint/golint
-	go get \
-		&& go install $(GOPACKAGES) \
-		&& go tool vet -v $(shell ls -d */ | egrep -v 'custom|vendor/' | xargs $(XARGS_ARG))
-	@if [ -n "$(shell $(GOLINT) | cut -d ':' -f 1)" ]; then $(GOLINT) && exit 1 ; fi
+lint-requirements:
+ifeq ($(shell which golangci-lint), )
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOBIN) $(GOLANGCI_LINT_VERSION)
+endif
+
+lint: lint-requirements
+	$(GOBIN)/golangci-lint run
+
+lint-ci-direct: lint-requirements
+	$(GOBIN)/golangci-lint --verbose run
+
+lint-ci: build-dev
+	docker run \
+		-v $(PWD):/go/src/github.com/gliderlabs/logspout \
+		$(NAME):dev make -e lint-ci-direct
 
 test: build-dev
 	docker run \
@@ -76,7 +87,7 @@ test-healthcheck:
 		-p 8000:80 \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		$(NAME):$(VERSION)
-	sleep 2
+	sleep 5
 	docker logs $(NAME)-healthcheck
 	docker inspect --format='{{ .State.Running }}' $(NAME)-healthcheck | grep true
 	curl --head --silent localhost:8000/health | grep "200 OK"
@@ -85,7 +96,7 @@ test-healthcheck:
 
 test-custom:
 	docker run --name $(NAME)-custom $(NAME):custom || true
-	docker logs $(NAME)-custom | grep -q logstash
+	docker logs $(NAME)-custom 2>&1 | grep -q logstash
 	docker rmi gliderlabs/$(NAME):master || true
 	docker rm $(NAME)-custom || true
 

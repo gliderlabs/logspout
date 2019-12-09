@@ -43,7 +43,7 @@ func (rt *FakeRoundTripper) Reset() {
 	rt.requests = nil
 }
 
-func newTestClient(rt *FakeRoundTripper) docker.Client {
+func newTestClient(rt http.RoundTripper) docker.Client {
 	endpoint := "http://localhost:4243"
 	client, _ := docker.NewClient(endpoint)
 	client.HTTPClient = &http.Client{Transport: rt}

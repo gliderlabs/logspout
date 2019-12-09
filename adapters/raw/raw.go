@@ -21,7 +21,7 @@ var funcs = template.FuncMap{
 	"toJSON": func(value interface{}) string {
 		bytes, err := json.Marshal(value)
 		if err != nil {
-			log.Println("error marshalling to JSON: ", err)
+			log.Println("error marshaling to JSON: ", err)
 			return "null"
 		}
 		return string(bytes)

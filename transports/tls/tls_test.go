@@ -27,7 +27,7 @@ func createTestTLSConfig(t *testing.T) *tls.Config {
 	return testTLSConfig
 }
 
-// TestEmptyTrustStore should test the behaviour of having
+// TestEmptyTrustStore should test the behavior of having
 // an empty TLS CA trust store.
 func TestEmptyTrustStore(t *testing.T) {
 	os.Setenv(envDisableSystemRoots, "true")
@@ -41,7 +41,7 @@ func TestEmptyTrustStore(t *testing.T) {
 
 }
 
-// TestSingleCustomCA should test the behaviour of loading
+// TestSingleCustomCA should test the behavior of loading
 // a single custom CA certificate in to the trust store.
 func TestSingleCustomCA(t *testing.T) {
 	os.Setenv(envDisableSystemRoots, "true")
@@ -55,7 +55,7 @@ func TestSingleCustomCA(t *testing.T) {
 
 }
 
-// TestMultipleCustomCAs should test the behaviour of loading
+// TestMultipleCustomCAs should test the behavior of loading
 // multiple custom CA certificates in to the trust store.
 func TestMultipleCustomCAs(t *testing.T) {
 	os.Setenv(envDisableSystemRoots, "true")
@@ -73,7 +73,7 @@ func TestMultipleCustomCAs(t *testing.T) {
 
 // TestSystemRootCAs should test that by default we load the system trust store
 func TestSystemRootCAs(t *testing.T) {
-	// default behaviour is none of these environment variables are set
+	// default behavior is none of these environment variables are set
 	os.Unsetenv(envDisableSystemRoots)
 	os.Unsetenv(envCaCerts)
 	testTLSConfig := createTestTLSConfig(t)
@@ -101,7 +101,7 @@ func TestSystemRootCAsAndCustomCAs(t *testing.T) {
 	}
 }
 
-// TestLoadingClientCertAndKey: should test the behaviour of loading
+// TestLoadingClientCertAndKey: should test the behavior of loading
 // a pem encoded client x509 certificate and private key
 func TestLoadingClientCertAndKey(t *testing.T) {
 	os.Unsetenv(envDisableSystemRoots)
@@ -115,7 +115,7 @@ func TestLoadingClientCertAndKey(t *testing.T) {
 	}
 }
 
-// TestTLSHardening should test the behaviour of enabling TLS hardening
+// TestTLSHardening should test the behavior of enabling TLS hardening
 func TestTLSHardening(t *testing.T) {
 	os.Unsetenv(envDisableSystemRoots)
 	os.Unsetenv(envCaCerts)
