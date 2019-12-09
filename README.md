@@ -275,9 +275,9 @@ logspout supports modification of the client TLS settings via environment variab
 | Environment Variable  | Description |
 | :---                  |  :---       |
 | `LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS` | when set to `true` it disables loading the system trust store into the trust store of logspout |
-| `LOGSPOUT_TLS_CA_CERTS` | a comma seperated list of filesystem paths to pem encoded CA certificates that should be added to logsput's TLS trust store. Each pem file can contain more than one certificate |
-| `LOGSPOUT_TLS_CLIENT_CERT` | filesytem path to pem encoded x509 client certificate to load when TLS mutual authentication is desired |
-| `LOGSPOUT_TLS_CLIENT_KEY` | filesytem path to pem encoded client private key to load when TLS mutual authentication is desired |
+| `LOGSPOUT_TLS_CA_CERTS` | a comma separated list of filesystem paths to pem encoded CA certificates that should be added to logsput's TLS trust store. Each pem file can contain more than one certificate |
+| `LOGSPOUT_TLS_CLIENT_CERT` | filesystem path to pem encoded x509 client certificate to load when TLS mutual authentication is desired |
+| `LOGSPOUT_TLS_CLIENT_KEY` | filesystem path to pem encoded client private key to load when TLS mutual authentication is desired |
 | `LOGSPOUT_TLS_HARDENING` | when set to `true` it enables stricter client TLS settings designed to mitigate some known TLS vulnerabilities |
 
 #### Example TLS settings
