@@ -331,6 +331,8 @@ The standard distribution of logspout comes with all modules defined in this rep
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
  * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)
  * [logspout-gelf](https://github.com/micahhausler/logspout-gelf) for Graylog
+ * [logspout-fluentd](https://github.com/dsouzajude/logspout-fluentd) for fluentd - instead of using fluentd log driver
+ 
 
 ### Loggly support
 
