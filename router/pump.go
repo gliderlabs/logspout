@@ -74,7 +74,7 @@ func normalID(id string) string {
 
 func logDriverSupported(container *docker.Container) bool {
 	switch container.HostConfig.LogConfig.Type {
-	case "json-file", "journald":
+	case "json-file", "journald", "db":
 		return true
 	default:
 		return false
