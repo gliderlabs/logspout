@@ -79,11 +79,6 @@ func TestSyslogReconnectOnClose(t *testing.T) {
 	for {
 		select {
 		case msg := <-done:
-			// Don't check a message that we know was dropped
-			if msgnum%connCloseIdx == 0 {
-				<-messages
-				msgnum++
-			}
 			check(t, adapter.(*Adapter).tmpl, <-messages, msg)
 			msgnum++
 		case <-timeout:

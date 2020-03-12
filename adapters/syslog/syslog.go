@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"log/syslog"
@@ -104,11 +105,15 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var closeChan = make(chan *net.Conn)
+
 	return &Adapter{
 		route:     route,
 		conn:      conn,
 		tmpl:      tmpl,
 		transport: transport,
+		closeChan: closeChan,
 	}, nil
 }
 
@@ -118,28 +123,41 @@ type Adapter struct {
 	route     *router.Route
 	tmpl      *template.Template
 	transport router.AdapterTransport
+	closeChan chan *net.Conn
 }
 
 // Stream sends log data to a connection
 func (a *Adapter) Stream(logstream chan *router.Message) {
-	for message := range logstream {
-		m := &Message{message}
-		buf, err := m.Render(a.tmpl)
-		if err != nil {
-			log.Println("syslog:", err)
-			return
-		}
-		if _, err = a.conn.Write(buf); err != nil {
-			log.Println("syslog:", err)
-			switch a.conn.(type) {
-			case *net.UDPConn:
-				continue
-			default:
-				if err = a.retry(buf, err); err != nil {
-					log.Panicf("syslog retry err: %+v", err)
+	go a.waitForEof()
+	for {
+		select {
+			case message := <-logstream:
+				m := &Message{message}
+				buf, err := m.Render(a.tmpl)
+				if err != nil {
+					log.Println("syslog:", err)
 					return
 				}
-			}
+				if _, err = a.conn.Write(buf); err != nil {
+					log.Println("syslog:", err)
+					switch a.conn.(type) {
+					case *net.UDPConn:
+						continue
+					default:
+						if err = a.retry(buf, err); err != nil {
+							log.Panicf("syslog retry err: %+v", err)
+							return
+						}
+					}
+				}
+			case conn := <-a.closeChan:
+				// if the channel to be closed is still our channel, reconnect
+				if a.conn == *conn {
+					log.Println("Reconnecting due to read exception")
+					a.reconnect()
+				} else {
+					log.Println("got read exception but already reconnected")
+				}
 		}
 	}
 }
@@ -192,6 +210,7 @@ func (a *Adapter) reconnect() error {
 			return err
 		}
 		a.conn = conn
+		go a.waitForEof()
 		return nil
 	}, retryCount)
 
@@ -258,4 +277,21 @@ func (m *Message) Timestamp() string {
 // ContainerName returns the message's container name
 func (m *Message) ContainerName() string {
 	return m.Message.Container.Name[1:]
+}
+
+func (a *Adapter) waitForEof() {
+	var buf = make([]byte, 1024)
+	for {
+		_, err := a.conn.Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				log.Println("EOF in reader:", err)
+			} else {
+				log.Println("unexpected error in reader:", err)
+			}
+			a.closeChan <- &a.conn
+			break
+		}
+		log.Printf("unexpected read: `%v`\n", string(buf))
+	}
 }
