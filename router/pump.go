@@ -91,15 +91,22 @@ func ignoreContainer(container *docker.Container) bool {
 
 	excludeLabel := cfg.GetEnvDefault("EXCLUDE_LABEL", "")
 	excludeValue := "true"
-	// support EXCLUDE_LABEL having a custom label value
-	excludeLabelArr := strings.Split(excludeLabel, ":")
-	if len(excludeLabelArr) == 2 {
-		excludeValue = excludeLabelArr[1]
-		excludeLabel = excludeLabelArr[0]
-	}
+	// support EXCLUDE_LABEL having multiple custom label values
+	excludeLabelArr := strings.Split(excludeLabel, ";")
 
-	if value, ok := container.Config.Labels[excludeLabel]; ok {
-		return len(excludeLabel) > 0 && strings.EqualFold(value, strings.ToLower(excludeValue))
+	for _, label := range excludeLabelArr {
+		labelParts := strings.Split(label, ":")
+
+		if len(labelParts) == 2 {
+			excludeValue = labelParts[1]
+			excludeLabel = labelParts[0]
+		}
+
+		if value, ok := container.Config.Labels[excludeLabel]; ok {
+			if len(excludeLabel) > 0 && strings.EqualFold(value, strings.ToLower(excludeValue)) {
+				return true
+			}
+		}
 	}
 	return false
 }

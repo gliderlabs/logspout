@@ -92,6 +92,26 @@ func TestPumpIgnoreContainerCustomLabels(t *testing.T) {
 	}
 }
 
+func TestPumpIgnoreContainersMatchingAtLeastOneLabel(t *testing.T) {
+	os.Setenv("EXCLUDE_LABEL", "k8s-app:canal;io.kubernetes.pod.namespace:default")
+	defer os.Unsetenv("EXCLUDE_LABEL")
+	containers := []struct {
+		in  *docker.Config
+		out bool
+	}{
+		{&docker.Config{Labels: map[string]string{"k8s-app": "canal"}}, true},
+		{&docker.Config{Labels: map[string]string{"app": "demo-app"}}, false},
+		{&docker.Config{Labels: map[string]string{"io.kubernetes.pod.namespace": "kube-system"}}, false},
+		{&docker.Config{Labels: map[string]string{"io.kubernetes.pod.namespace": "default"}}, true},
+	}
+
+	for _, conf := range containers {
+		if actual := ignoreContainer(&docker.Container{Config: conf.in}); actual != conf.out {
+			t.Errorf("expected %v got %v", conf.out, actual)
+		}
+	}
+}
+
 func TestPumpIgnoreContainerAllowTTYDefault(t *testing.T) {
 	containers := []struct {
 		in  *docker.Config
