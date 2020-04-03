@@ -10,6 +10,10 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.2.8] - 2020-04-03
+### Changed
+- @michaelshobbs bump alpine to 3.11 and go to 1.13.4-r1
+
 ## [v3.2.7] - 2020-04-03
 ### Fixed
 - @CodeLingoBot @gbolo Fix function comments based on best practices from Effective Go
@@ -210,7 +214,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.7...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.8...HEAD
+[v3.2.8]: https://github.com/gliderlabs/logspout/compare/v3.2.7...v3.2.8
 [v3.2.7]: https://github.com/gliderlabs/logspout/compare/v3.2.6...v3.2.7
 [v3.2.6]: https://github.com/gliderlabs/logspout/compare/v3.2.5...v3.2.6
 [v3.2.5]: https://github.com/gliderlabs/logspout/compare/v3.2.4...v3.2.5
