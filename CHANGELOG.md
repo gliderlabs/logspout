@@ -12,15 +12,15 @@ All notable changes to this project will be documented in this file.
 
 ## [v3.2.7] - 2020-04-03
 ### Fixed
-@CodeLingoBot @gbolo Fix function comments based on best practices from Effective Go
+- @CodeLingoBot @gbolo Fix function comments based on best practices from Effective Go
 
 ### Changed
-@michaelshobbs update alpine to 3.10/go 1.12.12-r0 and fix linting
-@whoisteri DOC Document accessible data in RAW_FORMAT template
-@tiagorlampert DOC typos
-@michaelshobbs DOC CHANGLELOG formatting
-@tomlankhorst DOC Suggest to disable userns-remap for logspout
-@StudioEtrange DOC add link to logspout-fluentd
+- @michaelshobbs update alpine to 3.10/go 1.12.12-r0 and fix linting
+- @whoisteri DOC Document accessible data in RAW_FORMAT template
+- @tiagorlampert DOC typos
+- @michaelshobbs DOC CHANGLELOG formatting
+- @tomlankhorst DOC Suggest to disable userns-remap for logspout
+- @StudioEtrange DOC add link to logspout-fluentd
 
 ## [v3.2.6] - 2018-10-04
 ### Fixed
