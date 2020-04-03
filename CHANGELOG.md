@@ -10,6 +10,18 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.2.7] - 2020-04-03
+### Fixed
+- @CodeLingoBot @gbolo Fix function comments based on best practices from Effective Go
+
+### Changed
+- @michaelshobbs update alpine to 3.10/go 1.12.12-r0 and fix linting
+- @whoisteri DOC Document accessible data in RAW_FORMAT template
+- @tiagorlampert DOC typos
+- @michaelshobbs DOC CHANGLELOG formatting
+- @tomlankhorst DOC Suggest to disable userns-remap for logspout
+- @StudioEtrange DOC add link to logspout-fluentd
+
 ## [v3.2.6] - 2018-10-04
 ### Fixed
 - @jdgiotta Spelling corrections and fixed stack compose formatting in example
@@ -28,12 +40,11 @@ All notable changes to this project will be documented in this file.
 - @gbolo enforced the use of `go 1.8+` in order to accommodate some TLS settings
 
 ## [v3.2.5] - 2018-06-05
+### Fixed
+- @michaelshobbs fix working_directory so we don't duplicate test runs
 - @gmelika panic if reconnect fails
 - @masterada Added multiline adapter
 - @billimek sleeping and syncing to fix issues with docker hub builds
-
-### Fixed
-- @michaelshobbs fix working_directory so we don't duplicate test runs
 
 ### Added
 - @chris7444 take the hostname from /etc/host_hostname if the file is there
@@ -199,7 +210,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.6...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.7...HEAD
+[v3.2.7]: https://github.com/gliderlabs/logspout/compare/v3.2.6...v3.2.7
 [v3.2.6]: https://github.com/gliderlabs/logspout/compare/v3.2.5...v3.2.6
 [v3.2.5]: https://github.com/gliderlabs/logspout/compare/v3.2.4...v3.2.5
 [v3.2.4]: https://github.com/gliderlabs/logspout/compare/v3.2.3...v3.2.4

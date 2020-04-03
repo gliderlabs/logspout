@@ -7,56 +7,48 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/gliderlabs/logspout/cfg"
 	"github.com/gliderlabs/logspout/router"
 )
 
 // Version is the running version of logspout
 var Version string
 
-func getopt(name, dfault string) string {
-	value := os.Getenv(name)
-	if value == "" {
-		value = dfault
-	}
-	return value
-}
-
 func main() {
 	if len(os.Args) == 2 && os.Args[1] == "--version" {
-		fmt.Println(Version)
+		fmt.Printf("%s\n", Version)
 		os.Exit(0)
 	}
 
-	fmt.Printf("# logspout %s by gliderlabs\n", Version)
-	fmt.Printf("# adapters: %s\n", strings.Join(router.AdapterFactories.Names(), " "))
-	fmt.Printf("# options : ")
-	if getopt("DEBUG", "") != "" {
-		fmt.Printf("debug:%s ", getopt("DEBUG", ""))
+	log.Printf("# logspout %s by gliderlabs\n", Version)
+	log.Printf("# adapters: %s\n", strings.Join(router.AdapterFactories.Names(), " "))
+	log.Printf("# options : ")
+	if d := cfg.GetEnvDefault("DEBUG", ""); d != "" {
+		log.Printf("debug:%s\n", d)
 	}
-	if getopt("BACKLOG", "") != "" {
-		fmt.Printf("backlog:%s ", getopt("BACKLOG", ""))
+	if b := cfg.GetEnvDefault("BACKLOG", ""); b != "" {
+		log.Printf("backlog:%s\n", b)
 	}
-	fmt.Printf("persist:%s\n", getopt("ROUTESPATH", "/mnt/routes"))
+	log.Printf("persist:%s\n", cfg.GetEnvDefault("ROUTESPATH", "/mnt/routes"))
 
 	var jobs []string
 	for _, job := range router.Jobs.All() {
-		err := job.Setup()
-		if err != nil {
-			fmt.Println("!!", err)
+		if err := job.Setup(); err != nil {
+			log.Printf("!! %v\n", err)
 			os.Exit(1)
 		}
 		if job.Name() != "" {
 			jobs = append(jobs, job.Name())
 		}
 	}
-	fmt.Printf("# jobs    : %s\n", strings.Join(jobs, " "))
+	log.Printf("# jobs    : %s\n", strings.Join(jobs, " "))
 
 	routes, _ := router.Routes.GetAll()
 	if len(routes) > 0 {
-		fmt.Println("# routes  :")
+		log.Println("# routes  :")
 		w := new(tabwriter.Writer)
 		w.Init(os.Stdout, 0, 8, 0, '\t', 0)
-		fmt.Fprintln(w, "#   ADAPTER\tADDRESS\tCONTAINERS\tSOURCES\tOPTIONS")
+		fmt.Fprintln(w, "#   ADAPTER\tADDRESS\tCONTAINERS\tSOURCES\tOPTIONS") //nolint:errcheck
 		for _, route := range routes {
 			fmt.Fprintf(w, "#   %s\t%s\t%s\t%s\t%s\n",
 				route.Adapter,
@@ -67,7 +59,7 @@ func main() {
 		}
 		w.Flush()
 	} else {
-		fmt.Println("# routes  : none")
+		log.Println("# routes  : none")
 	}
 
 	for _, job := range router.Jobs.All() {

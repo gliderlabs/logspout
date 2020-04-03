@@ -3,9 +3,9 @@ package router
 
 import (
 	"reflect"
-	"sync"
-	"strings"
 	"runtime"
+	"strings"
+	"sync"
 )
 
 var registry = struct {
@@ -119,10 +119,10 @@ func Unregister(name string) []string {
 	return ifaces
 }
 
-// HttpHandler
+// HTTPHandler
 
-var HttpHandlers = &httpHandlerExt{
-	newExtensionPoint(new(HttpHandler)),
+var HTTPHandlers = &httpHandlerExt{
+	newExtensionPoint(new(HTTPHandler)),
 }
 
 type httpHandlerExt struct {
@@ -133,22 +133,22 @@ func (ep *httpHandlerExt) Unregister(name string) bool {
 	return ep.unregister(name)
 }
 
-func (ep *httpHandlerExt) Register(component HttpHandler, name string) bool {
+func (ep *httpHandlerExt) Register(component HTTPHandler, name string) bool {
 	return ep.register(component, name)
 }
 
-func (ep *httpHandlerExt) Lookup(name string) (HttpHandler, bool) {
+func (ep *httpHandlerExt) Lookup(name string) (HTTPHandler, bool) {
 	ext, ok := ep.lookup(name)
 	if !ok {
 		return nil, ok
 	}
-	return ext.(HttpHandler), ok
+	return ext.(HTTPHandler), ok
 }
 
-func (ep *httpHandlerExt) All() map[string]HttpHandler {
-	all := make(map[string]HttpHandler)
+func (ep *httpHandlerExt) All() map[string]HTTPHandler {
+	all := make(map[string]HTTPHandler)
 	for k, v := range ep.all() {
-		all[k] = v.(HttpHandler)
+		all[k] = v.(HTTPHandler)
 	}
 	return all
 }
@@ -160,7 +160,6 @@ func (ep *httpHandlerExt) Names() []string {
 	}
 	return names
 }
-
 
 // AdapterFactory
 
@@ -204,7 +203,6 @@ func (ep *adapterFactoryExt) Names() []string {
 	return names
 }
 
-
 // AdapterTransport
 
 var AdapterTransports = &adapterTransportExt{
@@ -246,7 +244,6 @@ func (ep *adapterTransportExt) Names() []string {
 	}
 	return names
 }
-
 
 // Job
 
@@ -290,7 +287,6 @@ func (ep *jobExt) Names() []string {
 	return names
 }
 
-
 // LogRouter
 
 var LogRouters = &logRouterExt{
@@ -332,5 +328,3 @@ func (ep *logRouterExt) Names() []string {
 	}
 	return names
 }
-
-

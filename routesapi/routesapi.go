@@ -6,12 +6,13 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gliderlabs/logspout/router"
 	"github.com/gorilla/mux"
+
+	"github.com/gliderlabs/logspout/router"
 )
 
 func init() {
-	router.HttpHandlers.Register(RoutesAPI, "routes")
+	router.HTTPHandlers.Register(RoutesAPI, "routes")
 }
 
 // RoutesAPI returns a handler for the routes API
@@ -40,7 +41,6 @@ func RoutesAPI() http.Handler {
 		w.Header().Add("Content-Type", "application/json")
 		rts, _ := routes.GetAll()
 		w.Write(append(marshal(rts), '\n'))
-		return
 	}).Methods("GET")
 
 	r.HandleFunc("/routes", func(w http.ResponseWriter, req *http.Request) {

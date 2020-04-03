@@ -37,6 +37,8 @@ logspout will gather logs from other containers that are started **without the `
 
 To see what data is used for syslog messages, see the [syslog adapter](http://github.com/gliderlabs/logspout/blob/master/adapters) docs.
 
+The container must be able to access the Docker Unix socket to mount it. This is typically a problem when [namespace remapping](https://docs.docker.com/engine/security/userns-remap/) is enabled. To disable remapping for the logspout container, pass the `--userns=host` flag to `docker run`, `.. create`, etc. 
+
 #### Ignoring specific containers
 
 You can tell logspout to ignore specific containers by setting an environment variable when starting your container, like so:-
@@ -192,6 +194,14 @@ If you use multiline logging with raw, it's recommended to json encode the Data 
 
 The raw adapter has a function `toJSON` that can be used to format the message/fields to generate JSON-like output in a simple way, or full JSON output.
 
+The RAW_FORMAT env variable is used as a [Go template](https://golang.org/pkg/text/template/) with a [`Message` struct](https://github.com/gliderlabs/logspout/blob/master/router/types.go#L52) passed as data. You can access the following fields
+
+* `Source` - source stream name ("stdout", "stderr", ...)
+* `Data` - original log message 
+* `Time` - a Go [`Time` struct](https://golang.org/pkg/time/#Time)
+* `Container` - a [go-dockerclient](https://github.com/fsouza/go-dockerclient) `Container` struct (see [container.go](https://github.com/fsouza/go-dockerclient/blob/master/container.go#L443) source file for accessible fields)
+
+
 Use examples:
 
 ##### Mixed JSON + generic:
@@ -273,9 +283,9 @@ logspout supports modification of the client TLS settings via environment variab
 | Environment Variable  | Description |
 | :---                  |  :---       |
 | `LOGSPOUT_TLS_DISABLE_SYSTEM_ROOTS` | when set to `true` it disables loading the system trust store into the trust store of logspout |
-| `LOGSPOUT_TLS_CA_CERTS` | a comma seperated list of filesystem paths to pem encoded CA certificates that should be added to logsput's TLS trust store. Each pem file can contain more than one certificate |
-| `LOGSPOUT_TLS_CLIENT_CERT` | filesytem path to pem encoded x509 client certificate to load when TLS mutual authentication is desired |
-| `LOGSPOUT_TLS_CLIENT_KEY` | filesytem path to pem encoded client private key to load when TLS mutual authentication is desired |
+| `LOGSPOUT_TLS_CA_CERTS` | a comma separated list of filesystem paths to pem encoded CA certificates that should be added to logsput's TLS trust store. Each pem file can contain more than one certificate |
+| `LOGSPOUT_TLS_CLIENT_CERT` | filesystem path to pem encoded x509 client certificate to load when TLS mutual authentication is desired |
+| `LOGSPOUT_TLS_CLIENT_KEY` | filesystem path to pem encoded client private key to load when TLS mutual authentication is desired |
 | `LOGSPOUT_TLS_HARDENING` | when set to `true` it enables stricter client TLS settings designed to mitigate some known TLS vulnerabilities |
 
 #### Example TLS settings
@@ -329,6 +339,8 @@ The standard distribution of logspout comes with all modules defined in this rep
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
  * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)
  * [logspout-gelf](https://github.com/micahhausler/logspout-gelf) for Graylog
+ * [logspout-fluentd](https://github.com/dsouzajude/logspout-fluentd) for fluentd or fluent-bit - instead of using fluentd log driver
+ 
 
 ### Loggly support
 

@@ -23,6 +23,7 @@ const (
 	envClientCert         = "LOGSPOUT_TLS_CLIENT_CERT"
 	envClientKey          = "LOGSPOUT_TLS_CLIENT_KEY"
 	envTLSHardening       = "LOGSPOUT_TLS_HARDENING"
+	trueString            = "true"
 )
 
 var (
@@ -97,7 +98,7 @@ func createTLSConfig() (tlsConfig *tls.Config, err error) {
 
 	// use stronger TLS settings if enabled
 	// TODO: perhaps this should be default setting
-	if os.Getenv(envTLSHardening) == "true" {
+	if os.Getenv(envTLSHardening) == trueString {
 		tlsConfig.InsecureSkipVerify = false
 		tlsConfig.MinVersion = hardenedMinVersion
 		tlsConfig.CipherSuites = hardenedCiphers
@@ -112,7 +113,7 @@ func createTLSConfig() (tlsConfig *tls.Config, err error) {
 	// if we cannot, then it's fatal.
 	// NOTE that we ONLY fail if SystemCertPool returns an error,
 	// not if our system trust store is empty or doesn't exist!
-	if os.Getenv(envDisableSystemRoots) != "true" {
+	if os.Getenv(envDisableSystemRoots) != trueString {
 		tlsConfig.RootCAs, err = x509.SystemCertPool()
 		if err != nil {
 			return
@@ -157,5 +158,5 @@ func createTLSConfig() (tlsConfig *tls.Config, err error) {
 		// We will make this optional; the client cert pem file can contain more than one certificate
 		tlsConfig.Certificates = []tls.Certificate{clientCert}
 	}
-	return
+	return //nolint:nakedret
 }
