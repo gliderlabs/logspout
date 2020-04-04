@@ -62,6 +62,8 @@ Logspout also allows to ignore containers by specifying a list of labels using t
     $ docker run -d --label k8s=app image1
     $ docker run -d --label backend=rails image2
 
+**NOTE** Setting `EXCLUDE_LABELS` would take precedence over setting `EXCLUDE_LABEL`
+
 #### Including specific containers
 
 You can tell logspout to only include certain containers by setting filter parameters on the URI:
