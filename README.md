@@ -53,6 +53,15 @@ Or, by adding a label which you define by setting an environment variable when r
         gliderlabs/logspout
     $ docker run -d --label logspout.exclude=true image
 
+Logspout also allows to ignore containers by specifying a list of labels using the environment variables `EXCLUDE_LABELS` or `EXCLUDE_LABEL`, using the `;` as separator:
+
+    $ $ docker run --name="logspout" \
+        -e EXCLUDE_LABELS=k8s:app;backend:rails;io.kubernetes.pod.namespace:default \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        gliderlabs/logspout
+    $ docker run -d --label k8s=app image1
+    $ docker run -d --label backend=rails image2
+
 #### Including specific containers
 
 You can tell logspout to only include certain containers by setting filter parameters on the URI:
