@@ -259,3 +259,8 @@ func (m *Message) Timestamp() string {
 func (m *Message) ContainerName() string {
 	return m.Message.Container.Name[1:]
 }
+
+// ContainerNameSplitN returns the message's container name sliced at most "n" times using "sep"
+func (m *Message) ContainerNameSplitN(sep string, n int) []string {
+	return strings.SplitN(m.ContainerName(), sep, n)
+}
