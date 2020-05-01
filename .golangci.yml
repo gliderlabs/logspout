@@ -1,0 +1,77 @@
+linters-settings:
+  errcheck:
+    # ignore cases where we truly don't care about the returned error
+    ignore: net/http:^Write$,io:^WriteString$
+  govet:
+    check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Infof
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Warnf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Errorf
+          - (github.com/golangci/golangci-lint/pkg/logutils.Log).Fatalf
+  golint:
+    min-confidence: 0
+  gocyclo:
+    min-complexity: 12
+  maligned:
+    suggest-new: true
+  dupl:
+    threshold: 100
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  depguard:
+    list-type: blacklist
+  misspell:
+    locale: US
+  lll:
+    line-length: 160
+  goimports:
+    local-prefixes: github.com/gliderlabs/logspout
+  gocritic:
+    settings:
+      hugeParam:
+        sizeThreshold: 160
+    enabled-tags:
+      - performance
+  nakedret:
+      max-func-lines: 65
+
+linters:
+  enable-all: true
+  disable:
+    - maligned
+    - prealloc
+    - gochecknoglobals
+    - funlen
+    - gochecknoinits
+
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    # Exclude some linters from running on tests files.
+    - path: _test\.go
+      linters:
+        - dupl
+        - errcheck
+        - goconst
+        - gocyclo
+        - gosec
+        - lll
+        - nakedret
+        - unparam
+        - funlen
+
+run:
+  deadline: 2m
+  issues-exit-code: 1
+
+# golangci.com configuration
+# https://github.com/golangci/golangci/wiki/Configuration
+service:
+  golangci-lint-version: 1.18.x # use the fixed version to not introduce new linters unexpectedly
+  prepare:
+    - echo "here I can run custom commands, but no preparation needed for this repo"
+
