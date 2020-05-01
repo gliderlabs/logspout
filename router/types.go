@@ -8,11 +8,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 )
 
-// HttpHandler is an extension type for adding HTTP endpoints
-type HttpHandler func() http.Handler
+// HTTPHandler is an extension type for adding HTTP endpoints
+type HTTPHandler func() http.Handler
 
 // AdapterFactory is an extension type for adding new log adapters
 type AdapterFactory func(route *Route) (LogAdapter, error)
@@ -67,9 +67,9 @@ type Route struct {
 	Address       string            `json:"address"`
 	Options       map[string]string `json:"options,omitempty"`
 	adapter       LogAdapter
-	closed	      bool
-	closer        chan bool
-	closerRcv     <-chan bool // used instead of closer when set
+	closed        bool
+	closer        chan struct{}
+	closerRcv     <-chan struct{} // used instead of closer when set
 }
 
 // AdapterType returns a route's adapter type string
@@ -87,7 +87,7 @@ func (r *Route) AdapterTransport(dfault string) string {
 }
 
 // Closer returns a route's closerRcv
-func (r *Route) Closer() <-chan bool {
+func (r *Route) Closer() <-chan struct{} {
 	if r.closerRcv != nil {
 		return r.closerRcv
 	}
@@ -95,13 +95,13 @@ func (r *Route) Closer() <-chan bool {
 }
 
 // OverrideCloser sets a Route.closer to closer
-func (r *Route) OverrideCloser(closer <-chan bool) {
+func (r *Route) OverrideCloser(closer <-chan struct{}) {
 	r.closerRcv = closer
 }
 
 // Close sends true to a Route.closer
 func (r *Route) Close() {
-	r.closer <- true
+	r.closer <- struct{}{}
 }
 
 func (r *Route) matchAll() bool {

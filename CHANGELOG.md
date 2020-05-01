@@ -10,9 +10,45 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-## [v3.2.4] - 2018-01-16
+## [v3.2.8] - 2020-04-03
+### Changed
+- @michaelshobbs bump alpine to 3.11 and go to 1.13.4-r1
+
+## [v3.2.7] - 2020-04-03
+### Fixed
+- @CodeLingoBot @gbolo Fix function comments based on best practices from Effective Go
+
+### Changed
+- @michaelshobbs update alpine to 3.10/go 1.12.12-r0 and fix linting
+- @whoisteri DOC Document accessible data in RAW_FORMAT template
+- @tiagorlampert DOC typos
+- @michaelshobbs DOC CHANGLELOG formatting
+- @tomlankhorst DOC Suggest to disable userns-remap for logspout
+- @StudioEtrange DOC add link to logspout-fluentd
+
+## [v3.2.6] - 2018-10-04
+### Fixed
+- @jdgiotta Spelling corrections and fixed stack compose formatting in example
+- @dylanmei dylanmei Update 3rd party module link in README
+
+### Added
+- @vbeausoleil added a simple healthcheck
+- @gbolo added option to load TLS client certificate and key
+- @gbolo added ability to control the TLS client trust store
+- @gbolo added option to harden the TLS client
+- @chopmann added option to bind the http server to an address
+- @ibrokethecloud added ability to add custom key:value pairs as EXCLUDE_LABEL
+
+### Changed
+- @develar alpine 3.8 + golang 1.10.1
+- @gbolo enforced the use of `go 1.8+` in order to accommodate some TLS settings
+
+## [v3.2.5] - 2018-06-05
 ### Fixed
 - @michaelshobbs fix working_directory so we don't duplicate test runs
+- @gmelika panic if reconnect fails
+- @masterada Added multiline adapter
+- @billimek sleeping and syncing to fix issues with docker hub builds
 
 ### Added
 - @chris7444 take the hostname from /etc/host_hostname if the file is there
@@ -178,7 +214,11 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.4...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.8...HEAD
+[v3.2.8]: https://github.com/gliderlabs/logspout/compare/v3.2.7...v3.2.8
+[v3.2.7]: https://github.com/gliderlabs/logspout/compare/v3.2.6...v3.2.7
+[v3.2.6]: https://github.com/gliderlabs/logspout/compare/v3.2.5...v3.2.6
+[v3.2.5]: https://github.com/gliderlabs/logspout/compare/v3.2.4...v3.2.5
 [v3.2.4]: https://github.com/gliderlabs/logspout/compare/v3.2.3...v3.2.4
 [v3.2.3]: https://github.com/gliderlabs/logspout/compare/v3.2.2...v3.2.3
 [v3.2.2]: https://github.com/gliderlabs/logspout/compare/v3.2.1...v3.2.2

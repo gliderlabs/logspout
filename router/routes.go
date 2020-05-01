@@ -1,7 +1,7 @@
 package router
 
 import (
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec
 	"errors"
 	"fmt"
 	"io"
@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/gliderlabs/logspout/cfg"
 )
 
 // Routes is all the configured routes
@@ -38,7 +40,9 @@ func (rm *RouteManager) Load(persistor RouteStore) error {
 		return err
 	}
 	for _, route := range routes {
-		rm.Add(route)
+		if err = rm.Add(route); err != nil {
+			return err
+		}
 	}
 	rm.persistor = persistor
 	return nil
@@ -72,7 +76,7 @@ func (rm *RouteManager) Remove(id string) bool {
 	defer rm.Unlock()
 	route, ok := rm.routes[id]
 	if ok && route.closer != nil {
-		route.closer <- true
+		route.closer <- struct{}{}
 	}
 	delete(rm.routes, id)
 	if rm.persistor != nil {
@@ -130,15 +134,15 @@ func (rm *RouteManager) Add(route *Route) error {
 		return err
 	}
 	if route.ID == "" {
-		h := sha1.New()
+		h := sha1.New() //nolint:gosec
 		io.WriteString(h, strconv.Itoa(int(time.Now().UnixNano())))
 		route.ID = fmt.Sprintf("%x", h.Sum(nil))[:12]
 	}
-	route.closer = make(chan bool)
+	route.closer = make(chan struct{})
 	route.adapter = adapter
 	//Stop any existing route with this ID:
 	if rm.routes[route.ID] != nil {
-		rm.routes[route.ID].closer <- true
+		rm.routes[route.ID].closer <- struct{}{}
 	}
 
 	rm.routes[route.ID] = route
@@ -220,7 +224,7 @@ func (rm *RouteManager) Setup() error {
 		}
 	}
 
-	persistPath := getopt("ROUTESPATH", "/mnt/routes")
+	persistPath := cfg.GetEnvDefault("ROUTESPATH", "/mnt/routes")
 	if _, err := os.Stat(persistPath); err == nil {
 		return rm.Load(RouteFileStore(persistPath))
 	}
