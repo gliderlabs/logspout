@@ -20,7 +20,14 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
-const defaultRetryCount = 10
+const (
+	// TraditionalTCPFraming is the traditional LF framing of syslog messages on the wire
+	TraditionalTCPFraming TCPFraming = "traditional"
+	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
+	OctetCountedTCPFraming TCPFraming = "octet-counted"
+
+	defaultRetryCount = 10
+)
 
 var (
 	hostname         string
@@ -31,13 +38,6 @@ var (
 
 // TCPFraming represents the type of framing to use for syslog messages
 type TCPFraming string
-
-const (
-	// TraditionalTCPFraming is the traditional LF framing of syslog messages on the wire
-	TraditionalTCPFraming TCPFraming = "traditional"
-	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
-	OctetCountedTCPFraming TCPFraming = "octet-counted"
-)
 
 func init() {
 	hostname, _ = os.Hostname()
@@ -102,13 +102,8 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 
 	if isTCPConnecion(conn) {
-		switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", "traditional"); s {
-		case "traditional":
-			tcpFraming = TraditionalTCPFraming
-		case "octet-counted":
-			tcpFraming = OctetCountedTCPFraming
-		default:
-			return nil, fmt.Errorf("unknown SYSLOG_TCP_FRAMING value: %s", s)
+		if err = setTCPFraming(); err != nil {
+			return nil, err
 		}
 	}
 
@@ -141,6 +136,19 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		tmpl:      tmpl,
 		transport: transport,
 	}, nil
+}
+
+func setTCPFraming() error {
+	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", "traditional"); s {
+	case "traditional":
+		tcpFraming = TraditionalTCPFraming
+		return nil
+	case "octet-counted":
+		tcpFraming = OctetCountedTCPFraming
+		return nil
+	default:
+		return fmt.Errorf("unknown SYSLOG_TCP_FRAMING value: %s", s)
+	}
 }
 
 // Adapter streams log output to a connection in the Syslog format
