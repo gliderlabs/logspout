@@ -10,6 +10,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.2.10] - 2020-05-1
+### Added
+- @jszwedko Add optional TCP framing to syslog adapter
+
+### Fixed
+- @bbigras add missing syntax highlighting in README.md
+
 ## [v3.2.9] - 2020-04-30
 ### Fixed
 - @bbigras add missing syntax highlighting in README.md
@@ -227,7 +234,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.9...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.10...HEAD
+[v3.2.10]: https://github.com/gliderlabs/logspout/compare/v3.2.9...v3.2.10
 [v3.2.9]: https://github.com/gliderlabs/logspout/compare/v3.2.8...v3.2.9
 [v3.2.8]: https://github.com/gliderlabs/logspout/compare/v3.2.7...v3.2.8
 [v3.2.7]: https://github.com/gliderlabs/logspout/compare/v3.2.6...v3.2.7
