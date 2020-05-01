@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -19,13 +20,24 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
-const defaultRetryCount = 10
+const (
+	// TraditionalTCPFraming is the traditional LF framing of syslog messages on the wire
+	TraditionalTCPFraming TCPFraming = "traditional"
+	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
+	OctetCountedTCPFraming TCPFraming = "octet-counted"
+
+	defaultRetryCount = 10
+)
 
 var (
 	hostname         string
 	retryCount       uint
+	tcpFraming       TCPFraming
 	econnResetErrStr string
 )
+
+// TCPFraming represents the type of framing to use for syslog messages
+type TCPFraming string
 
 func init() {
 	hostname, _ = os.Hostname()
@@ -89,6 +101,12 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		structuredData = fmt.Sprintf("[%s]", structuredData)
 	}
 
+	if isTCPConnecion(conn) {
+		if err = setTCPFraming(); err != nil {
+			return nil, err
+		}
+	}
+
 	var tmplStr string
 	switch format {
 	case "rfc5424":
@@ -120,6 +138,19 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	}, nil
 }
 
+func setTCPFraming() error {
+	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", "traditional"); s {
+	case "traditional":
+		tcpFraming = TraditionalTCPFraming
+		return nil
+	case "octet-counted":
+		tcpFraming = OctetCountedTCPFraming
+		return nil
+	default:
+		return fmt.Errorf("unknown SYSLOG_TCP_FRAMING value: %s", s)
+	}
+}
+
 // Adapter streams log output to a connection in the Syslog format
 type Adapter struct {
 	conn      net.Conn
@@ -137,6 +168,19 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			log.Println("syslog:", err)
 			return
 		}
+
+		if isTCPConnecion(a.conn) {
+			switch tcpFraming {
+			case OctetCountedTCPFraming:
+				buf = append([]byte(fmt.Sprintf("%d ", len(buf))), buf...)
+			case TraditionalTCPFraming:
+				// leave as-is
+			default:
+				// should never get here, validated above
+				panic("unknown framing format: " + tcpFraming)
+			}
+		}
+
 		if _, err = a.conn.Write(buf); err != nil {
 			log.Println("syslog:", err)
 			switch a.conn.(type) {
@@ -223,6 +267,17 @@ func retryExp(fun func() error, tries uint) error {
 		}
 
 		time.Sleep((1 << try) * 10 * time.Millisecond)
+	}
+}
+
+func isTCPConnecion(conn net.Conn) bool {
+	switch conn.(type) {
+	case *net.TCPConn:
+		return true
+	case *tls.Conn:
+		return true
+	default:
+		return false
 	}
 }
 
