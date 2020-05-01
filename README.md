@@ -263,7 +263,7 @@ Use examples:
 
 In a swarm, logspout is best deployed as a global service.  When running logspout with 'docker run', you can change the value of the hostname field using the `SYSLOG_HOSTNAME` environment variable as explained above. However, this does not work in a compose file because the value for `SYSLOG_HOSTNAME` will be the same for all logspout "tasks", regardless of the docker host on which they run. To support this mode of deployment, the syslog adapter will look for the file `/etc/host_hostname` and, if the file exists and it is not empty, will configure the hostname field with the content of this file. You can then use a volume mount to map a file on the docker hosts with the file `/etc/host_hostname` in the container.  The sample compose file below illustrates how this can be done
 
-```
+```yml
 version: "3"
 networks:
   logging:
