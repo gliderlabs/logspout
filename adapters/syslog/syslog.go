@@ -27,6 +27,12 @@ var (
 	econnResetErrStr string
 )
 
+var funcs = template.FuncMap{
+	"join": strings.Join,
+	"replace":  strings.Replace,
+	"split": strings.Split,
+}
+
 func init() {
 	hostname, _ = os.Hostname()
 	econnResetErrStr = fmt.Sprintf("write: %s", syscall.ECONNRESET.Error())
@@ -108,7 +114,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	default:
 		return nil, errors.New("unsupported syslog format: " + format)
 	}
-	tmpl, err := template.New("syslog").Parse(tmplStr)
+	tmpl, err := template.New("syslog").Funcs(funcs).Parse(tmplStr)
 	if err != nil {
 		return nil, err
 	}
