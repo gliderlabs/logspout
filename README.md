@@ -53,6 +53,17 @@ Or, by adding a label which you define by setting an environment variable when r
         gliderlabs/logspout
     $ docker run -d --label logspout.exclude=true image
 
+Logspout also allows to ignore containers by specifying a list of labels using the environment variables `EXCLUDE_LABELS` or `EXCLUDE_LABEL`, using the `;` as separator:
+
+    $ $ docker run --name="logspout" \
+        -e EXCLUDE_LABELS=k8s:app;backend:rails;io.kubernetes.pod.namespace:default \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        gliderlabs/logspout
+    $ docker run -d --label k8s=app image1
+    $ docker run -d --label backend=rails image2
+
+**NOTE** Setting `EXCLUDE_LABELS` would take precedence over setting `EXCLUDE_LABEL`
+
 #### Including specific containers
 
 You can tell logspout to only include certain containers by setting filter parameters on the URI:
@@ -243,7 +254,7 @@ Use examples:
 
 In a swarm, logspout is best deployed as a global service.  When running logspout with 'docker run', you can change the value of the hostname field using the `SYSLOG_HOSTNAME` environment variable as explained above. However, this does not work in a compose file because the value for `SYSLOG_HOSTNAME` will be the same for all logspout "tasks", regardless of the docker host on which they run. To support this mode of deployment, the syslog adapter will look for the file `/etc/host_hostname` and, if the file exists and it is not empty, will configure the hostname field with the content of this file. You can then use a volume mount to map a file on the docker hosts with the file `/etc/host_hostname` in the container.  The sample compose file below illustrates how this can be done
 
-```
+```yml
 version: "3"
 networks:
   logging:
