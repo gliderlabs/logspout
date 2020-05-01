@@ -14,12 +14,23 @@ import (
 	"syscall"
 	"text/template"
 	"time"
+	"strings"
+	"regexp"
 
 	"github.com/gliderlabs/logspout/cfg"
 	"github.com/gliderlabs/logspout/router"
 )
 
 const defaultRetryCount = 10
+
+var funcs = template.FuncMap{
+	"split": strings.Split,
+	"join": strings.Join,
+	"reSubmatch": func(pat string, str string) []string {
+		re := regexp.MustCompile(pat)
+		return re.FindStringSubmatch(str)
+	},
+}
 
 var (
 	hostname         string
@@ -108,7 +119,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	default:
 		return nil, errors.New("unsupported syslog format: " + format)
 	}
-	tmpl, err := template.New("syslog").Parse(tmplStr)
+	tmpl, err := template.New("syslog").Funcs(funcs).Parse(tmplStr)
 	if err != nil {
 		return nil, err
 	}
