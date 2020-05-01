@@ -15,6 +15,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/gliderlabs/logspout/cfg"
 	"github.com/gliderlabs/logspout/router"
 )
 
@@ -34,20 +35,12 @@ func init() {
 }
 
 func setRetryCount() {
-	if count, err := strconv.Atoi(getopt("RETRY_COUNT", strconv.Itoa(defaultRetryCount))); err != nil {
+	if count, err := strconv.Atoi(cfg.GetEnvDefault("RETRY_COUNT", strconv.Itoa(defaultRetryCount))); err != nil {
 		retryCount = uint(defaultRetryCount)
 	} else {
 		retryCount = uint(count)
 	}
 	debug("setting retryCount to:", retryCount)
-}
-
-func getopt(name, dfault string) string {
-	value := os.Getenv(name)
-	if value == "" {
-		value = dfault
-	}
-	return value
 }
 
 func debug(v ...interface{}) {
@@ -61,7 +54,7 @@ func getHostname() string {
 	if err == nil && len(content) > 0 {
 		hostname = strings.TrimRight(string(content), "\r\n")
 	} else {
-		hostname = getopt("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
+		hostname = cfg.GetEnvDefault("SYSLOG_HOSTNAME", "{{.Container.Config.Hostname}}")
 	}
 	return hostname
 }
@@ -77,18 +70,18 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 
-	format := getopt("SYSLOG_FORMAT", "rfc5424")
-	priority := getopt("SYSLOG_PRIORITY", "{{.Priority}}")
-	pid := getopt("SYSLOG_PID", "{{.Container.State.Pid}}")
+	format := cfg.GetEnvDefault("SYSLOG_FORMAT", "rfc5424")
+	priority := cfg.GetEnvDefault("SYSLOG_PRIORITY", "{{.Priority}}")
+	pid := cfg.GetEnvDefault("SYSLOG_PID", "{{.Container.State.Pid}}")
 	hostname = getHostname()
 
-	tag := getopt("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
-	structuredData := getopt("SYSLOG_STRUCTURED_DATA", "")
+	tag := cfg.GetEnvDefault("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
+	structuredData := cfg.GetEnvDefault("SYSLOG_STRUCTURED_DATA", "")
 	if route.Options["structured_data"] != "" {
 		structuredData = route.Options["structured_data"]
 	}
-	data := getopt("SYSLOG_DATA", "{{.Data}}")
-	timestamp := getopt("SYSLOG_TIMESTAMP", "{{.Timestamp}}")
+	data := cfg.GetEnvDefault("SYSLOG_DATA", "{{.Data}}")
+	timestamp := cfg.GetEnvDefault("SYSLOG_TIMESTAMP", "{{.Timestamp}}")
 
 	if structuredData == "" {
 		structuredData = "-"
@@ -99,10 +92,18 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	var tmplStr string
 	switch format {
 	case "rfc5424":
-		tmplStr = fmt.Sprintf("<%s>1 %s %s %s %s - %s %s\n",
+		// notes from RFC:
+		// - there is no upper limit for the entire message and depends on the transport in use
+		// - the HOSTNAME field must not exceed 255 characters
+		// - the TAG field must not exceed 48 characters
+		// - the PROCID field must not exceed 128 characters
+		tmplStr = fmt.Sprintf("<%s>1 %s %.255s %.48s %.128s - %s %s\n",
 			priority, timestamp, hostname, tag, pid, structuredData, data)
 	case "rfc3164":
-		tmplStr = fmt.Sprintf("<%s>%s %s %s[%s]: %s\n",
+		// notes from RFC:
+		// - the entire message must be <= 1024 bytes
+		// - the TAG field must not exceed 32 characters
+		tmplStr = fmt.Sprintf("<%s>%s %s %.32s[%s]: %s\n",
 			priority, timestamp, hostname, tag, pid, data)
 	default:
 		return nil, errors.New("unsupported syslog format: " + format)
