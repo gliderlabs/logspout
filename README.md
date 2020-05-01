@@ -53,6 +53,17 @@ Or, by adding a label which you define by setting an environment variable when r
         gliderlabs/logspout
     $ docker run -d --label logspout.exclude=true image
 
+Logspout also allows to ignore containers by specifying a list of labels using the environment variables `EXCLUDE_LABELS` or `EXCLUDE_LABEL`, using the `;` as separator:
+
+    $ $ docker run --name="logspout" \
+        -e EXCLUDE_LABELS=k8s:app;backend:rails;io.kubernetes.pod.namespace:default \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        gliderlabs/logspout
+    $ docker run -d --label k8s=app image1
+    $ docker run -d --label backend=rails image2
+
+**NOTE** Setting `EXCLUDE_LABELS` would take precedence over setting `EXCLUDE_LABEL`
+
 #### Including specific containers
 
 You can tell logspout to only include certain containers by setting filter parameters on the URI:
@@ -203,6 +214,14 @@ There are a few built in functions as well:
 
 The raw adapter has a function `toJSON` that can be used to format the message/fields to generate JSON-like output in a simple way, or full JSON output.
 
+The RAW_FORMAT env variable is used as a [Go template](https://golang.org/pkg/text/template/) with a [`Message` struct](https://github.com/gliderlabs/logspout/blob/master/router/types.go#L52) passed as data. You can access the following fields
+
+* `Source` - source stream name ("stdout", "stderr", ...)
+* `Data` - original log message 
+* `Time` - a Go [`Time` struct](https://golang.org/pkg/time/#Time)
+* `Container` - a [go-dockerclient](https://github.com/fsouza/go-dockerclient) `Container` struct (see [container.go](https://github.com/fsouza/go-dockerclient/blob/master/container.go#L443) source file for accessible fields)
+
+
 Use examples:
 
 ##### Mixed JSON + generic:
@@ -340,6 +359,8 @@ The standard distribution of logspout comes with all modules defined in this rep
  * [logspout-logstash](https://github.com/looplab/logspout-logstash)
  * [logspout-redis-logstash](https://github.com/rtoma/logspout-redis-logstash)
  * [logspout-gelf](https://github.com/micahhausler/logspout-gelf) for Graylog
+ * [logspout-fluentd](https://github.com/dsouzajude/logspout-fluentd) for fluentd or fluent-bit - instead of using fluentd log driver
+ 
 
 ### Loggly support
 
