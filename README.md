@@ -194,6 +194,7 @@ If you use multiline logging with raw, it's recommended to json encode the Data 
 * `SYSLOG_PRIORITY` - datum for priority field (default `{{.Priority}}`)
 * `SYSLOG_STRUCTURED_DATA` - datum for structured data field
 * `SYSLOG_TAG` - datum for tag field (default `{{.ContainerName}}+route.Options["append_tag"]`)
+* `SYSLOG_TCP_FRAMING` - for TCP or TLS transports, whether to use `octet-counted` framing in emitted messages or `traditional` LF framing (default `traditional`)
 * `SYSLOG_TIMESTAMP` - datum for timestamp field (default `{{.Timestamp}}`)
 * `MULTILINE_ENABLE_DEFAULT` - enable multiline logging for all containers when using the multiline adapter (default `true`)
 * `MULTILINE_MATCH` - determines which lines the pattern should match, one of first|last|nonfirst|nonlast, for details see: [MULTILINE_MATCH](#multiline_match) (default `nonfirst`)
@@ -249,6 +250,22 @@ Use examples:
 }
 
 ```
+
+#### Syslog TCP Framing
+
+When using a TCP or TLS transport with the Syslog adapter, it is possible to add octet-counting to the emitted frames as described in [RFC6587 (Syslog over TCP) 3.4.1](https://tools.ietf.org/html/rfc6587#section-3.4.1) and [RFC5424 (Syslog over TLS)](https://tools.ietf.org/html/rfc5424).
+
+This prefixes each message with the length of the message to allow consumers to easily determine where the message ends (rather than traditional LF framing). This also enables multiline Syslog messages without escaping.
+
+To enable octet-counted framing for Syslog over TCP or TLS, use the `SYSLOG_TCP_FRAMING` environment variable:
+
+    $ docker run --name="logspout" \
+        -e SYSLOG_TCP_FRAMING=octet-counted \
+        --volume=/var/run/docker.sock:/var/run/docker.sock \
+        gliderlabs/logspout \
+        syslog+tcp://logs.papertrailapp.com:55555
+
+> NOTE: The default is to use traditional LF framing for backwards compatibility though octet-counted framing is preferred when it is known the downstream consumer can handle it.
 
 #### Using Logspout in a swarm
 
