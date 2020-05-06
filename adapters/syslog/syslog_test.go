@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"text/template"
 	"time"
 
 	_ "github.com/gliderlabs/logspout/transports/tcp"
@@ -135,7 +134,7 @@ func TestSyslogReconnectOnClose(t *testing.T) {
 				<-messages
 				msgnum++
 			}
-			check(t, adapter.(*Adapter).tmpl, <-messages, msg)
+			check(t, <-messages, msg)
 			msgnum++
 		case <-timeout:
 			adapter.(*Adapter).conn.Close()
@@ -226,7 +225,7 @@ func sendLogstream(stream chan *router.Message, messages chan string, adapter ro
 	}
 }
 
-func check(t *testing.T, tmpl *template.Template, in string, out string) {
+func check(t *testing.T, in string, out string) {
 	if in != out {
 		t.Errorf("expected: %s\ngot: %s\n", in, out)
 	}

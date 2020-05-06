@@ -80,6 +80,57 @@ func getHostname() string {
 	return hostname
 }
 
+func getFieldTemplates(route *router.Route) (*FieldTemplates, error) {
+	var err error
+	var s string
+	var tmpl FieldTemplates
+
+	s = cfg.GetEnvDefault("SYSLOG_PRIORITY", "{{.Priority}}")
+	if tmpl.priority, err = template.New("priority").Parse(s); err != nil {
+		return nil, err
+	}
+
+	s = cfg.GetEnvDefault("SYSLOG_TIMESTAMP", "{{.Timestamp}}")
+	if tmpl.timestamp, err = template.New("timestamp").Parse(s); err != nil {
+		return nil, err
+	}
+
+	s = getHostname()
+	if tmpl.hostname, err = template.New("hostname").Parse(s); err != nil {
+		return nil, err
+	}
+
+	s = cfg.GetEnvDefault("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
+	if tmpl.tag, err = template.New("tag").Parse(s); err != nil {
+		return nil, err
+	}
+
+	s = cfg.GetEnvDefault("SYSLOG_PID", "{{.Container.State.Pid}}")
+	if tmpl.pid, err = template.New("pid").Parse(s); err != nil {
+		return nil, err
+	}
+
+	s = cfg.GetEnvDefault("SYSLOG_STRUCTURED_DATA", "")
+	if route.Options["structured_data"] != "" {
+		s = route.Options["structured_data"]
+	}
+	if s == "" {
+		s = "-"
+	} else {
+		s = fmt.Sprintf("[%s]", s)
+	}
+	if tmpl.structuredData, err = template.New("structuredData").Parse(s); err != nil {
+		return nil, err
+	}
+
+	s = cfg.GetEnvDefault("SYSLOG_DATA", "{{.Data}}")
+	if tmpl.data, err = template.New("data").Parse(s); err != nil {
+		return nil, err
+	}
+
+	return &tmpl, nil
+}
+
 // NewSyslogAdapter returnas a configured syslog.Adapter
 func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
@@ -95,22 +146,9 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 
-	priority := cfg.GetEnvDefault("SYSLOG_PRIORITY", "{{.Priority}}")
-	pid := cfg.GetEnvDefault("SYSLOG_PID", "{{.Container.State.Pid}}")
-	hostname = getHostname()
-
-	tag := cfg.GetEnvDefault("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
-	structuredData := cfg.GetEnvDefault("SYSLOG_STRUCTURED_DATA", "")
-	if route.Options["structured_data"] != "" {
-		structuredData = route.Options["structured_data"]
-	}
-	data := cfg.GetEnvDefault("SYSLOG_DATA", "{{.Data}}")
-	timestamp := cfg.GetEnvDefault("SYSLOG_TIMESTAMP", "{{.Timestamp}}")
-
-	if structuredData == "" {
-		structuredData = "-"
-	} else {
-		structuredData = fmt.Sprintf("[%s]", structuredData)
+	var tmpl *FieldTemplates
+	if tmpl, err = getFieldTemplates(route); err != nil {
+		return nil, err
 	}
 
 	if isTCPConnecion(conn) {
@@ -119,27 +157,6 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		}
 	}
 
-	var tmplStr string
-	switch format {
-	case Rfc5424Format:
-		// notes from RFC:
-		// - there is no upper limit for the entire message and depends on the transport in use
-		// - the HOSTNAME field must not exceed 255 characters
-		// - the TAG field must not exceed 48 characters
-		// - the PROCID field must not exceed 128 characters
-		tmplStr = fmt.Sprintf("<%s>1 %s %.255s %.48s %.128s - %s %s\n",
-			priority, timestamp, hostname, tag, pid, structuredData, data)
-	case Rfc3164Format:
-		// notes from RFC:
-		// - the entire message must be <= 1024 bytes
-		// - the TAG field must not exceed 32 characters
-		tmplStr = fmt.Sprintf("<%s>%s %s %.32s[%s]: %s\n",
-			priority, timestamp, hostname, tag, pid, data)
-	}
-	tmpl, err := template.New("syslog").Parse(tmplStr)
-	if err != nil {
-		return nil, err
-	}
 	return &Adapter{
 		route:     route,
 		conn:      conn,
@@ -176,11 +193,22 @@ func setTCPFraming() error {
 	}
 }
 
+// Field templates for rendering Syslog messages
+type FieldTemplates struct {
+	priority       *template.Template
+	timestamp      *template.Template
+	hostname       *template.Template
+	tag            *template.Template
+	pid            *template.Template
+	structuredData *template.Template
+	data           *template.Template
+}
+
 // Adapter streams log output to a connection in the Syslog format
 type Adapter struct {
 	conn      net.Conn
 	route     *router.Route
-	tmpl      *template.Template
+	tmpl      *FieldTemplates
 	transport router.AdapterTransport
 }
 
@@ -312,12 +340,69 @@ type Message struct {
 }
 
 // Render transforms the log message using the Syslog template
-func (m *Message) Render(tmpl *template.Template) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	err := tmpl.Execute(buf, m)
+func (m *Message) Render(tmpl *FieldTemplates) ([]byte, error) {
+	var err error
+
+	priority := new(bytes.Buffer)
+	err = tmpl.priority.Execute(priority, m)
 	if err != nil {
 		return nil, err
 	}
+
+	timestamp := new(bytes.Buffer)
+	err = tmpl.timestamp.Execute(timestamp, m)
+	if err != nil {
+		return nil, err
+	}
+
+	hostname := new(bytes.Buffer)
+	err = tmpl.hostname.Execute(hostname, m)
+	if err != nil {
+		return nil, err
+	}
+
+	tag := new(bytes.Buffer)
+	err = tmpl.tag.Execute(tag, m)
+	if err != nil {
+		return nil, err
+	}
+
+	pid := new(bytes.Buffer)
+	err = tmpl.pid.Execute(pid, m)
+	if err != nil {
+		return nil, err
+	}
+
+	structuredData := new(bytes.Buffer)
+	err = tmpl.structuredData.Execute(structuredData, m)
+	if err != nil {
+		return nil, err
+	}
+
+	data := new(bytes.Buffer)
+	err = tmpl.data.Execute(data, m)
+	if err != nil {
+		return nil, err
+	}
+
+	buf := new(bytes.Buffer)
+	switch format {
+	case Rfc5424Format:
+		// notes from RFC:
+		// - there is no upper limit for the entire message and depends on the transport in use
+		// - the HOSTNAME field must not exceed 255 characters
+		// - the TAG field must not exceed 48 characters
+		// - the PROCID field must not exceed 128 characters
+		fmt.Fprintf(buf, "<%s>1 %s %.255s %.48s %.128s - %s %s\n",
+			priority, timestamp, hostname, tag, pid, structuredData, data)
+	case Rfc3164Format:
+		// notes from RFC:
+		// - the entire message must be <= 1024 bytes
+		// - the TAG field must not exceed 32 characters
+		fmt.Fprintf(buf, "<%s>%s %s %.32s[%s]: %s\n",
+			priority, timestamp, hostname, tag, pid, data)
+	}
+
 	return buf.Bytes(), nil
 }
 
