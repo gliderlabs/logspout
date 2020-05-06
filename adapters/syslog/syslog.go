@@ -2,7 +2,6 @@ package syslog
 
 import (
 	"bytes"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +9,7 @@ import (
 	"log/syslog"
 	"net"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
@@ -141,6 +141,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
+	connIsUDP := reflect.TypeOf(conn).String() == "*net.UDPConn"
 
 	if err = setFormat(); err != nil {
 		return nil, err
@@ -151,7 +152,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 
-	if isTCPConnecion(conn) {
+	if !connIsUDP {
 		if err = setTCPFraming(); err != nil {
 			return nil, err
 		}
@@ -160,6 +161,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	return &Adapter{
 		route:     route,
 		conn:      conn,
+		connIsUDP: connIsUDP,
 		tmpl:      tmpl,
 		transport: transport,
 	}, nil
@@ -207,6 +209,7 @@ type FieldTemplates struct {
 // Adapter streams log output to a connection in the Syslog format
 type Adapter struct {
 	conn      net.Conn
+	connIsUDP bool
 	route     *router.Route
 	tmpl      *FieldTemplates
 	transport router.AdapterTransport
@@ -222,16 +225,8 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			return
 		}
 
-		if isTCPConnecion(a.conn) {
-			switch tcpFraming {
-			case OctetCountedTCPFraming:
-				buf = append([]byte(fmt.Sprintf("%d ", len(buf))), buf...)
-			case TraditionalTCPFraming:
-				// leave as-is
-			default:
-				// should never get here, validated above
-				panic("unknown framing format: " + tcpFraming)
-			}
+		if !a.connIsUDP && tcpFraming == OctetCountedTCPFraming {
+			buf = append([]byte(fmt.Sprintf("%d ", len(buf))), buf...)
 		}
 
 		if _, err = a.conn.Write(buf); err != nil {
@@ -320,17 +315,6 @@ func retryExp(fun func() error, tries uint) error {
 		}
 
 		time.Sleep((1 << try) * 10 * time.Millisecond)
-	}
-}
-
-func isTCPConnecion(conn net.Conn) bool {
-	switch conn.(type) {
-	case *net.TCPConn:
-		return true
-	case *tls.Conn:
-		return true
-	default:
-		return false
 	}
 }
 
