@@ -91,15 +91,16 @@ func TestSyslogOctetFraming(t *testing.T) {
 }
 
 func TestSyslogRetryCount(t *testing.T) {
+	const defaultRetryCount = uint(10)
 	newRetryCount := uint(20)
 	os.Setenv("RETRY_COUNT", strconv.Itoa(int(newRetryCount)))
-	setRetryCount()
+	retryCount, _ := getRetryCount()
 	if retryCount != newRetryCount {
 		t.Errorf("expected %v got %v", newRetryCount, retryCount)
 	}
 
 	os.Unsetenv("RETRY_COUNT")
-	setRetryCount()
+	retryCount, _ = getRetryCount()
 	if retryCount != defaultRetryCount {
 		t.Errorf("expected %v got %v", defaultRetryCount, retryCount)
 	}
@@ -219,7 +220,7 @@ func sendLogstream(stream chan *router.Message, messages chan string, adapter ro
 			},
 		}
 		stream <- msg.Message
-		b, _ := msg.Render(adapter.(*Adapter).tmpl)
+		b, _ := msg.Render(adapter.(*Adapter).format, adapter.(*Adapter).tmpl)
 		messages <- string(b)
 		time.Sleep(10 * time.Millisecond)
 	}

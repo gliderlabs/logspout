@@ -30,15 +30,10 @@ const (
 	TraditionalTCPFraming TCPFraming = "traditional"
 	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
 	OctetCountedTCPFraming TCPFraming = "octet-counted"
-
-	defaultRetryCount = 10
 )
 
 var (
-	hostname   string
-	retryCount uint
-	format     Format
-	tcpFraming TCPFraming
+	hostname string
 )
 
 // Format represents the RFC spec to use for syslog messages
@@ -50,21 +45,22 @@ type TCPFraming string
 func init() {
 	hostname, _ = os.Hostname()
 	router.AdapterFactories.Register(NewSyslogAdapter, "syslog")
-	setRetryCount()
-}
-
-func setRetryCount() {
-	if count, err := strconv.Atoi(cfg.GetEnvDefault("RETRY_COUNT", strconv.Itoa(defaultRetryCount))); err != nil {
-		retryCount = uint(defaultRetryCount)
-	} else {
-		retryCount = uint(count)
-	}
-	debug("setting retryCount to:", retryCount)
 }
 
 func debug(v ...interface{}) {
 	if os.Getenv("DEBUG") != "" {
 		log.Println(v...)
+	}
+}
+
+func getFormat() (Format, error) {
+	switch s := cfg.GetEnvDefault("SYSLOG_FORMAT", string(Rfc5424Format)); s {
+	case string(Rfc5424Format):
+		return Rfc5424Format, nil
+	case string(Rfc3164Format):
+		return Rfc3164Format, nil
+	default:
+		return Rfc5424Format, fmt.Errorf("unknown SYSLOG_FORMAT value: %s", s)
 	}
 }
 
@@ -136,6 +132,22 @@ func getFieldTemplates(route *router.Route) (*FieldTemplates, error) {
 	return &tmpl, nil
 }
 
+func getTCPFraming() (TCPFraming, error) {
+	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", string(TraditionalTCPFraming)); s {
+	case string(TraditionalTCPFraming):
+		return TraditionalTCPFraming, nil
+	case string(OctetCountedTCPFraming):
+		return OctetCountedTCPFraming, nil
+	default:
+		return TraditionalTCPFraming, fmt.Errorf("unknown SYSLOG_TCP_FRAMING value: %s", s)
+	}
+}
+
+func getRetryCount() (uint, error) {
+	retryCount, err := strconv.Atoi(cfg.GetEnvDefault("RETRY_COUNT", "10"))
+	return uint(retryCount), err
+}
+
 // NewSyslogAdapter returnas a configured syslog.Adapter
 func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	transport, found := router.AdapterTransports.Lookup(route.AdapterTransport("udp"))
@@ -148,7 +160,8 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	}
 	connIsUDP := reflect.TypeOf(conn).String() == "*net.UDPConn"
 
-	if err = setFormat(); err != nil {
+	var format Format
+	if format, err = getFormat(); err != nil {
 		return nil, err
 	}
 	debug("setting format to:", format)
@@ -158,48 +171,30 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 
+	var tcpFraming TCPFraming
 	if !connIsUDP {
-		if err = setTCPFraming(); err != nil {
+		if tcpFraming, err = getTCPFraming(); err != nil {
 			return nil, err
 		}
 		debug("setting tcpFraming to:", tcpFraming)
 	}
 
+	var retryCount uint
+	if retryCount, err = getRetryCount(); err != nil {
+		return nil, err
+	}
+	debug("setting retryCount to:", retryCount)
+
 	return &Adapter{
-		route:     route,
-		conn:      conn,
-		connIsUDP: connIsUDP,
-		tmpl:      tmpl,
-		transport: transport,
+		route:      route,
+		conn:       conn,
+		connIsUDP:  connIsUDP,
+		format:     format,
+		tmpl:       tmpl,
+		transport:  transport,
+		tcpFraming: tcpFraming,
+		retryCount: retryCount,
 	}, nil
-}
-
-// Parses SYSLOG_FORMAT from the environment and sets format
-func setFormat() error {
-	switch s := cfg.GetEnvDefault("SYSLOG_FORMAT", string(Rfc5424Format)); s {
-	case string(Rfc5424Format):
-		format = Rfc5424Format
-		return nil
-	case string(Rfc3164Format):
-		format = Rfc3164Format
-		return nil
-	default:
-		return fmt.Errorf("unknown SYSLOG_FORMAT value: %s", s)
-	}
-}
-
-// Parses SYSLOG_TCP_FRAMING from the environment and sets tcpFraming
-func setTCPFraming() error {
-	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", string(TraditionalTCPFraming)); s {
-	case string(TraditionalTCPFraming):
-		tcpFraming = TraditionalTCPFraming
-		return nil
-	case string(OctetCountedTCPFraming):
-		tcpFraming = OctetCountedTCPFraming
-		return nil
-	default:
-		return fmt.Errorf("unknown SYSLOG_TCP_FRAMING value: %s", s)
-	}
 }
 
 // Field templates for rendering Syslog messages
@@ -215,24 +210,27 @@ type FieldTemplates struct {
 
 // Adapter streams log output to a connection in the Syslog format
 type Adapter struct {
-	conn      net.Conn
-	connIsUDP bool
-	route     *router.Route
-	tmpl      *FieldTemplates
-	transport router.AdapterTransport
+	conn       net.Conn
+	connIsUDP  bool
+	route      *router.Route
+	format     Format
+	tmpl       *FieldTemplates
+	transport  router.AdapterTransport
+	tcpFraming TCPFraming
+	retryCount uint
 }
 
 // Stream sends log data to a connection
 func (a *Adapter) Stream(logstream chan *router.Message) {
 	for message := range logstream {
 		m := &Message{message}
-		buf, err := m.Render(a.tmpl)
+		buf, err := m.Render(a.format, a.tmpl)
 		if err != nil {
 			log.Println("syslog:", err)
 			return
 		}
 
-		if !a.connIsUDP && tcpFraming == OctetCountedTCPFraming {
+		if !a.connIsUDP && a.tcpFraming == OctetCountedTCPFraming {
 			buf = append([]byte(fmt.Sprintf("%d ", len(buf))), buf...)
 		}
 
@@ -272,7 +270,7 @@ func (a *Adapter) retry(buf []byte, err error) error {
 }
 
 func (a *Adapter) retryTemporary(buf []byte) error {
-	log.Printf("syslog: retrying tcp up to %v times\n", retryCount)
+	log.Printf("syslog: retrying tcp up to %v times\n", a.retryCount)
 	err := retryExp(func() error {
 		_, err := a.conn.Write(buf)
 		if err == nil {
@@ -281,7 +279,7 @@ func (a *Adapter) retryTemporary(buf []byte) error {
 		}
 
 		return err
-	}, retryCount)
+	}, a.retryCount)
 
 	if err != nil {
 		log.Println("syslog: retry failed")
@@ -292,7 +290,7 @@ func (a *Adapter) retryTemporary(buf []byte) error {
 }
 
 func (a *Adapter) reconnect() error {
-	log.Printf("syslog: reconnecting up to %v times\n", retryCount)
+	log.Printf("syslog: reconnecting up to %v times\n", a.retryCount)
 	err := retryExp(func() error {
 		conn, err := a.transport.Dial(a.route.Address, a.route.Options)
 		if err != nil {
@@ -300,7 +298,7 @@ func (a *Adapter) reconnect() error {
 		}
 		a.conn = conn
 		return nil
-	}, retryCount)
+	}, a.retryCount)
 
 	if err != nil {
 		return err
@@ -331,7 +329,7 @@ type Message struct {
 }
 
 // Render transforms the log message using the Syslog template
-func (m *Message) Render(tmpl *FieldTemplates) ([]byte, error) {
+func (m *Message) Render(format Format, tmpl *FieldTemplates) ([]byte, error) {
 	var err error
 
 	priority := new(bytes.Buffer)
