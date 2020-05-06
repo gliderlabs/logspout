@@ -167,11 +167,11 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 
 // Parses SYSLOG_FORMAT from the environment and sets format
 func setFormat() error {
-	switch s := cfg.GetEnvDefault("SYSLOG_FORMAT", "rfc5424"); s {
-	case "rfc5424":
+	switch s := cfg.GetEnvDefault("SYSLOG_FORMAT", string(Rfc5424Format)); s {
+	case string(Rfc5424Format):
 		format = Rfc5424Format
 		return nil
-	case "rfc3164":
+	case string(Rfc3164Format):
 		format = Rfc3164Format
 		return nil
 	default:
@@ -181,11 +181,11 @@ func setFormat() error {
 
 // Parses SYSLOG_TCP_FRAMING from the environment and sets tcpFraming
 func setTCPFraming() error {
-	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", "traditional"); s {
-	case "traditional":
+	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", string(TraditionalTCPFraming)); s {
+	case string(TraditionalTCPFraming):
 		tcpFraming = TraditionalTCPFraming
 		return nil
-	case "octet-counted":
+	case string(OctetCountedTCPFraming):
 		tcpFraming = OctetCountedTCPFraming
 		return nil
 	default:
