@@ -21,6 +21,11 @@ import (
 )
 
 const (
+	// Modern Syslog protocol. https://tools.ietf.org/html/rfc5424
+	Rfc5424Format Format = "rfc5424"
+	// Legacy BSD Syslog protocol. https://tools.ietf.org/html/rfc3164
+	Rfc3164Format Format = "rfc3164"
+
 	// TraditionalTCPFraming is the traditional LF framing of syslog messages on the wire
 	TraditionalTCPFraming TCPFraming = "traditional"
 	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
@@ -32,9 +37,13 @@ const (
 var (
 	hostname         string
 	retryCount       uint
+	format           Format
 	tcpFraming       TCPFraming
 	econnResetErrStr string
 )
+
+// Format represents the RFC spec to use for syslog messages
+type Format string
 
 // TCPFraming represents the type of framing to use for syslog messages
 type TCPFraming string
@@ -82,7 +91,10 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 
-	format := cfg.GetEnvDefault("SYSLOG_FORMAT", "rfc5424")
+	if err = setFormat(); err != nil {
+		return nil, err
+	}
+
 	priority := cfg.GetEnvDefault("SYSLOG_PRIORITY", "{{.Priority}}")
 	pid := cfg.GetEnvDefault("SYSLOG_PID", "{{.Container.State.Pid}}")
 	hostname = getHostname()
@@ -109,7 +121,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 
 	var tmplStr string
 	switch format {
-	case "rfc5424":
+	case Rfc5424Format:
 		// notes from RFC:
 		// - there is no upper limit for the entire message and depends on the transport in use
 		// - the HOSTNAME field must not exceed 255 characters
@@ -117,14 +129,12 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		// - the PROCID field must not exceed 128 characters
 		tmplStr = fmt.Sprintf("<%s>1 %s %.255s %.48s %.128s - %s %s\n",
 			priority, timestamp, hostname, tag, pid, structuredData, data)
-	case "rfc3164":
+	case Rfc3164Format:
 		// notes from RFC:
 		// - the entire message must be <= 1024 bytes
 		// - the TAG field must not exceed 32 characters
 		tmplStr = fmt.Sprintf("<%s>%s %s %.32s[%s]: %s\n",
 			priority, timestamp, hostname, tag, pid, data)
-	default:
-		return nil, errors.New("unsupported syslog format: " + format)
 	}
 	tmpl, err := template.New("syslog").Parse(tmplStr)
 	if err != nil {
@@ -138,6 +148,21 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	}, nil
 }
 
+// Parses SYSLOG_FORMAT from the environment and sets format
+func setFormat() error {
+	switch s := cfg.GetEnvDefault("SYSLOG_FORMAT", "rfc5424"); s {
+	case "rfc5424":
+		format = Rfc5424Format
+		return nil
+	case "rfc3164":
+		format = Rfc3164Format
+		return nil
+	default:
+		return fmt.Errorf("unknown SYSLOG_FORMAT value: %s", s)
+	}
+}
+
+// Parses SYSLOG_TCP_FRAMING from the environment and sets tcpFraming
 func setTCPFraming() error {
 	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", "traditional"); s {
 	case "traditional":
