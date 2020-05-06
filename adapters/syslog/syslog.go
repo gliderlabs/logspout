@@ -87,26 +87,31 @@ func getFieldTemplates(route *router.Route) (*FieldTemplates, error) {
 	if tmpl.priority, err = template.New("priority").Parse(s); err != nil {
 		return nil, err
 	}
+	debug("setting priority to:", s)
 
 	s = cfg.GetEnvDefault("SYSLOG_TIMESTAMP", "{{.Timestamp}}")
 	if tmpl.timestamp, err = template.New("timestamp").Parse(s); err != nil {
 		return nil, err
 	}
+	debug("setting timestamp to:", s)
 
 	s = getHostname()
 	if tmpl.hostname, err = template.New("hostname").Parse(s); err != nil {
 		return nil, err
 	}
+	debug("setting hostname to:", s)
 
 	s = cfg.GetEnvDefault("SYSLOG_TAG", "{{.ContainerName}}"+route.Options["append_tag"])
 	if tmpl.tag, err = template.New("tag").Parse(s); err != nil {
 		return nil, err
 	}
+	debug("setting tag to:", s)
 
 	s = cfg.GetEnvDefault("SYSLOG_PID", "{{.Container.State.Pid}}")
 	if tmpl.pid, err = template.New("pid").Parse(s); err != nil {
 		return nil, err
 	}
+	debug("setting pid to:", s)
 
 	s = cfg.GetEnvDefault("SYSLOG_STRUCTURED_DATA", "")
 	if route.Options["structured_data"] != "" {
@@ -120,11 +125,13 @@ func getFieldTemplates(route *router.Route) (*FieldTemplates, error) {
 	if tmpl.structuredData, err = template.New("structuredData").Parse(s); err != nil {
 		return nil, err
 	}
+	debug("setting structuredData to:", s)
 
 	s = cfg.GetEnvDefault("SYSLOG_DATA", "{{.Data}}")
 	if tmpl.data, err = template.New("data").Parse(s); err != nil {
 		return nil, err
 	}
+	debug("setting data to:", s)
 
 	return &tmpl, nil
 }
@@ -144,6 +151,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	if err = setFormat(); err != nil {
 		return nil, err
 	}
+	debug("setting format to:", format)
 
 	var tmpl *FieldTemplates
 	if tmpl, err = getFieldTemplates(route); err != nil {
@@ -154,6 +162,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		if err = setTCPFraming(); err != nil {
 			return nil, err
 		}
+		debug("setting tcpFraming to:", tcpFraming)
 	}
 
 	return &Adapter{
