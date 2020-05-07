@@ -35,7 +35,7 @@ var (
 			Hostname: "8dfafdbc3a40",
 		},
 	}
-	hostHostnameFilename = "/etc/host_hostname"
+	hostHostnameFilename = "/tmp/host_hostname"
 	hostnameContent      = "hostname"
 	badHostnameContent   = "hostname\r\n"
 )
@@ -91,16 +91,15 @@ func TestSyslogOctetFraming(t *testing.T) {
 }
 
 func TestSyslogRetryCount(t *testing.T) {
-	const defaultRetryCount = uint(10)
 	newRetryCount := uint(20)
 	os.Setenv("RETRY_COUNT", strconv.Itoa(int(newRetryCount)))
-	retryCount, _ := getRetryCount()
+	retryCount := getRetryCount()
 	if retryCount != newRetryCount {
 		t.Errorf("expected %v got %v", newRetryCount, retryCount)
 	}
 
 	os.Unsetenv("RETRY_COUNT")
-	retryCount, _ = getRetryCount()
+	retryCount = getRetryCount()
 	if retryCount != defaultRetryCount {
 		t.Errorf("expected %v got %v", defaultRetryCount, retryCount)
 	}

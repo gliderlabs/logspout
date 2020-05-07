@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"bytes"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -9,7 +10,6 @@ import (
 	"log/syslog"
 	"net"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
@@ -21,15 +21,17 @@ import (
 )
 
 const (
-	// Modern Syslog protocol. https://tools.ietf.org/html/rfc5424
+	// Rfc5424Format is the modern syslog protocol format. https://tools.ietf.org/html/rfc5424
 	Rfc5424Format Format = "rfc5424"
-	// Legacy BSD Syslog protocol. https://tools.ietf.org/html/rfc3164
+	// Rfc3164Format is the legacy BSD syslog protocol format. https://tools.ietf.org/html/rfc3164
 	Rfc3164Format Format = "rfc3164"
 
 	// TraditionalTCPFraming is the traditional LF framing of syslog messages on the wire
 	TraditionalTCPFraming TCPFraming = "traditional"
 	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
 	OctetCountedTCPFraming TCPFraming = "octet-counted"
+
+	defaultRetryCount = 10
 )
 
 var (
@@ -143,9 +145,24 @@ func getTCPFraming() (TCPFraming, error) {
 	}
 }
 
-func getRetryCount() (uint, error) {
-	retryCount, err := strconv.Atoi(cfg.GetEnvDefault("RETRY_COUNT", "10"))
-	return uint(retryCount), err
+func getRetryCount() uint {
+	retryCountStr := cfg.GetEnvDefault("RETRY_COUNT", "")
+	if retryCountStr != "" {
+		retryCount, _ := strconv.Atoi(retryCountStr)
+		return uint(retryCount)
+	}
+	return defaultRetryCount
+}
+
+func isTCPConnecion(conn net.Conn) bool {
+	switch conn.(type) {
+	case *net.TCPConn:
+		return true
+	case *tls.Conn:
+		return true
+	default:
+		return false
+	}
 }
 
 // NewSyslogAdapter returnas a configured syslog.Adapter
@@ -158,37 +175,36 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	connIsUDP := reflect.TypeOf(conn).String() == "*net.UDPConn"
 
-	var format Format
-	if format, err = getFormat(); err != nil {
+	format, err := getFormat()
+	if err != nil {
 		return nil, err
 	}
 	debug("setting format to:", format)
 
-	var tmpl *FieldTemplates
-	if tmpl, err = getFieldTemplates(route); err != nil {
+	tmpl, err := getFieldTemplates(route)
+	if err != nil {
 		return nil, err
 	}
 
+	connIsTCP := isTCPConnecion(conn)
+	debug("setting connIsTCP to:", connIsTCP)
+
 	var tcpFraming TCPFraming
-	if !connIsUDP {
+	if connIsTCP {
 		if tcpFraming, err = getTCPFraming(); err != nil {
 			return nil, err
 		}
 		debug("setting tcpFraming to:", tcpFraming)
 	}
 
-	var retryCount uint
-	if retryCount, err = getRetryCount(); err != nil {
-		return nil, err
-	}
+	retryCount := getRetryCount()
 	debug("setting retryCount to:", retryCount)
 
 	return &Adapter{
 		route:      route,
 		conn:       conn,
-		connIsUDP:  connIsUDP,
+		connIsTCP:  connIsTCP,
 		format:     format,
 		tmpl:       tmpl,
 		transport:  transport,
@@ -211,7 +227,7 @@ type FieldTemplates struct {
 // Adapter streams log output to a connection in the Syslog format
 type Adapter struct {
 	conn       net.Conn
-	connIsUDP  bool
+	connIsTCP  bool
 	route      *router.Route
 	format     Format
 	tmpl       *FieldTemplates
@@ -230,16 +246,13 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			return
 		}
 
-		if !a.connIsUDP && a.tcpFraming == OctetCountedTCPFraming {
+		if a.connIsTCP && a.tcpFraming == OctetCountedTCPFraming {
 			buf = append([]byte(fmt.Sprintf("%d ", len(buf))), buf...)
 		}
 
 		if _, err = a.conn.Write(buf); err != nil {
 			log.Println("syslog:", err)
-			switch a.conn.(type) {
-			case *net.UDPConn:
-				continue
-			default:
+			if a.connIsTCP {
 				if err = a.retry(buf, err); err != nil {
 					log.Panicf("syslog retry err: %+v", err)
 					return
@@ -307,7 +320,7 @@ func (a *Adapter) reconnect() error {
 }
 
 func retryExp(fun func() error, tries uint) error {
-	try := uint(0)
+	var try uint
 	for {
 		err := fun()
 		if err == nil {
@@ -330,47 +343,38 @@ type Message struct {
 
 // Render transforms the log message using the Syslog template
 func (m *Message) Render(format Format, tmpl *FieldTemplates) ([]byte, error) {
-	var err error
-
 	priority := new(bytes.Buffer)
-	err = tmpl.priority.Execute(priority, m)
-	if err != nil {
+	if err := tmpl.priority.Execute(priority, m); err != nil {
 		return nil, err
 	}
 
 	timestamp := new(bytes.Buffer)
-	err = tmpl.timestamp.Execute(timestamp, m)
-	if err != nil {
+	if err := tmpl.timestamp.Execute(timestamp, m); err != nil {
 		return nil, err
 	}
 
 	hostname := new(bytes.Buffer)
-	err = tmpl.hostname.Execute(hostname, m)
-	if err != nil {
+	if err := tmpl.hostname.Execute(hostname, m); err != nil {
 		return nil, err
 	}
 
 	tag := new(bytes.Buffer)
-	err = tmpl.tag.Execute(tag, m)
-	if err != nil {
+	if err := tmpl.tag.Execute(tag, m); err != nil {
 		return nil, err
 	}
 
 	pid := new(bytes.Buffer)
-	err = tmpl.pid.Execute(pid, m)
-	if err != nil {
+	if err := tmpl.pid.Execute(pid, m); err != nil {
 		return nil, err
 	}
 
 	structuredData := new(bytes.Buffer)
-	err = tmpl.structuredData.Execute(structuredData, m)
-	if err != nil {
+	if err := tmpl.structuredData.Execute(structuredData, m); err != nil {
 		return nil, err
 	}
 
 	data := new(bytes.Buffer)
-	err = tmpl.data.Execute(data, m)
-	if err != nil {
+	if err := tmpl.data.Execute(data, m); err != nil {
 		return nil, err
 	}
 
@@ -383,13 +387,15 @@ func (m *Message) Render(format Format, tmpl *FieldTemplates) ([]byte, error) {
 		// - the TAG field must not exceed 48 characters
 		// - the PROCID field must not exceed 128 characters
 		fmt.Fprintf(buf, "<%s>1 %s %.255s %.48s %.128s - %s %s\n",
-			priority, timestamp, hostname, tag, pid, structuredData, data)
+			priority, timestamp, hostname, tag, pid, structuredData, data,
+		)
 	case Rfc3164Format:
 		// notes from RFC:
 		// - the entire message must be <= 1024 bytes
 		// - the TAG field must not exceed 32 characters
 		fmt.Fprintf(buf, "<%s>%s %s %.32s[%s]: %s\n",
-			priority, timestamp, hostname, tag, pid, data)
+			priority, timestamp, hostname, tag, pid, data,
+		)
 	}
 
 	return buf.Bytes(), nil
