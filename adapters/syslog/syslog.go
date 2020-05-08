@@ -156,7 +156,7 @@ func getRetryCount() uint {
 	return defaultRetryCount
 }
 
-func isTCPConnecion(conn net.Conn) bool {
+func isTCPConnection(conn net.Conn) bool {
 	switch conn.(type) {
 	case *net.TCPConn:
 		return true
@@ -189,7 +189,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 		return nil, err
 	}
 
-	connIsTCP := isTCPConnecion(conn)
+	connIsTCP := isTCPConnection(conn)
 	debug("setting connIsTCP to:", connIsTCP)
 
 	var tcpFraming TCPFraming
