@@ -31,6 +31,8 @@ const (
 	// OctetCountedTCPFraming prepends the size of each message before the message. https://tools.ietf.org/html/rfc6587#section-3.4.1
 	OctetCountedTCPFraming TCPFraming = "octet-counted"
 
+	defaultFormat     = Rfc5424Format
+	defaultTCPFraming = TraditionalTCPFraming
 	defaultRetryCount = 10
 )
 
@@ -56,13 +58,13 @@ func debug(v ...interface{}) {
 }
 
 func getFormat() (Format, error) {
-	switch s := cfg.GetEnvDefault("SYSLOG_FORMAT", string(Rfc5424Format)); s {
+	switch s := cfg.GetEnvDefault("SYSLOG_FORMAT", string(defaultFormat)); s {
 	case string(Rfc5424Format):
 		return Rfc5424Format, nil
 	case string(Rfc3164Format):
 		return Rfc3164Format, nil
 	default:
-		return Rfc5424Format, fmt.Errorf("unknown SYSLOG_FORMAT value: %s", s)
+		return defaultFormat, fmt.Errorf("unknown SYSLOG_FORMAT value: %s", s)
 	}
 }
 
@@ -135,13 +137,13 @@ func getFieldTemplates(route *router.Route) (*FieldTemplates, error) {
 }
 
 func getTCPFraming() (TCPFraming, error) {
-	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", string(TraditionalTCPFraming)); s {
+	switch s := cfg.GetEnvDefault("SYSLOG_TCP_FRAMING", string(defaultTCPFraming)); s {
 	case string(TraditionalTCPFraming):
 		return TraditionalTCPFraming, nil
 	case string(OctetCountedTCPFraming):
 		return OctetCountedTCPFraming, nil
 	default:
-		return TraditionalTCPFraming, fmt.Errorf("unknown SYSLOG_TCP_FRAMING value: %s", s)
+		return defaultTCPFraming, fmt.Errorf("unknown SYSLOG_TCP_FRAMING value: %s", s)
 	}
 }
 

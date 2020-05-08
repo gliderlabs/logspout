@@ -90,6 +90,64 @@ func TestSyslogOctetFraming(t *testing.T) {
 	}
 }
 
+func TestSysLogFormat(t *testing.T) {
+	defer os.Unsetenv("SYSLOG_FORMAT")
+
+	newFormat := Rfc3164Format
+	os.Setenv("SYSLOG_FORMAT", string(newFormat))
+	format, err := getFormat()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if format != newFormat {
+		t.Errorf("expected %v got %v", newFormat, format)
+	}
+
+	os.Unsetenv("SYSLOG_FORMAT")
+	format, err = getFormat()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if format != defaultFormat {
+		t.Errorf("expected %v got %v", defaultFormat, format)
+	}
+
+	os.Setenv("SYSLOG_FORMAT", "invalid-option")
+	_, err = getFormat()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestSysLogTCPFraming(t *testing.T) {
+	defer os.Unsetenv("SYSLOG_TCP_FRAMING")
+
+	newTCPFraming := OctetCountedTCPFraming
+	os.Setenv("SYSLOG_TCP_FRAMING", string(newTCPFraming))
+	tcpFraming, err := getTCPFraming()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if tcpFraming != newTCPFraming {
+		t.Errorf("expected %v got %v", newTCPFraming, tcpFraming)
+	}
+
+	os.Unsetenv("SYSLOG_TCP_FRAMING")
+	tcpFraming, err = getTCPFraming()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if tcpFraming != defaultTCPFraming {
+		t.Errorf("expected %v got %v", defaultTCPFraming, tcpFraming)
+	}
+
+	os.Setenv("SYSLOG_TCP_FRAMING", "invalid-option")
+	_, err = getTCPFraming()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
 func TestSyslogRetryCount(t *testing.T) {
 	newRetryCount := uint(20)
 	os.Setenv("RETRY_COUNT", strconv.Itoa(int(newRetryCount)))
