@@ -215,7 +215,7 @@ func NewSyslogAdapter(route *router.Route) (router.LogAdapter, error) {
 	}, nil
 }
 
-// Field templates for rendering Syslog messages
+// FieldTemplates for rendering Syslog messages
 type FieldTemplates struct {
 	priority       *template.Template
 	timestamp      *template.Template
