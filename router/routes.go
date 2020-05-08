@@ -140,7 +140,7 @@ func (rm *RouteManager) Add(route *Route) error {
 	}
 	route.closer = make(chan struct{})
 	route.adapter = adapter
-	//Stop any existing route with this ID:
+	// Stop any existing route with this ID:
 	if rm.routes[route.ID] != nil {
 		rm.routes[route.ID].closer <- struct{}{}
 	}

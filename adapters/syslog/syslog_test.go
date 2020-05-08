@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"text/template"
 	"time"
 
 	_ "github.com/gliderlabs/logspout/transports/tcp"
@@ -36,7 +35,7 @@ var (
 			Hostname: "8dfafdbc3a40",
 		},
 	}
-	hostHostnameFilename = "/etc/host_hostname"
+	hostHostnameFilename = "/tmp/host_hostname"
 	hostnameContent      = "hostname"
 	badHostnameContent   = "hostname\r\n"
 )
@@ -91,16 +90,74 @@ func TestSyslogOctetFraming(t *testing.T) {
 	}
 }
 
+func TestSysLogFormat(t *testing.T) {
+	defer os.Unsetenv("SYSLOG_FORMAT")
+
+	newFormat := Rfc3164Format
+	os.Setenv("SYSLOG_FORMAT", string(newFormat))
+	format, err := getFormat()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if format != newFormat {
+		t.Errorf("expected %v got %v", newFormat, format)
+	}
+
+	os.Unsetenv("SYSLOG_FORMAT")
+	format, err = getFormat()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if format != defaultFormat {
+		t.Errorf("expected %v got %v", defaultFormat, format)
+	}
+
+	os.Setenv("SYSLOG_FORMAT", "invalid-option")
+	_, err = getFormat()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestSysLogTCPFraming(t *testing.T) {
+	defer os.Unsetenv("SYSLOG_TCP_FRAMING")
+
+	newTCPFraming := OctetCountedTCPFraming
+	os.Setenv("SYSLOG_TCP_FRAMING", string(newTCPFraming))
+	tcpFraming, err := getTCPFraming()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if tcpFraming != newTCPFraming {
+		t.Errorf("expected %v got %v", newTCPFraming, tcpFraming)
+	}
+
+	os.Unsetenv("SYSLOG_TCP_FRAMING")
+	tcpFraming, err = getTCPFraming()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if tcpFraming != defaultTCPFraming {
+		t.Errorf("expected %v got %v", defaultTCPFraming, tcpFraming)
+	}
+
+	os.Setenv("SYSLOG_TCP_FRAMING", "invalid-option")
+	_, err = getTCPFraming()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
 func TestSyslogRetryCount(t *testing.T) {
 	newRetryCount := uint(20)
 	os.Setenv("RETRY_COUNT", strconv.Itoa(int(newRetryCount)))
-	setRetryCount()
+	retryCount := getRetryCount()
 	if retryCount != newRetryCount {
 		t.Errorf("expected %v got %v", newRetryCount, retryCount)
 	}
 
 	os.Unsetenv("RETRY_COUNT")
-	setRetryCount()
+	retryCount = getRetryCount()
 	if retryCount != defaultRetryCount {
 		t.Errorf("expected %v got %v", defaultRetryCount, retryCount)
 	}
@@ -135,7 +192,7 @@ func TestSyslogReconnectOnClose(t *testing.T) {
 				<-messages
 				msgnum++
 			}
-			check(t, adapter.(*Adapter).tmpl, <-messages, msg)
+			check(t, <-messages, msg)
 			msgnum++
 		case <-timeout:
 			adapter.(*Adapter).conn.Close()
@@ -220,13 +277,13 @@ func sendLogstream(stream chan *router.Message, messages chan string, adapter ro
 			},
 		}
 		stream <- msg.Message
-		b, _ := msg.Render(adapter.(*Adapter).tmpl)
+		b, _ := msg.Render(adapter.(*Adapter).format, adapter.(*Adapter).tmpl)
 		messages <- string(b)
 		time.Sleep(10 * time.Millisecond)
 	}
 }
 
-func check(t *testing.T, tmpl *template.Template, in string, out string) {
+func check(t *testing.T, in string, out string) {
 	if in != out {
 		t.Errorf("expected: %s\ngot: %s\n", in, out)
 	}
