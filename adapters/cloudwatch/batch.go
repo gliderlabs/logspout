@@ -11,17 +11,20 @@ type Message struct {
 	Container string    `json:"container"`
 }
 
+// Batch is a group of Messages to be submitted to Cloudwatch
+// as part of a single request
 type Batch struct {
 	Msgs []Message
 	Size int64
 }
 
-const MsgOverhead = 26 // bytes
+const msgOverhead = 26 // bytes
 
 func msgSize(msg Message) int64 {
-	return int64((len(msg.Message) * 8) + MsgOverhead)
+	return int64((len(msg.Message) * 8) + msgOverhead)
 }
 
+// NewBatch creates and returns an empty Batch
 func NewBatch() *Batch {
 	return &Batch{
 		Msgs: []Message{},
@@ -29,6 +32,7 @@ func NewBatch() *Batch {
 	}
 }
 
+// Append adds Messages to a Batch
 func (b *Batch) Append(msg Message) {
 	b.Msgs = append(b.Msgs, msg)
 	b.Size = b.Size + msgSize(msg)

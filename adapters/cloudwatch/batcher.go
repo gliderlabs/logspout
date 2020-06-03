@@ -27,7 +27,7 @@ type Batcher struct {
 	batches map[string]*Batch
 }
 
-// constructor for CloudwatchBatcher - requires the adapter
+// NewCloudwatchBatcher returns a new Batcher assigned to the given adapeter
 func NewCloudwatchBatcher(adapter *Adapter) *Batcher {
 	batcher := Batcher{
 		Input:   make(chan Message),
@@ -40,10 +40,10 @@ func NewCloudwatchBatcher(adapter *Adapter) *Batcher {
 	return &batcher
 }
 
-// Main loop for the Batcher - just sorts each messages into a batch, but
-// submits the batch first and replaces it if the message is too big.
+// Start begins the main loop for the Batcher - just sorts each messages into a
+// batch, but submits the batch first and replaces it if the message is too big.
 func (b *Batcher) Start() {
-	go b.RunTimer()
+	go b.runTimer()
 	for { // run forever, and...
 		select { // either batch up a message, or respond to the timer
 		case msg := <-b.Input: // a message - put it into its slice
@@ -71,7 +71,7 @@ func (b *Batcher) Start() {
 	}
 }
 
-func (b *Batcher) RunTimer() {
+func (b *Batcher) runTimer() {
 	delayText := strconv.Itoa(defaultDelay)
 	if routeDelay, isSet := b.route.Options[`DELAY`]; isSet {
 		delayText = routeDelay

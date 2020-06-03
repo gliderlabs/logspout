@@ -1,7 +1,6 @@
 package cloudwatch
 
 import (
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -21,6 +20,7 @@ type Uploader struct {
 	debugSet bool
 }
 
+// NewUploader creates and returns a new Uploader for the current EC2 Region
 func NewUploader(adapter *Adapter) *Uploader {
 	region := adapter.Route.Address
 	if (region == "auto") || (region == "") {
@@ -48,8 +48,8 @@ func NewUploader(adapter *Adapter) *Uploader {
 	return &uploader
 }
 
-// Main loop for the Uploader - POSTs each batch to AWS Cloudwatch Logs,
-// while keeping track of the unique sequence token for each log stream.
+// Start begins the ain loop for the Uploader- POSTs each batch to AWS Cloudwatch
+// Logs, while keeping track of the unique sequence token for each log stream.
 func (u *Uploader) Start() {
 	for batch := range u.Input {
 		msg := batch.Msgs[0]
@@ -133,8 +133,8 @@ func (u *Uploader) getSequenceToken(msg Message) (*string, error) {
 		return nil, err
 	}
 	if count := len(resp.LogStreams); count > 1 { // too many matching streams!
-		return nil, errors.New(fmt.Sprintf(
-			"%d streams match group %s, stream %s!", count, group, stream))
+		return nil, fmt.Errorf(
+			"%d streams match group %s, stream %s", count, group, stream)
 	}
 	if len(resp.LogStreams) == 0 { // no matching streams - create one and retry
 		if err = u.createStream(group, stream); err != nil {

@@ -9,6 +9,8 @@ import (
 	"text/template"
 )
 
+// RenderContext defines the info that can be used in
+// LogGroup and LogStream names.
 type RenderContext struct {
 	Host       string            // container host name
 	Env        map[string]string // container ENV
@@ -20,7 +22,7 @@ type RenderContext struct {
 	Region     string            // EC2 region
 }
 
-// renders a label value based on a given key
+// Lbl renders a label value based on a given key
 func (r *RenderContext) Lbl(key string) (string, error) {
 	if val, exists := r.Labels[key]; exists {
 		return val, nil
@@ -50,17 +52,16 @@ func (a *Adapter) renderEnvValue(
 	if err != nil {
 		log.Println("cloudwatch: error parsing template", finalVal, ":", err)
 		return defaultVal
-	} else { // render the templates in the generated context
-		var renderedValue bytes.Buffer
-		err = template.Execute(&renderedValue, context)
-		if err != nil {
-			log.Printf("cloudwatch: error rendering template %s : %s\n",
-				finalVal, err)
-			return defaultVal
-		}
-		finalVal = renderedValue.String()
 	}
-	return finalVal
+	// render the templates in the generated context
+	var renderedValue bytes.Buffer
+	err = template.Execute(&renderedValue, context)
+	if err != nil {
+		log.Printf("cloudwatch: error rendering template %s : %s\n",
+			finalVal, err)
+		return defaultVal
+	}
+	return renderedValue.String()
 }
 
 func parseEnv(envLines []string) map[string]string {

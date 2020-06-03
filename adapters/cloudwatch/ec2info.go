@@ -10,14 +10,17 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
+// EC2Info is a subset of the data from the EC2 Metadata Service
 type EC2Info struct {
 	InstanceID string
 	Region     string
 }
 
+// NewEC2Info returns a new EC2Info struct with the current InstanceID and
+// Region, or nil and an Error if not available.
 func NewEC2Info(route *router.Route) (EC2Info, error) {
-	_, skip_ec2 := route.Options[`NOEC2`]
-	if skip_ec2 || (os.Getenv(`NOEC2`) != "") {
+	_, skipEc2 := route.Options[`NOEC2`]
+	if skipEc2 || (os.Getenv(`NOEC2`) != "") {
 		return EC2Info{}, nil
 	}
 	// get my instance ID
@@ -27,7 +30,7 @@ func NewEC2Info(route *router.Route) (EC2Info, error) {
 		log.Println("cloudwatch: WARNING EC2 Metadata service not available")
 		return EC2Info{}, nil
 	}
-	instance_id, err := metadataSvc.GetMetadata(`instance-id`)
+	instanceID, err := metadataSvc.GetMetadata(`instance-id`)
 	if err != nil {
 		return EC2Info{}, fmt.Errorf("ERROR getting instance ID: %s", err)
 	}
@@ -36,7 +39,7 @@ func NewEC2Info(route *router.Route) (EC2Info, error) {
 		return EC2Info{}, fmt.Errorf("ERROR getting EC2 region: %s", err)
 	}
 	return EC2Info{
-		InstanceID: instance_id,
+		InstanceID: instanceID,
 		Region:     region,
 	}, nil
 }

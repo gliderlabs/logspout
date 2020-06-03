@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	router.AdapterFactories.Register(NewCloudwatchAdapter, "cloudwatch")
+	router.AdapterFactories.Register(NewAdapter, "cloudwatch")
 }
 
 // Adapter is an adapter that streams JSON to AWS CloudwatchLogs.
@@ -30,8 +30,8 @@ type Adapter struct {
 	streamnames map[string]string // maps container names to log streams
 }
 
-// NewCloudwatchAdapter creates a CloudwatchAdapter for the current region.
-func NewCloudwatchAdapter(route *router.Route) (router.LogAdapter, error) {
+// NewAdapter creates a CloudwatchAdapter for the current region.
+func NewAdapter(route *router.Route) (router.LogAdapter, error) {
 	dockerHost := `unix:///var/run/docker.sock`
 	if envVal := os.Getenv(`DOCKER_HOST`); envVal != "" {
 		dockerHost = envVal
