@@ -1,10 +1,12 @@
 package cloudwatch
 
 import (
+	"bytes"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+	"text/template"
 	"time"
 
 	docker "github.com/fsouza/go-dockerclient"
@@ -116,4 +118,47 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			Container: m.Container.ID,
 		}
 	}
+}
+
+// Searches the OS environment, then the route options, then the render context
+// Env for a given key, then uses the value (or the provided default value)
+// as template text, which is then rendered in the given context.
+// The rendered result is returned - or the default value on any errors.
+func (a *Adapter) renderEnvValue(
+	envKey string, context *RenderContext, defaultVal string) string {
+	finalVal := defaultVal
+	if logspoutEnvVal := os.Getenv(envKey); logspoutEnvVal != "" {
+		finalVal = logspoutEnvVal // use $envKey, if set
+	}
+	if routeOptionsVal, exists := a.Route.Options[envKey]; exists {
+		finalVal = routeOptionsVal
+	}
+	if containerEnvVal, exists := context.Env[envKey]; exists {
+		finalVal = containerEnvVal // or, $envKey from container!
+	}
+	template, err := template.New("template").Parse(finalVal)
+	if err != nil {
+		log.Println("cloudwatch: error parsing template", finalVal, ":", err)
+		return defaultVal
+	}
+	// render the templates in the generated context
+	var renderedValue bytes.Buffer
+	err = template.Execute(&renderedValue, context)
+	if err != nil {
+		log.Printf("cloudwatch: error rendering template %s : %s\n",
+			finalVal, err)
+		return defaultVal
+	}
+	return renderedValue.String()
+}
+
+func parseEnv(envLines []string) map[string]string {
+	env := map[string]string{}
+	for _, line := range envLines {
+		fields := strings.Split(line, `=`)
+		if len(fields) > 1 {
+			env[fields[0]] = strings.Join(fields[1:], `=`)
+		}
+	}
+	return env
 }
