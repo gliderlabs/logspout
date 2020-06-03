@@ -3,6 +3,7 @@ package cloudwatch
 import (
 	"log"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,6 +15,8 @@ func init() {
 	router.AdapterFactories.Register(NewAdapter, "cloudwatch")
 }
 
+const defaultMaxRetries = 5
+
 // Adapter is an adapter that streams JSON to AWS CloudwatchLogs.
 // It mostly just checkes ENV vars and other container info to determine
 // the LogGroup and LogStream for each message, then sends each message
@@ -23,6 +26,7 @@ type Adapter struct {
 	OsHost      string
 	Ec2Region   string
 	Ec2Instance string
+	maxRetries  int
 
 	client      *docker.Client
 	batcher     *Batcher          // batches up messages by log group and stream
@@ -32,6 +36,14 @@ type Adapter struct {
 
 // NewAdapter creates a CloudwatchAdapter for the current region.
 func NewAdapter(route *router.Route) (router.LogAdapter, error) {
+	maxRetries := defaultMaxRetries
+	if envVal := os.Getenv(`MAX_RETRIES`); envVal != "" {
+		i, err := strconv.Atoi(envVal)
+		if err != nil {
+			return nil, err
+		}
+		maxRetries = i
+	}
 	dockerHost := `unix:///var/run/docker.sock`
 	if envVal := os.Getenv(`DOCKER_HOST`); envVal != "" {
 		dockerHost = envVal
@@ -53,6 +65,7 @@ func NewAdapter(route *router.Route) (router.LogAdapter, error) {
 		OsHost:      hostname,
 		Ec2Instance: ec2info.InstanceID,
 		Ec2Region:   ec2info.Region,
+		maxRetries:  maxRetries,
 		client:      client,
 		groupnames:  map[string]string{},
 		streamnames: map[string]string{},

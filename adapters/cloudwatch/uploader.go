@@ -42,7 +42,10 @@ func NewUploader(adapter *Adapter) *Uploader {
 		tokens:   map[string]string{},
 		debugSet: debugSet,
 		svc: cloudwatchlogs.New(session.New(),
-			&aws.Config{Region: aws.String(region)}),
+			&aws.Config{
+				Region:     aws.String(region),
+				MaxRetries: &adapter.maxRetries,
+			}),
 	}
 	go uploader.Start()
 	return &uploader
