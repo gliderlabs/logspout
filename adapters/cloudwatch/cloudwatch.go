@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/fsouza/go-dockerclient"
+	docker "github.com/fsouza/go-dockerclient"
 	"github.com/gliderlabs/logspout/router"
 )
 
@@ -14,20 +14,20 @@ func init() {
 	router.AdapterFactories.Register(NewCloudwatchAdapter, "cloudwatch")
 }
 
-// CloudwatchAdapter is an adapter that streams JSON to AWS CloudwatchLogs.
+// Adapter is an adapter that streams JSON to AWS CloudwatchLogs.
 // It mostly just checkes ENV vars and other container info to determine
 // the LogGroup and LogStream for each message, then sends each message
 // on to a CloudwatchBatcher, which batches messages for upload to AWS.
-type CloudwatchAdapter struct {
+type Adapter struct {
 	Route       *router.Route
 	OsHost      string
 	Ec2Region   string
 	Ec2Instance string
 
 	client      *docker.Client
-	batcher     *CloudwatchBatcher // batches up messages by log group and stream
-	groupnames  map[string]string  // maps container names to log groups
-	streamnames map[string]string  // maps container names to log streams
+	batcher     *Batcher          // batches up messages by log group and stream
+	groupnames  map[string]string // maps container names to log groups
+	streamnames map[string]string // maps container names to log streams
 }
 
 // NewCloudwatchAdapter creates a CloudwatchAdapter for the current region.
@@ -48,7 +48,7 @@ func NewCloudwatchAdapter(route *router.Route) (router.LogAdapter, error) {
 	if err != nil {
 		return nil, err
 	}
-	adapter := CloudwatchAdapter{
+	adapter := Adapter{
 		Route:       route,
 		OsHost:      hostname,
 		Ec2Instance: ec2info.InstanceID,
@@ -62,7 +62,7 @@ func NewCloudwatchAdapter(route *router.Route) (router.LogAdapter, error) {
 }
 
 // Stream implements the router.LogAdapter interface.
-func (a *CloudwatchAdapter) Stream(logstream chan *router.Message) {
+func (a *Adapter) Stream(logstream chan *router.Message) {
 	for m := range logstream {
 		// determine the log group name and log stream name
 		var groupName, streamName string
@@ -95,7 +95,7 @@ func (a *CloudwatchAdapter) Stream(logstream chan *router.Message) {
 			a.groupnames[m.Container.ID] = groupName   // cache the group name
 			a.streamnames[m.Container.ID] = streamName // and the stream name
 		}
-		a.batcher.Input <- CloudwatchMessage{
+		a.batcher.Input <- Message{
 			Message:   m.Data,
 			Group:     groupName,
 			Stream:    streamName,

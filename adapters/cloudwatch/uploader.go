@@ -12,16 +12,16 @@ import (
 	"github.com/aws/aws-sdk-go/service/cloudwatchlogs"
 )
 
-// CloudwatchUploader receieves CloudwatchBatches on its input channel,
+// Uploader receieves CloudwatchBatches on its input channel,
 // and sends them on to the AWS Cloudwatch Logs endpoint.
-type CloudwatchUploader struct {
-	Input    chan CloudwatchBatch
+type Uploader struct {
+	Input    chan Batch
 	svc      *cloudwatchlogs.CloudWatchLogs
 	tokens   map[string]string
 	debugSet bool
 }
 
-func NewCloudwatchUploader(adapter *CloudwatchAdapter) *CloudwatchUploader {
+func NewUploader(adapter *Adapter) *Uploader {
 	region := adapter.Route.Address
 	if (region == "auto") || (region == "") {
 		if adapter.Ec2Region == "" {
@@ -37,8 +37,8 @@ func NewCloudwatchUploader(adapter *CloudwatchAdapter) *CloudwatchUploader {
 		log.Println("cloudwatch: Creating AWS Cloudwatch client for region",
 			region)
 	}
-	uploader := CloudwatchUploader{
-		Input:    make(chan CloudwatchBatch),
+	uploader := Uploader{
+		Input:    make(chan Batch),
 		tokens:   map[string]string{},
 		debugSet: debugSet,
 		svc: cloudwatchlogs.New(session.New(),
@@ -50,7 +50,7 @@ func NewCloudwatchUploader(adapter *CloudwatchAdapter) *CloudwatchUploader {
 
 // Main loop for the Uploader - POSTs each batch to AWS Cloudwatch Logs,
 // while keeping track of the unique sequence token for each log stream.
-func (u *CloudwatchUploader) Start() {
+func (u *Uploader) Start() {
 	for batch := range u.Input {
 		msg := batch.Msgs[0]
 		u.log("Submitting batch for %s-%s (length %d, size %v)",
@@ -111,8 +111,7 @@ func (u *CloudwatchUploader) Start() {
 
 // returns the next sequence token for the log stream associated
 // with the given message's group and stream. Creates the stream as needed.
-func (u *CloudwatchUploader) getSequenceToken(msg CloudwatchMessage) (*string,
-	error) {
+func (u *Uploader) getSequenceToken(msg Message) (*string, error) {
 	group, stream := msg.Group, msg.Stream
 	groupExists, err := u.groupExists(group)
 	if err != nil {
@@ -147,7 +146,7 @@ func (u *CloudwatchUploader) getSequenceToken(msg CloudwatchMessage) (*string,
 	return resp.LogStreams[0].UploadSequenceToken, nil
 }
 
-func (u *CloudwatchUploader) groupExists(group string) (bool, error) {
+func (u *Uploader) groupExists(group string) (bool, error) {
 	u.log("Checking for group: %s...", group)
 	resp, err := u.svc.DescribeLogGroups(&cloudwatchlogs.DescribeLogGroupsInput{
 		LogGroupNamePrefix: aws.String(group),
@@ -163,7 +162,7 @@ func (u *CloudwatchUploader) groupExists(group string) (bool, error) {
 	return false, nil
 }
 
-func (u *CloudwatchUploader) createGroup(group string) error {
+func (u *Uploader) createGroup(group string) error {
 	u.log("Creating group: %s...", group)
 	params := &cloudwatchlogs.CreateLogGroupInput{
 		LogGroupName: aws.String(group),
@@ -174,7 +173,7 @@ func (u *CloudwatchUploader) createGroup(group string) error {
 	return nil
 }
 
-func (u *CloudwatchUploader) createStream(group, stream string) error {
+func (u *Uploader) createStream(group, stream string) error {
 	u.log("Creating stream for group %s, stream %s...", group, stream)
 	params := &cloudwatchlogs.CreateLogStreamInput{
 		LogGroupName:  aws.String(group),
@@ -188,7 +187,7 @@ func (u *CloudwatchUploader) createStream(group, stream string) error {
 
 // HELPER METHODS
 
-func (u *CloudwatchUploader) log(format string, args ...interface{}) {
+func (u *Uploader) log(format string, args ...interface{}) {
 	if u.debugSet {
 		msg := fmt.Sprintf(format, args...)
 		msg = fmt.Sprintf("cloudwatch: %s", msg)

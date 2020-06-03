@@ -11,24 +11,24 @@ import (
 
 const DEFAULT_DELAY = 4 //seconds
 
-// CloudwatchBatcher receieves Cloudwatch messages on its input channel,
+// Batcher receieves Cloudwatch messages on its input channel,
 // stores them in CloudwatchBatches until enough data is ready to send, then
 // sends each CloudwatchMessageBatch on its output channel.
-type CloudwatchBatcher struct {
-	Input  chan CloudwatchMessage
-	output chan CloudwatchBatch
+type Batcher struct {
+	Input  chan Message
+	output chan Batch
 	route  *router.Route
 	timer  chan bool
 	// maintain a batch for each container, indexed by its name
-	batches map[string]*CloudwatchBatch
+	batches map[string]*Batch
 }
 
 // constructor for CloudwatchBatcher - requires the adapter
-func NewCloudwatchBatcher(adapter *CloudwatchAdapter) *CloudwatchBatcher {
-	batcher := CloudwatchBatcher{
-		Input:   make(chan CloudwatchMessage),
-		output:  NewCloudwatchUploader(adapter).Input,
-		batches: map[string]*CloudwatchBatch{},
+func NewCloudwatchBatcher(adapter *Adapter) *Batcher {
+	batcher := Batcher{
+		Input:   make(chan Message),
+		output:  NewUploader(adapter).Input,
+		batches: map[string]*Batch{},
 		timer:   make(chan bool),
 		route:   adapter.Route,
 	}
@@ -38,7 +38,7 @@ func NewCloudwatchBatcher(adapter *CloudwatchAdapter) *CloudwatchBatcher {
 
 // Main loop for the Batcher - just sorts each messages into a batch, but
 // submits the batch first and replaces it if the message is too big.
-func (b *CloudwatchBatcher) Start() {
+func (b *Batcher) Start() {
 	go b.RunTimer()
 	for { // run forever, and...
 		select { // either batch up a message, or respond to the timer
@@ -48,13 +48,13 @@ func (b *CloudwatchBatcher) Start() {
 			}
 			// get or create the correct slice of messages for this message
 			if _, exists := b.batches[msg.Container]; !exists {
-				b.batches[msg.Container] = NewCloudwatchBatch()
+				b.batches[msg.Container] = NewBatch()
 			}
 			// if Msg is too long for the current batch, submit the batch
 			if (b.batches[msg.Container].Size+msgSize(msg)) > MAX_BATCH_SIZE ||
 				len(b.batches[msg.Container].Msgs) >= MAX_BATCH_COUNT {
 				b.output <- *b.batches[msg.Container]
-				b.batches[msg.Container] = NewCloudwatchBatch()
+				b.batches[msg.Container] = NewBatch()
 			}
 			thisBatch := b.batches[msg.Container]
 			thisBatch.Append(msg)
@@ -67,7 +67,7 @@ func (b *CloudwatchBatcher) Start() {
 	}
 }
 
-func (b *CloudwatchBatcher) RunTimer() {
+func (b *Batcher) RunTimer() {
 	delayText := strconv.Itoa(DEFAULT_DELAY)
 	if routeDelay, isSet := b.route.Options[`DELAY`]; isSet {
 		delayText = routeDelay

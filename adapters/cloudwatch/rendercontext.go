@@ -34,7 +34,7 @@ func (r *RenderContext) Lbl(key string) (string, error) {
 // Env for a given key, then uses the value (or the provided default value)
 // as template text, which is then rendered in the given context.
 // The rendered result is returned - or the default value on any errors.
-func (a *CloudwatchAdapter) renderEnvValue(
+func (a *Adapter) renderEnvValue(
 	envKey string, context *RenderContext, defaultVal string) string {
 	finalVal := defaultVal
 	if logspoutEnvVal := os.Getenv(envKey); logspoutEnvVal != "" {
