@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "github.com/gliderlabs/logspout/adapters/cloudwatch"
 	_ "github.com/gliderlabs/logspout/adapters/multiline"
 	_ "github.com/gliderlabs/logspout/adapters/raw"
 	_ "github.com/gliderlabs/logspout/adapters/syslog"
