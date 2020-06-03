@@ -16,10 +16,7 @@ type Batch struct {
 	Size int64
 }
 
-// Rules for creating Cloudwatch Log batches, from https://goo.gl/TrIN8c
-const MaxBatchCount = 10000  // messages
-const MaxBatchSize = 1048576 // bytes
-const MsgOverhead = 26       // bytes
+const MsgOverhead = 26 // bytes
 
 func msgSize(msg Message) int64 {
 	return int64((len(msg.Message) * 8) + MsgOverhead)

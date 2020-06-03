@@ -9,7 +9,11 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
-const DefaultDelay = 4 //seconds
+const defaultDelay = 4 //seconds
+
+// Rules for creating Cloudwatch Log batches, from https://goo.gl/TrIN8c
+const maxBatchSize = 1048576 // bytem
+const maxBatchCount = 10000  // messages
 
 // Batcher receieves Cloudwatch messages on its input channel,
 // stores them in CloudwatchBatches until enough data is ready to send, then
@@ -51,8 +55,8 @@ func (b *Batcher) Start() {
 				b.batches[msg.Container] = NewBatch()
 			}
 			// if Msg is too long for the current batch, submit the batch
-			if (b.batches[msg.Container].Size+msgSize(msg)) > MaxBatchSize ||
-				len(b.batches[msg.Container].Msgs) >= MaxBatchCount {
+			if (b.batches[msg.Container].Size+msgSize(msg)) > maxBatchSize ||
+				len(b.batches[msg.Container].Msgs) >= maxBatchCount {
 				b.output <- *b.batches[msg.Container]
 				b.batches[msg.Container] = NewBatch()
 			}
@@ -68,7 +72,7 @@ func (b *Batcher) Start() {
 }
 
 func (b *Batcher) RunTimer() {
-	delayText := strconv.Itoa(DefaultDelay)
+	delayText := strconv.Itoa(defaultDelay)
 	if routeDelay, isSet := b.route.Options[`DELAY`]; isSet {
 		delayText = routeDelay
 	}
@@ -78,8 +82,8 @@ func (b *Batcher) RunTimer() {
 	delay, err := strconv.Atoi(delayText)
 	if err != nil {
 		log.Printf("WARNING: ERROR parsing DELAY %s, using default of %d\n",
-			delayText, DefaultDelay)
-		delay = DefaultDelay
+			delayText, defaultDelay)
+		delay = defaultDelay
 	}
 	for {
 		time.Sleep(time.Duration(delay) * time.Second)
