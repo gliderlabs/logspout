@@ -72,7 +72,7 @@ func NewAdapter(route *router.Route) (router.LogAdapter, error) {
 		groupnames:  map[string]string{},
 		streamnames: map[string]string{},
 	}
-	adapter.batcher = NewCloudwatchBatcher(&adapter)
+	adapter.batcher = NewBatcher(&adapter)
 	return &adapter, nil
 }
 

@@ -27,8 +27,8 @@ type Batcher struct {
 	batches map[string]*Batch
 }
 
-// NewCloudwatchBatcher returns a new Batcher assigned to the given adapeter
-func NewCloudwatchBatcher(adapter *Adapter) *Batcher {
+// NewBatcher returns a new Batcher assigned to the given adapeter
+func NewBatcher(adapter *Adapter) *Batcher {
 	batcher := Batcher{
 		Input:   make(chan Message),
 		output:  NewUploader(adapter).Input,
