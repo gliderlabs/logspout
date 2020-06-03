@@ -37,6 +37,10 @@ func NewUploader(adapter *Adapter) *Uploader {
 		log.Println("cloudwatch: Creating AWS Cloudwatch client for region",
 			region)
 	}
+	awsLogLevel := aws.LogOff
+	if debugSet {
+		awsLogLevel = aws.LogDebugWithRequestRetries
+	}
 	uploader := Uploader{
 		Input:    make(chan Batch),
 		tokens:   map[string]string{},
@@ -45,6 +49,7 @@ func NewUploader(adapter *Adapter) *Uploader {
 			&aws.Config{
 				Region:     aws.String(region),
 				MaxRetries: &adapter.maxRetries,
+				LogLevel:   &awsLogLevel,
 			}),
 	}
 	go uploader.Start()
@@ -99,6 +104,7 @@ func (u *Uploader) Start() {
 		resp, err := u.svc.PutLogEvents(params)
 		if err != nil {
 			u.log(err.Error())
+			u.log("Dropping %d messages", len(events))
 			continue
 		}
 		u.log("Got 200 response")
