@@ -9,7 +9,7 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
-const DEFAULT_DELAY = 4 //seconds
+const DefaultDelay = 4 //seconds
 
 // Batcher receieves Cloudwatch messages on its input channel,
 // stores them in CloudwatchBatches until enough data is ready to send, then
@@ -51,8 +51,8 @@ func (b *Batcher) Start() {
 				b.batches[msg.Container] = NewBatch()
 			}
 			// if Msg is too long for the current batch, submit the batch
-			if (b.batches[msg.Container].Size+msgSize(msg)) > MAX_BATCH_SIZE ||
-				len(b.batches[msg.Container].Msgs) >= MAX_BATCH_COUNT {
+			if (b.batches[msg.Container].Size+msgSize(msg)) > MaxBatchSize ||
+				len(b.batches[msg.Container].Msgs) >= MaxBatchCount {
 				b.output <- *b.batches[msg.Container]
 				b.batches[msg.Container] = NewBatch()
 			}
@@ -68,7 +68,7 @@ func (b *Batcher) Start() {
 }
 
 func (b *Batcher) RunTimer() {
-	delayText := strconv.Itoa(DEFAULT_DELAY)
+	delayText := strconv.Itoa(DefaultDelay)
 	if routeDelay, isSet := b.route.Options[`DELAY`]; isSet {
 		delayText = routeDelay
 	}
@@ -78,8 +78,8 @@ func (b *Batcher) RunTimer() {
 	delay, err := strconv.Atoi(delayText)
 	if err != nil {
 		log.Printf("WARNING: ERROR parsing DELAY %s, using default of %d\n",
-			delayText, DEFAULT_DELAY)
-		delay = DEFAULT_DELAY
+			delayText, DefaultDelay)
+		delay = DefaultDelay
 	}
 	for {
 		time.Sleep(time.Duration(delay) * time.Second)
