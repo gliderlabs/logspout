@@ -60,58 +60,60 @@ func NewUploader(adapter *Adapter) *Uploader {
 // Logs, while keeping track of the unique sequence token for each log stream.
 func (u *Uploader) Start() {
 	for batch := range u.Input {
-		msg := batch.Msgs[0]
-		u.log("Submitting batch for %s-%s (length %d, size %v)",
-			msg.Group, msg.Stream, len(batch.Msgs), batch.Size)
+		if len(batch.Msgs) > 0 {
+			msg := batch.Msgs[0]
+			u.log("Submitting batch for %s-%s (length %d, size %v)",
+				msg.Group, msg.Stream, len(batch.Msgs), batch.Size)
 
-		// fetch and cache the upload sequence token
-		var token *string
-		if cachedToken, isCached := u.tokens[msg.Container]; isCached {
-			token = &cachedToken
-			u.log("Got token from cache: %s", *token)
-		} else {
-			u.log("Fetching token from AWS...")
-			awsToken, err := u.getSequenceToken(msg)
+			// fetch and cache the upload sequence token
+			var token *string
+			if cachedToken, isCached := u.tokens[msg.Container]; isCached {
+				token = &cachedToken
+				u.log("Got token from cache: %s", *token)
+			} else {
+				u.log("Fetching token from AWS...")
+				awsToken, err := u.getSequenceToken(msg)
+				if err != nil {
+					u.log("ERROR: %s", err)
+					continue
+				}
+				if awsToken != nil {
+					u.tokens[msg.Container] = *(awsToken)
+					u.log("Got token from AWS: %s", *awsToken)
+					token = awsToken
+				}
+			}
+
+			// generate the array of InputLogEvent from the batch's contents
+			events := []*cloudwatchlogs.InputLogEvent{}
+			for _, msg := range batch.Msgs {
+				event := cloudwatchlogs.InputLogEvent{
+					Message:   aws.String(msg.Message),
+					Timestamp: aws.Int64(msg.Time.UnixNano() / 1000000),
+				}
+				events = append(events, &event)
+			}
+			params := &cloudwatchlogs.PutLogEventsInput{
+				LogEvents:     events,
+				LogGroupName:  aws.String(msg.Group),
+				LogStreamName: aws.String(msg.Stream),
+				SequenceToken: token,
+			}
+
+			u.log("POSTing PutLogEvents to %s-%s with %d messages, %d bytes",
+				msg.Group, msg.Stream, len(batch.Msgs), batch.Size)
+			resp, err := u.svc.PutLogEvents(params)
 			if err != nil {
-				u.log("ERROR: %s", err)
+				u.log(err.Error())
+				u.log("Dropping %d messages", len(events))
 				continue
 			}
-			if awsToken != nil {
-				u.tokens[msg.Container] = *(awsToken)
-				u.log("Got token from AWS: %s", *awsToken)
-				token = awsToken
+			u.log("Got 200 response")
+			if resp.NextSequenceToken != nil {
+				u.log("Caching new sequence token for %s-%s: %s",
+					msg.Group, msg.Stream, *resp.NextSequenceToken)
+				u.tokens[msg.Container] = *resp.NextSequenceToken
 			}
-		}
-
-		// generate the array of InputLogEvent from the batch's contents
-		events := []*cloudwatchlogs.InputLogEvent{}
-		for _, msg := range batch.Msgs {
-			event := cloudwatchlogs.InputLogEvent{
-				Message:   aws.String(msg.Message),
-				Timestamp: aws.Int64(msg.Time.UnixNano() / 1000000),
-			}
-			events = append(events, &event)
-		}
-		params := &cloudwatchlogs.PutLogEventsInput{
-			LogEvents:     events,
-			LogGroupName:  aws.String(msg.Group),
-			LogStreamName: aws.String(msg.Stream),
-			SequenceToken: token,
-		}
-
-		u.log("POSTing PutLogEvents to %s-%s with %d messages, %d bytes",
-			msg.Group, msg.Stream, len(batch.Msgs), batch.Size)
-		resp, err := u.svc.PutLogEvents(params)
-		if err != nil {
-			u.log(err.Error())
-			u.log("Dropping %d messages", len(events))
-			continue
-		}
-		u.log("Got 200 response")
-		if resp.NextSequenceToken != nil {
-			u.log("Caching new sequence token for %s-%s: %s",
-				msg.Group, msg.Stream, *resp.NextSequenceToken)
-			u.tokens[msg.Container] = *resp.NextSequenceToken
 		}
 	}
 }
