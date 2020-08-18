@@ -12,7 +12,7 @@ import (
 
 	docker "github.com/fsouza/go-dockerclient"
 
-	"github.com/gliderlabs/logspout/cfg"
+	"github.com/gliderlabs/logspout/v3/cfg"
 )
 
 const (

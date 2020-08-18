@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gliderlabs/logspout/cfg"
+	"github.com/gliderlabs/logspout/v3/cfg"
 )
 
 func init() {

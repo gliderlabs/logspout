@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	"golang.org/x/net/websocket"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/v3/router"
 )
 
 func init() {

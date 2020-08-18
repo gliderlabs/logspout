@@ -14,13 +14,13 @@ import (
 	"testing"
 	"time"
 
-	_ "github.com/gliderlabs/logspout/transports/tcp"
-	_ "github.com/gliderlabs/logspout/transports/tls"
-	_ "github.com/gliderlabs/logspout/transports/udp"
+	_ "github.com/gliderlabs/logspout/v3/transports/tcp"
+	_ "github.com/gliderlabs/logspout/v3/transports/tls"
+	_ "github.com/gliderlabs/logspout/v3/transports/udp"
 
 	docker "github.com/fsouza/go-dockerclient"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/v3/router"
 )
 
 const (
