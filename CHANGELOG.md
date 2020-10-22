@@ -10,7 +10,11 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-## [v3.2.11] - 2020-05-8
+## [v3.2.12] - 2020-10-22
+### Changed
+- @michaelshobbs bump alpine to 3.12
+
+## [v3.2.11] - 2020-05-08
 ### Added
 - @hhromic Add Syslog TCP framing documentation to README
 
@@ -19,7 +23,7 @@ All notable changes to this project will be documented in this file.
 - @michaelshobbs use type assertion instead of reflection to determine connection type
 - @michaelshobbs use // + space for all human readable comments
 
-## [v3.2.10] - 2020-05-1
+## [v3.2.10] - 2020-05-01
 ### Added
 - @jszwedko Add optional TCP framing to syslog adapter
 
