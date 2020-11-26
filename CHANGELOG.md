@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 - @michaelshobbs bump golangci-lint to 1.27 and fix lintballs
 
 ### Fixed
-- @michaelshobbsfix backlog() logic and add tests
+- @michaelshobbs fix backlog() logic and add tests
 
 ## [v3.2.12] - 2020-10-22
 ### Changed
