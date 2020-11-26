@@ -14,6 +14,8 @@ import (
 	"github.com/gliderlabs/logspout/router"
 )
 
+const maxRouteIDLen = 12
+
 func init() {
 	router.HTTPHandlers.Register(LogStreamer, "logs")
 }
@@ -35,8 +37,8 @@ func LogStreamer() http.Handler {
 			switch params["predicate"] {
 			case "id":
 				route.FilterID = params["value"]
-				if len(route.ID) > 12 {
-					route.FilterID = route.FilterID[:12]
+				if len(route.ID) > maxRouteIDLen {
+					route.FilterID = route.FilterID[:maxRouteIDLen]
 				}
 			case "name":
 				route.FilterName = params["value"]
@@ -83,10 +85,10 @@ func (c Colorizer) Get(key string) string {
 		i = c[key]
 	}
 	bright := "1;"
-	if i%14 > 6 {
+	if i%14 > 6 { //nolint:gomnd
 		bright = ""
 	}
-	return "\x1b[" + bright + "3" + strconv.Itoa(7-(i%7)) + "m"
+	return "\x1b[" + bright + "3" + strconv.Itoa(7-(i%7)) + "m" //nolint:gomnd
 }
 
 func marshal(obj interface{}) []byte {
@@ -134,7 +136,7 @@ func httpStreamer(w http.ResponseWriter, req *http.Request, logstream chan *rout
 		if req.URL.Query().Get("sources") != "" && logline.Source != req.URL.Query().Get("sources") {
 			continue
 		}
-		if usejson {
+		if usejson { //nolint:nestif
 			w.Write(append(marshal(logline), '\n'))
 		} else {
 			if multi {

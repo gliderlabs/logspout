@@ -10,6 +10,14 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+
+## [v3.2.13] - 2020-11-26
+### Changed
+- @michaelshobbs bump golangci-lint to 1.27 and fix lintballs
+
+### Fixed
+- @michaelshobbs fix backlog() logic and add tests
+
 ## [v3.2.12] - 2020-10-22
 ### Changed
 - @michaelshobbs bump alpine to 3.12
@@ -247,7 +255,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.12...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.13...HEAD
+[v3.2.13]: https://github.com/gliderlabs/logspout/compare/v3.2.12...v3.2.13
 [v3.2.12]: https://github.com/gliderlabs/logspout/compare/v3.2.11...v3.2.12
 [v3.2.11]: https://github.com/gliderlabs/logspout/compare/v3.2.10...v3.2.11
 [v3.2.10]: https://github.com/gliderlabs/logspout/compare/v3.2.9...v3.2.10

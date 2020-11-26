@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	matchFirst    = "first"
-	matchLast     = "last"
-	matchNonFirst = "nonfirst"
-	matchNonLast  = "nonlast"
+	matchFirst        = "first"
+	matchLast         = "last"
+	matchNonFirst     = "nonfirst"
+	matchNonLast      = "nonlast"
+	defaultFlushAfter = 500 * time.Millisecond
 )
 
 func init() {
@@ -89,7 +90,7 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 		return nil, errors.New("multiline: invalid value for MULTILINE_MATCH (must be one of first|last|nonfirst|nonlast): " + matchType)
 	}
 
-	flushAfter := 500 * time.Millisecond
+	flushAfter := defaultFlushAfter
 	flushAfterStr := os.Getenv("MULTILINE_FLUSH_AFTER")
 	if flushAfterStr != "" {
 		timeoutMS, errConv := strconv.Atoi(flushAfterStr)
@@ -100,7 +101,7 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 	}
 
 	parts := strings.SplitN(route.Adapter, "+", 2)
-	if len(parts) != 2 {
+	if len(parts) != 2 { //nolint:gomnd
 		return nil, errors.New("multiline: adapter must have a sub-adapter, eg: multiline+raw+tcp")
 	}
 
@@ -117,7 +118,7 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 	route.Adapter = originalAdapter
 
 	out := make(chan *router.Message)
-	checkInterval := flushAfter / 2
+	checkInterval := flushAfter / 2 //nolint:gomnd
 
 	return &Adapter{
 		out:             out,
@@ -135,7 +136,7 @@ func NewMultilineAdapter(route *router.Route) (a router.LogAdapter, err error) {
 }
 
 // Stream sends log data to the next adapter
-func (a *Adapter) Stream(logstream chan *router.Message) { //nolint:gocyclo
+func (a *Adapter) Stream(logstream chan *router.Message) { //nolint:gocyclo,gocognit
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -165,7 +166,7 @@ func (a *Adapter) Stream(logstream chan *router.Message) { //nolint:gocyclo
 
 			cID := message.Container.ID
 			old, oldExists := a.buffers[cID]
-			if a.isFirstLine(message) {
+			if a.isFirstLine(message) { //nolint:nestif
 				if oldExists {
 					a.out <- old
 				}

@@ -268,3 +268,22 @@ func TestPumpRoutingFrom(t *testing.T) {
 		t.Errorf("expected RoutingFrom to return 'false'")
 	}
 }
+
+func TestPumpBacklog(t *testing.T) {
+	os.Unsetenv("BACKLOG")
+	if backlog() != false {
+		t.Errorf("expected backlog() to return 'false'")
+	}
+	os.Setenv("BACKLOG", "false")
+	if backlog() != false {
+		t.Errorf("expected backlog() to return 'false'")
+	}
+	os.Setenv("BACKLOG", "true")
+	if backlog() != true {
+		t.Errorf("expected backlog() to return 'true'")
+	}
+	os.Unsetenv("BACKLOG")
+	if backlog() != false {
+		t.Errorf("expected backlog() to return 'false'")
+	}
+}
