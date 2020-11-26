@@ -46,7 +46,7 @@ func debug(v ...interface{}) {
 }
 
 func backlog() bool {
-	return os.Getenv("BACKLOG") == "false"
+	return os.Getenv("BACKLOG") == trueString
 }
 
 func setAllowTTY() {
