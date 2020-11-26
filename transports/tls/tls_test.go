@@ -38,7 +38,6 @@ func TestEmptyTrustStore(t *testing.T) {
 	if numOfTrustedCerts != 0 {
 		t.Fatalf("expected 0 RootCAs but got: %d", numOfTrustedCerts)
 	}
-
 }
 
 // TestSingleCustomCA should test the behavior of loading
@@ -52,7 +51,6 @@ func TestSingleCustomCA(t *testing.T) {
 	if !bytes.Contains(testTLSConfig.RootCAs.Subjects()[0], []byte(caRootCertSubjectCN)) {
 		t.Errorf("failed to load custom root CA into trust store: %s", caRootCertFileLocation)
 	}
-
 }
 
 // TestMultipleCustomCAs should test the behavior of loading
