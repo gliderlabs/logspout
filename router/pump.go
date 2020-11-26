@@ -22,6 +22,7 @@ const (
 	pumpEventStatusRenameName  = "rename"
 	pumpEventStatusDieName     = "die"
 	trueString                 = "true"
+	pumpMaxIDLen               = 12
 )
 
 var (
@@ -66,8 +67,8 @@ func normalName(name string) string {
 }
 
 func normalID(id string) string {
-	if len(id) > 12 {
-		return id[:12]
+	if len(id) > pumpMaxIDLen {
+		return id[:pumpMaxIDLen]
 	}
 	return id
 }
@@ -101,7 +102,7 @@ func ignoreContainer(container *docker.Container) bool {
 	for _, label := range excludeLabelArr {
 		labelParts := strings.Split(label, ":")
 
-		if len(labelParts) == 2 {
+		if len(labelParts) == 2 { //nolint:gomnd
 			excludeLabel = labelParts[0]
 			excludeValue = labelParts[1]
 		}
@@ -321,8 +322,8 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 		if route.MatchContainer(
 			normalID(pump.container.ID),
 			normalName(pump.container.Name),
-			pump.container.Config.Labels) {
-
+			pump.container.Config.Labels,
+		) {
 			pump.add(logstream, route)
 			defer pump.remove(logstream)
 		}
@@ -344,8 +345,8 @@ func (p *LogsPump) Route(route *Route, logstream chan *Message) {
 				if route.MatchContainer(
 					normalID(event.pump.container.ID),
 					normalName(event.pump.container.Name),
-					event.pump.container.Config.Labels) {
-
+					event.pump.container.Config.Labels,
+				) {
 					event.pump.add(logstream, route)
 					defer event.pump.remove(logstream)
 				}

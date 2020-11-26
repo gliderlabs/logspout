@@ -97,7 +97,7 @@ func createTLSConfig() (tlsConfig *tls.Config, err error) {
 	tlsConfig = &tls.Config{}
 
 	// use stronger TLS settings if enabled
-	// TODO: perhaps this should be default setting
+	// perhaps this should be default setting @gbolo
 	if os.Getenv(envTLSHardening) == trueString {
 		tlsConfig.InsecureSkipVerify = false
 		tlsConfig.MinVersion = hardenedMinVersion

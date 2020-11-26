@@ -51,7 +51,7 @@ func (fs RouteFileStore) GetAll() ([]*Route, error) {
 
 // Add writes a marshaled *Route to the RouteFileStore
 func (fs RouteFileStore) Add(route *Route) error {
-	return ioutil.WriteFile(fs.Filename(route.ID), marshal(route), 0644)
+	return ioutil.WriteFile(fs.Filename(route.ID), marshal(route), 0600)
 }
 
 // Remove removes route from the RouteFileStore based on id
