@@ -6,7 +6,7 @@ VERSION=$(shell cat VERSION)
 MAX_IMAGE_SIZE := 40000000
 
 GOBIN := $(shell go env GOPATH | awk -F ":" '{ print $$1 }')/bin
-GOLANGCI_LINT_VERSION := v1.18.0
+GOLANGCI_LINT_VERSION := v1.27.0
 
 ifeq ($(shell uname), Darwin)
 	XARGS_ARG="-L1"

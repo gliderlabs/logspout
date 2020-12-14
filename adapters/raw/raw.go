@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"reflect"
 	"text/template"
 
 	"github.com/gliderlabs/logspout/router"
@@ -69,11 +68,10 @@ func (a *Adapter) Stream(logstream chan *router.Message) {
 			log.Println("raw:", err)
 			return
 		}
-		//log.Println("debug:", buf.String())
 		_, err = a.conn.Write(buf.Bytes())
 		if err != nil {
 			log.Println("raw:", err)
-			if reflect.TypeOf(a.conn).String() != "*net.UDPConn" {
+			if _, ok := a.conn.(*net.UDPConn); !ok {
 				return
 			}
 		}

@@ -32,10 +32,10 @@ func TestRouterGetAll(t *testing.T) {
 func TestRouterNoDuplicateIds(t *testing.T) {
 	AdapterFactories.Register(newDummyAdapter, "syslog")
 
-	//Mock "running" so routes actually start running when added.
+	// Mock "running" so routes actually start running when added.
 	Routes.routing = true
 
-	//Start the first route.
+	// Start the first route.
 	route1 := &Route{
 		ID:      "abc",
 		Address: "someUrl",
@@ -45,7 +45,7 @@ func TestRouterNoDuplicateIds(t *testing.T) {
 		t.Error("Error adding route:", err)
 	}
 
-	//Start a second route with the same ID.
+	// Start a second route with the same ID.
 	var route2 = &Route{
 		ID:      "abc",
 		Address: "someUrl2",

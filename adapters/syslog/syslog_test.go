@@ -2,6 +2,7 @@ package syslog
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -11,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"text/template"
 	"time"
 
 	_ "github.com/gliderlabs/logspout/transports/tcp"
@@ -35,21 +35,129 @@ var (
 			Hostname: "8dfafdbc3a40",
 		},
 	}
-	hostHostnameFilename = "/etc/host_hostname"
+	hostHostnameFilename = "/tmp/host_hostname"
 	hostnameContent      = "hostname"
 	badHostnameContent   = "hostname\r\n"
 )
 
+func TestSyslogOctetFraming(t *testing.T) {
+	os.Setenv("SYSLOG_TCP_FRAMING", "octet-counted")
+	defer os.Unsetenv("SYSLOG_TCP_FRAMING")
+
+	done := make(chan string)
+	addr, sock, srvWG := startServer("tcp", "", done)
+	defer srvWG.Wait()
+	defer os.Remove(addr)
+	defer sock.Close()
+
+	route := &router.Route{Adapter: "syslog+tcp", Address: addr}
+	adapter, err := NewSyslogAdapter(route)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer adapter.(*Adapter).conn.Close()
+
+	stream := make(chan *router.Message)
+	go adapter.Stream(stream)
+
+	count := 1
+	messages := make(chan string, count)
+	go sendLogstream(stream, messages, adapter, count)
+
+	timeout := time.After(6 * time.Second)
+	msgnum := 1
+	select {
+	case msg := <-done:
+		sizeStr := ""
+		_, err := fmt.Sscan(msg, &sizeStr)
+		if err != nil {
+			t.Fatal("unable to scan size from message: ", err)
+		}
+
+		size, err := strconv.ParseInt(sizeStr, 10, 32)
+		if err != nil {
+			t.Fatal("unable to scan size from message: ", err)
+		}
+
+		expectedOctetFrame := len(sizeStr) + 1 + int(size)
+		if len(msg) != expectedOctetFrame {
+			t.Errorf("expected octet frame to be %d. got %d instead for message %s", expectedOctetFrame, size, msg)
+		}
+		return
+	case <-timeout:
+		t.Fatal("timeout after", msgnum, "messages")
+		return
+	}
+}
+
+func TestSysLogFormat(t *testing.T) {
+	defer os.Unsetenv("SYSLOG_FORMAT")
+
+	newFormat := Rfc3164Format
+	os.Setenv("SYSLOG_FORMAT", string(newFormat))
+	format, err := getFormat()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if format != newFormat {
+		t.Errorf("expected %v got %v", newFormat, format)
+	}
+
+	os.Unsetenv("SYSLOG_FORMAT")
+	format, err = getFormat()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if format != defaultFormat {
+		t.Errorf("expected %v got %v", defaultFormat, format)
+	}
+
+	os.Setenv("SYSLOG_FORMAT", "invalid-option")
+	_, err = getFormat()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
+func TestSysLogTCPFraming(t *testing.T) {
+	defer os.Unsetenv("SYSLOG_TCP_FRAMING")
+
+	newTCPFraming := OctetCountedTCPFraming
+	os.Setenv("SYSLOG_TCP_FRAMING", string(newTCPFraming))
+	tcpFraming, err := getTCPFraming()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if tcpFraming != newTCPFraming {
+		t.Errorf("expected %v got %v", newTCPFraming, tcpFraming)
+	}
+
+	os.Unsetenv("SYSLOG_TCP_FRAMING")
+	tcpFraming, err = getTCPFraming()
+	if err != nil {
+		t.Fatal("unexpected error: ", err)
+	}
+	if tcpFraming != defaultTCPFraming {
+		t.Errorf("expected %v got %v", defaultTCPFraming, tcpFraming)
+	}
+
+	os.Setenv("SYSLOG_TCP_FRAMING", "invalid-option")
+	_, err = getTCPFraming()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+}
+
 func TestSyslogRetryCount(t *testing.T) {
 	newRetryCount := uint(20)
 	os.Setenv("RETRY_COUNT", strconv.Itoa(int(newRetryCount)))
-	setRetryCount()
+	retryCount := getRetryCount()
 	if retryCount != newRetryCount {
 		t.Errorf("expected %v got %v", newRetryCount, retryCount)
 	}
 
 	os.Unsetenv("RETRY_COUNT")
-	setRetryCount()
+	retryCount = getRetryCount()
 	if retryCount != defaultRetryCount {
 		t.Errorf("expected %v got %v", defaultRetryCount, retryCount)
 	}
@@ -84,7 +192,7 @@ func TestSyslogReconnectOnClose(t *testing.T) {
 				<-messages
 				msgnum++
 			}
-			check(t, adapter.(*Adapter).tmpl, <-messages, msg)
+			check(t, <-messages, msg)
 			msgnum++
 		case <-timeout:
 			adapter.(*Adapter).conn.Close()
@@ -169,13 +277,13 @@ func sendLogstream(stream chan *router.Message, messages chan string, adapter ro
 			},
 		}
 		stream <- msg.Message
-		b, _ := msg.Render(adapter.(*Adapter).tmpl)
+		b, _ := msg.Render(adapter.(*Adapter).format, adapter.(*Adapter).tmpl)
 		messages <- string(b)
 		time.Sleep(10 * time.Millisecond)
 	}
 }
 
-func check(t *testing.T, tmpl *template.Template, in string, out string) {
+func check(t *testing.T, in string, out string) {
 	if in != out {
 		t.Errorf("expected: %s\ngot: %s\n", in, out)
 	}
