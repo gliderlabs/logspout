@@ -1,0 +1,11 @@
+FROM arm32v6/alpine:3.8
+ENTRYPOINT ["/bin/logspout"]
+VOLUME /mnt/routes
+EXPOSE 80
+
+COPY . /src
+RUN cd /src && ./build-arm.sh "$(cat VERSION)-arm"
+
+ONBUILD COPY ./build-arm.sh /src/build-arm.sh
+ONBUILD COPY ./modules.go /src/modules.go
+ONBUILD RUN cd /src && chmod +x ./build-arm.sh && sleep 1 && sync && ./build-arm.sh "$(cat VERSION)-arm-custom"
