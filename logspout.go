@@ -1,5 +1,6 @@
 package main
 
+
 import (
 	"fmt"
 	"log"
@@ -7,8 +8,8 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/gliderlabs/logspout/cfg"
-	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/v3/cfg"
+	"github.com/gliderlabs/logspout/v3/router"
 )
 
 // Version is the running version of logspout

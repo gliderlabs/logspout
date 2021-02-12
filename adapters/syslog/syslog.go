@@ -16,8 +16,8 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/gliderlabs/logspout/cfg"
-	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/v3/cfg"
+	"github.com/gliderlabs/logspout/v3/router"
 )
 
 const (

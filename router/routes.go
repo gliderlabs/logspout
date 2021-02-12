@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gliderlabs/logspout/cfg"
+	"github.com/gliderlabs/logspout/v3/cfg"
 )
 
 // Routes is all the configured routes

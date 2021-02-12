@@ -8,7 +8,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/v3/router"
 )
 
 func init() {

@@ -9,7 +9,7 @@ import (
 
 	docker "github.com/fsouza/go-dockerclient"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/v3/router"
 )
 
 type dummyAdapter struct {
