@@ -36,3 +36,25 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "release" ]; then
               make release
             fi
+  publish:
+    machine:
+      image: ubuntu-1604:202007-01
+    working_directory: /home/circleci/logspout
+    environment:
+      DEBUG: true
+    steps:
+      - checkout
+      - run: mkdir -vp ~/.docker/cli-plugins/
+      - run: curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
+      - run: chmod a+x ~/.docker/cli-plugins/docker-buildx
+      - run: docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+      - run: docker run -it --rm --privileged tonistiigi/binfmt --install all
+      - run: docker buildx create --use --name mybuilder
+      - run: |
+          docker buildx build --push --platform linux/arm64,linux/amd64 -t ${DOCKER_USERNAME}/logspout:${CIRCLE_BRANCH} -t ${DOCKER_USERNAME}/logspout:latest .
+workflows:
+  version: 2
+  build_and_publish:
+    jobs:
+      - build
+      - publish
