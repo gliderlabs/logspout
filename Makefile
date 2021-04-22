@@ -127,5 +127,18 @@ clean:
 	docker rm $(shell docker ps -aq) || true
 	docker rmi $(NAME):dev $(NAME):$(VERSION) || true
 	docker rmi $(shell docker images -f 'dangling=true' -q) || true
+publish:
+	mkdir -vp ~/.docker/cli-plugins/
+	curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
+	chmod a+x ~/.docker/cli-plugins/docker-buildx
+	docker run -it --rm --privileged tonistiigi/binfmt --install all
+	docker buildx create --use --name mybuilder
+ifeq ($(CIRCLE_BRANCH), master)
+	docker buildx build --platform linux/arm64,linux/amd64 -t ${DOCKER_USERNAME}/logspout:${CIRCLE_BRANCH} -t ${DOCKER_USERNAME}/logspout:latest --push .
+endif
+
+ifeq ($(CIRCLE_BRANCH), release)
+	docker buildx build --push --platform linux/arm64,linux/amd64 -t ${DOCKER_USERNAME}/logspout:${VERSION} .
+endif
 
 .PHONY: release clean
