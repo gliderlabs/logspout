@@ -36,3 +36,19 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "release" ]; then
               make release
             fi
+  publish:
+    machine:
+      image: ubuntu-1604:202007-01
+    working_directory: /home/circleci/logspout
+    environment:
+      DEBUG: true
+    steps:
+      - checkout
+      - run: docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+      - run: make publish
+
+  version: 2
+  build_and_publish:
+    jobs:
+      - build
+      - publish
