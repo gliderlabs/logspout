@@ -4,7 +4,7 @@ jobs:
     machine: true
     working_directory: /home/circleci/logspout
     environment:
-      DEBUG: true
+      DEBUG: "true"
     steps:
       - checkout
       - run: |
@@ -36,3 +36,32 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "release" ]; then
               make release
             fi
+  publish:
+    machine:
+      image: ubuntu-1604:202007-01
+    working_directory: /home/circleci/logspout
+    environment:
+      DEBUG: "true"
+    steps:
+      - checkout
+      - run: make publish-requirements
+      - run: make publish-test
+      - run: |
+          if [ "${CIRCLE_BRANCH}" == "master" ]; then
+            docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+            make publish-master
+          fi
+      - run: |
+          if [ "${CIRCLE_BRANCH}" == "release" ]; then
+            docker login -u "$DOCKER_USERNAME" -p "$DOCKER_PASSWORD"
+            make publish-release
+          fi
+
+workflows:
+  version: 2
+  build_and_publish:
+    jobs:
+      - build
+      - publish:
+          requires:
+            - build

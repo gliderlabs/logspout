@@ -1,5 +1,3 @@
-.PHONY: build
-
 NAME=logspout
 VERSION=$(shell cat VERSION)
 # max image size of 40MB
@@ -110,6 +108,7 @@ test-tls-custom:
 	docker stop $(NAME)-tls-custom || true
 	docker rm $(NAME)-tls-custom || true
 
+.PHONY: release
 release:
 	rm -rf release && mkdir release
 	go get github.com/progrium/gh-release/...
@@ -117,15 +116,37 @@ release:
 	gh-release create gliderlabs/$(NAME) $(VERSION) \
 		$(shell git rev-parse --abbrev-ref HEAD) $(VERSION)
 
+.PHONY: circleci
 circleci:
 ifneq ($(CIRCLE_BRANCH), release)
 	echo build-$$CIRCLE_BUILD_NUM > VERSION
 endif
 
+.PHONY: clean
 clean:
 	rm -rf build/
 	docker rm $(shell docker ps -aq) || true
 	docker rmi $(NAME):dev $(NAME):$(VERSION) || true
 	docker rmi $(shell docker images -f 'dangling=true' -q) || true
 
-.PHONY: release clean
+.PHONY: publish-requirements
+publish-requirements:
+	mkdir -vp ~/.docker/cli-plugins/
+	curl --silent -L --output ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.3.1/buildx-v0.3.1.linux-amd64
+	chmod a+x ~/.docker/cli-plugins/docker-buildx
+	docker run -it --rm --privileged tonistiigi/binfmt --install all
+	docker buildx create --use --name mybuilder
+
+.PHONY: publish-test
+publish-test:
+	docker buildx build --load --platform linux/amd64 -t gliderlabs/$(NAME):linux-amd64-${CIRCLE_BRANCH} .
+	docker buildx build --load --platform linux/arm64 -t gliderlabs/$(NAME):linux-arm64-${CIRCLE_BRANCH} .
+	docker images
+
+.PHONY: publish-master
+publish-master:
+	docker buildx build --push --platform linux/arm64,linux/amd64 -t gliderlabs/$(NAME):master -t gliderlabs/$(NAME):latest .
+
+.PHONY: publish-release
+publish-release:
+	docker buildx build --push --platform linux/arm64,linux/amd64 -t gliderlabs/$(NAME):$(VERSION) .
