@@ -10,6 +10,14 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+## [v3.2.14] - 2021-12-03
+### Fixed
+- @0xflotus fix: typo error in project name
+
+### Changed
+- @skyzh upgrade dockerclient dependency
+- @merowing1279 retrieve logs from already started containers
+- @odidev Release docker image for arm64
 
 ## [v3.2.13] - 2020-11-26
 ### Changed
@@ -255,7 +263,8 @@ All notable changes to this project will be documented in this file.
 - Base container is now Alpine
 - Moved to gliderlabs organization
 
-[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.13...HEAD
+[unreleased]: https://github.com/gliderlabs/logspout/compare/v3.2.14...HEAD
+[v3.2.14]: https://github.com/gliderlabs/logspout/compare/v3.2.13...v3.2.14
 [v3.2.13]: https://github.com/gliderlabs/logspout/compare/v3.2.12...v3.2.13
 [v3.2.12]: https://github.com/gliderlabs/logspout/compare/v3.2.11...v3.2.12
 [v3.2.11]: https://github.com/gliderlabs/logspout/compare/v3.2.10...v3.2.11
