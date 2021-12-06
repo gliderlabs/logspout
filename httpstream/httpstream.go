@@ -104,7 +104,7 @@ func normalName(name string) string {
 }
 
 func websocketStreamer(w http.ResponseWriter, req *http.Request, logstream chan *router.Message, closer chan struct{}) {
-	websocket.Handler(func(conn *websocket.Conn) {
+	websocket.Server{Handler: websocket.Handler(func(conn *websocket.Conn) {
 		for logline := range logstream {
 			if req.URL.Query().Get("source") != "" && logline.Source != req.URL.Query().Get("source") {
 				continue
@@ -115,7 +115,7 @@ func websocketStreamer(w http.ResponseWriter, req *http.Request, logstream chan 
 				return
 			}
 		}
-	}).ServeHTTP(w, req)
+	})}.ServeHTTP(w, req)
 }
 
 func httpStreamer(w http.ResponseWriter, req *http.Request, logstream chan *router.Message, multi bool) {
