@@ -140,13 +140,14 @@ publish-requirements:
 .PHONY: publish-test
 publish-test:
 	docker buildx build --load --platform linux/amd64 -t gliderlabs/$(NAME):linux-amd64-${CIRCLE_BRANCH} .
+	docker buildx build --load --platform linux/arm/v6 -t gliderlabs/$(NAME):linux-arm-v6-${CIRCLE_BRANCH} .
 	docker buildx build --load --platform linux/arm64 -t gliderlabs/$(NAME):linux-arm64-${CIRCLE_BRANCH} .
 	docker images
 
 .PHONY: publish-master
 publish-master:
-	docker buildx build --push --platform linux/arm64,linux/amd64 -t gliderlabs/$(NAME):master -t gliderlabs/$(NAME):latest .
+	docker buildx build --push --platform linux/amd64,linux/arm/v6,linux/arm64 -t gliderlabs/$(NAME):master -t gliderlabs/$(NAME):latest .
 
 .PHONY: publish-release
 publish-release:
-	docker buildx build --push --platform linux/arm64,linux/amd64 -t gliderlabs/$(NAME):$(VERSION) .
+	docker buildx build --push --platform linux/amd64,linux/arm/v6,linux/arm64 -t gliderlabs/$(NAME):$(VERSION) .
