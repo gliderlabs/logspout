@@ -1,4 +1,4 @@
-module github.com/gliderlabs/logspout
+module github.com/gliderlabs/logspout/v3
 
 go 1.13
 

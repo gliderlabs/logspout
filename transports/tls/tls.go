@@ -12,8 +12,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/gliderlabs/logspout/adapters/raw"
-	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/v3/adapters/raw"
+	"github.com/gliderlabs/logspout/v3/router"
 )
 
 const (

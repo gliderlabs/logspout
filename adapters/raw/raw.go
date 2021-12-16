@@ -9,7 +9,7 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/gliderlabs/logspout/router"
+	"github.com/gliderlabs/logspout/v3/router"
 )
 
 func init() {
