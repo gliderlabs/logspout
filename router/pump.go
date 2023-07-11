@@ -157,7 +157,7 @@ func (p *LogsPump) Setup() error {
 func (p *LogsPump) rename(event *docker.APIEvents) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	container, err := p.client.InspectContainer(event.ID)
+	container, err := p.client.InspectContainerWithOptions(docker.InspectContainerOptions{ID: event.ID})
 	assert(err, defaultPumpName)
 	pump, ok := p.pumps[normalID(event.ID)]
 	if !ok {
@@ -180,7 +180,7 @@ func (p *LogsPump) Run() error {
 		p.pumpLogs(&docker.APIEvents{
 			ID:     normalID(containers[idx].ID),
 			Status: pumpEventStatusStartName,
-		}, false, inactivityTimeout)
+		}, backlog(), inactivityTimeout)
 	}
 	events := make(chan *docker.APIEvents)
 	err = p.client.AddEventListener(events)
@@ -203,7 +203,7 @@ func (p *LogsPump) Run() error {
 
 func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTimeout time.Duration) { //nolint:gocyclo
 	id := normalID(event.ID)
-	container, err := p.client.InspectContainer(id)
+	container, err := p.client.InspectContainerWithOptions(docker.InspectContainerOptions{ID: id})
 	assert(err, defaultPumpName)
 	if ignoreContainerTTY(container) {
 		debug("pump.pumpLogs():", id, "ignored: tty enabled")
@@ -270,7 +270,7 @@ func (p *LogsPump) pumpLogs(event *docker.APIEvents, backlog bool, inactivityTim
 				sinceTime = sinceTime.Add(-inactivityTimeout)
 			}
 
-			container, err := p.client.InspectContainer(id)
+			container, err := p.client.InspectContainerWithOptions(docker.InspectContainerOptions{ID: id})
 			if err != nil {
 				_, four04 := err.(*docker.NoSuchContainer)
 				if !four04 {
